@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capillary Rise Simulation - Trinity Simulation Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --bg:        #EFF2F5;
+      --bg-alt:    #E2E7EC;
+      --paper:     #F7F8FA;
+      --ink:       #0C1115;
+      --ink-soft:  #2B333A;
+      --ink-mute:  #6B7680;
+      --rule-soft: rgba(12,17,21,0.14);
+      --dark:      #0C1115;
+      --dark-ink:  #EFF2F5;
+      --dark-mute: #7F8892;
+      --accent:    oklch(0.52 0.12 200);
+      --accent-ink:#F7F8FA;
+      --sans:      'Manrope', system-ui, sans-serif;
+      --mono:      'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--sans);
+      background: var(--dark);
+      color: var(--dark-ink);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── App shell ── */
+    .app {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── 1. Header strip ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 22px;
+      border-bottom: 1px solid #2A2A2A;
+      flex-shrink: 0;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+    }
+
+    .title {
+      margin-top: 5px;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--dark-ink);
+    }
+
+    .controls { display: flex; gap: 8px; }
+
+    .btn-circle {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--dark-ink);
+      background: transparent;
+      color: var(--dark-ink);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+    .btn-circle:active { opacity: 0.6; }
+    .btn-circle svg { width: 16px; height: 16px; fill: currentColor; }
+    .btn-circle.outline svg { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── 2. Body: stage left + params right ── */
+    .body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Stage */
+    .stage {
+      flex: 1 1 0;
+      border-right: 1px solid #2A2A2A;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stage svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Parameter panel */
+    .params {
+      width: 270px;
+      flex-shrink: 0;
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow-y: auto;
+    }
+
+    .params-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+      margin-bottom: 20px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .slider-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+    }
+
+    .slider-row span:last-child { color: var(--dark-ink); }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Formula block */
+    .formula {
+      border-top: 1px solid #2A2A2A;
+      padding-top: 18px;
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .formula-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+    }
+
+    .formula-eq {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--dark-ink);
+      opacity: 0.75;
+      line-height: 1.9;
+    }
+
+    .formula-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dark-mute);
+      margin-top: 2px;
+    }
+
+    .formula-row.accent span:last-child { color: var(--accent); }
+
+    /* ── 3. Prompt strip ── */
+    .prompt {
+      border-top: 1px solid #2A2A2A;
+      padding: 10px 22px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--dark-mute);
+      flex-shrink: 0;
+    }
+
+    /* Mobile reflow */
+    @media (max-width: 700px) {
+      html, body { overflow: auto; }
+      .app { height: auto; }
+      .body { flex-direction: column; }
+      .stage { min-height: 340px; border-right: none; border-bottom: 1px solid #2A2A2A; }
+      .params { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    const App = () => {
+      const [surfTension, setSurfTension] = useState(0.072);
+      const [theta, setTheta]             = useState(8);
+      const [rho, setRho]                 = useState(1000);
+      const [r, setR]                     = useState(0.4);
+      const [isPlaying, setIsPlaying]     = useState(true);
+      const [currentH, setCurrentH]       = useState(0);
+      const requestRef = useRef();
+
+      useEffect(() => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          setIsPlaying(false);
+        }
+      }, []);
+
+      // h = 2T cosθ / ρgr  (result in mm)
+      const targetH = useMemo(() => {
+        const rad   = (theta * Math.PI) / 180;
+        const rM    = r * 1e-3;
+        const hM    = (2 * surfTension * Math.cos(rad)) / (rho * 9.8 * rM);
+        return hM * 1000;
+      }, [surfTension, theta, rho, r]);
+
+      // Snap to target on first render
+      useEffect(() => {
+        if (currentH === 0 && targetH !== 0) setCurrentH(targetH);
+      }, [targetH, currentH]);
+
+      const animate = useCallback(() => {
+        if (isPlaying) {
+          setCurrentH(prev => {
+            const diff = targetH - prev;
+            if (Math.abs(diff) < 0.05) return targetH;
+            return prev + diff * 0.08;
+          });
+        }
+        requestRef.current = requestAnimationFrame(animate);
+      }, [targetH, isPlaying]);
+
+      useEffect(() => {
+        requestRef.current = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(requestRef.current);
+      }, [animate]);
+
+      const handleReset = () => {
+        setSurfTension(0.072); setTheta(8); setRho(1000); setR(0.4);
+        const rad = (8 * Math.PI) / 180;
+        setCurrentH(((2 * 0.072 * Math.cos(rad)) / (1000 * 9.8 * 0.4e-3)) * 1000);
+      };
+
+      // ── SVG geometry ──
+      const W = 700, H = 560;
+      const resY     = 380;           // reservoir surface Y
+      const mmToPx   = 3.6;
+
+      const tubeHalfW = Math.max(10, Math.min(38, 10 + ((r - 0.1) / 1.9) * 28));
+      const cx        = W / 2;
+      const tubeL     = cx - tubeHalfW;
+      const tubeR     = cx + tubeHalfW;
+
+      let disp = currentH * mmToPx;
+      disp = Math.max(-(H - resY - 60), Math.min(resY - 60, disp));
+
+      const hCenterY = resY - disp;
+      const thetaRad = (theta * Math.PI) / 180;
+
+      let meniscusContactY = hCenterY;
+      let arcPath = "";
+
+      if (theta === 90) {
+        arcPath = `L ${tubeR} ${hCenterY}`;
+      } else {
+        const rCurv   = Math.abs(tubeHalfW / Math.cos(thetaRad));
+        const sagitta = rCurv - Math.abs(rCurv * Math.sin(thetaRad));
+        meniscusContactY = theta < 90 ? hCenterY - sagitta : hCenterY + sagitta;
+        const sweep = theta < 90 ? 0 : 1;
+        arcPath = `A ${rCurv} ${rCurv} 0 0 ${sweep} ${tubeR} ${meniscusContactY}`;
+      }
+
+      const hSign = currentH > 0.05 ? "+" : currentH < -0.05 ? "−" : "";
+      const hCm   = (currentH / 10).toFixed(2);
+
+      // Grid lines
+      const gridCols = 8, gridRows = 8;
+
+      return (
+        <div className="app">
+
+          {/* ── Header ── */}
+          <header className="header">
+            <div>
+              <div className="eyebrow">Simulation · Physics</div>
+              <h1 className="title">Capillary Rise</h1>
+            </div>
+            <div className="controls">
+              <button className="btn-circle" onClick={() => setIsPlaying(v => !v)} aria-label={isPlaying ? "Pause" : "Play"}>
+                {isPlaying
+                  ? <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+                  : <svg viewBox="0 0 24 24"><polygon points="6,4 19,12 6,20"/></svg>}
+              </button>
+              <button className="btn-circle outline" onClick={handleReset} aria-label="Reset">
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+              </button>
+            </div>
+          </header>
+
+          {/* ── Body ── */}
+          <div className="body">
+
+            {/* Stage (LEFT) */}
+            <div className="stage">
+              <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+
+                {/* Grid */}
+                {Array.from({ length: gridRows + 1 }).map((_, i) => (
+                  <line key={`gh${i}`} x1="0" y1={i * H / gridRows} x2={W} y2={i * H / gridRows}
+                    stroke="#2A2A2A" strokeWidth="0.5" />
+                ))}
+                {Array.from({ length: gridCols + 1 }).map((_, i) => (
+                  <line key={`gv${i}`} x1={i * W / gridCols} y1="0" x2={i * W / gridCols} y2={H}
+                    stroke="#2A2A2A" strokeWidth="0.5" />
+                ))}
+
+                {/* Reservoir outline */}
+                <path d={`M 60 180 L 60 ${H - 28} L ${W - 60} ${H - 28} L ${W - 60} 180`}
+                  fill="none" stroke="var(--dark-ink)" strokeWidth="1.2" opacity="0.85" />
+
+                {/* Liquid body — reservoir + tube column */}
+                <path
+                  d={`
+                    M 61 ${resY}
+                    L ${tubeL} ${resY}
+                    L ${tubeL} ${meniscusContactY}
+                    ${arcPath}
+                    L ${tubeR} ${resY}
+                    L ${W - 61} ${resY}
+                    L ${W - 61} ${H - 29}
+                    L 61 ${H - 29}
+                    Z
+                  `}
+                  fill="var(--dark-ink)" opacity="0.22"
+                />
+
+                {/* Reservoir surface lines (outside tube) */}
+                <line x1="61" y1={resY} x2={tubeL} y2={resY} stroke="var(--dark-ink)" strokeWidth="1" opacity="0.55" />
+                <line x1={tubeR} y1={resY} x2={W - 61} y2={resY} stroke="var(--dark-ink)" strokeWidth="1" opacity="0.55" />
+
+                {/* Tube walls */}
+                <line x1={tubeL} y1="44" x2={tubeL} y2={H - 29} stroke="var(--dark-ink)" strokeWidth="1.5" opacity="0.9" />
+                <line x1={tubeR} y1="44" x2={tubeR} y2={H - 29} stroke="var(--dark-ink)" strokeWidth="1.5" opacity="0.9" />
+
+                {/* Tube top caps (open ends) */}
+                <line x1={tubeL - 6} y1="44" x2={tubeL} y2="44" stroke="var(--dark-ink)" strokeWidth="1.5" opacity="0.9" />
+                <line x1={tubeR} y1="44" x2={tubeR + 6} y2="44" stroke="var(--dark-ink)" strokeWidth="1.5" opacity="0.9" />
+
+                {/* Meniscus — ACCENT */}
+                <path
+                  d={`M ${tubeL} ${meniscusContactY} ${arcPath}`}
+                  fill="none" stroke="var(--accent)" strokeWidth="1.8"
+                />
+
+                {/* Height annotation */}
+                {Math.abs(disp) > 14 && (() => {
+                  const ax  = tubeR + 28;
+                  const midY = (resY + hCenterY) / 2;
+                  const dir  = currentH > 0 ? 1 : -1;
+                  return (
+                    <g>
+                      <line x1={ax} y1={resY} x2={ax} y2={hCenterY} stroke="var(--dark-mute)" strokeWidth="0.9" strokeDasharray="3 4" />
+                      <polyline points={`${ax - 4},${hCenterY + dir * 5} ${ax},${hCenterY} ${ax + 4},${hCenterY + dir * 5}`}
+                        fill="none" stroke="var(--dark-mute)" strokeWidth="0.9" />
+                      <polyline points={`${ax - 4},${resY - dir * 5} ${ax},${resY} ${ax + 4},${resY - dir * 5}`}
+                        fill="none" stroke="var(--dark-mute)" strokeWidth="0.9" />
+                      <text x={ax + 9} y={midY + 4} fill="var(--dark-mute)"
+                        fontFamily="var(--mono)" fontSize="12" dominantBaseline="middle">h</text>
+                    </g>
+                  );
+                })()}
+
+                {/* Radius annotation */}
+                <line x1={tubeL} y1="30" x2={tubeR} y2="30" stroke="var(--dark-mute)" strokeWidth="0.8" />
+                <line x1={tubeL} y1="26" x2={tubeL} y2="34" stroke="var(--dark-mute)" strokeWidth="0.8" />
+                <line x1={tubeR} y1="26" x2={tubeR} y2="34" stroke="var(--dark-mute)" strokeWidth="0.8" />
+                <text x={cx} y="20" textAnchor="middle" fill="var(--dark-mute)"
+                  fontFamily="var(--mono)" fontSize="10">r = {r.toFixed(2)} mm</text>
+
+                {/* Contact angle indicator */}
+                {theta > 3 && theta < 90 && (
+                  <g>
+                    <path
+                      d={`M ${tubeL} ${meniscusContactY + 22} A 22 22 0 0 0 ${tubeL + 22 * Math.sin(thetaRad)} ${meniscusContactY + 22 * Math.cos(thetaRad)}`}
+                      fill="none" stroke="var(--dark-mute)" strokeWidth="0.9"
+                    />
+                    <text x={tubeL + 8} y={meniscusContactY + 38}
+                      fill="var(--dark-mute)" fontFamily="var(--mono)" fontSize="10">θ</text>
+                  </g>
+                )}
+
+                {/* Readouts — top-left */}
+                <text fontFamily="var(--mono)" fontSize="11" letterSpacing="0.07em" fill="var(--dark-mute)">
+                  <tspan x="14" dy="0" y="68">h  {hSign}{Math.abs(currentH).toFixed(1)} mm</tspan>
+                  <tspan x="14" dy="17">T  {surfTension.toFixed(3)} N/m</tspan>
+                  <tspan x="14" dy="17">θ  {theta}°</tspan>
+                  <tspan x="14" dy="17">ρ  {rho} kg/m³</tspan>
+                </text>
+              </svg>
+            </div>
+
+            {/* Parameters (RIGHT) */}
+            <div className="params">
+              <div className="params-label">Parameters</div>
+
+              <div className="slider-group">
+                <div className="slider-row">
+                  <span>Surface Tension</span>
+                  <span>{surfTension.toFixed(3)} N/m</span>
+                </div>
+                <input type="range" min="0.020" max="0.080" step="0.001"
+                  value={surfTension} onChange={e => setSurfTension(parseFloat(e.target.value))} />
+              </div>
+
+              <div className="slider-group">
+                <div className="slider-row">
+                  <span>Contact Angle</span>
+                  <span>{theta}°</span>
+                </div>
+                <input type="range" min="0" max="150" step="1"
+                  value={theta} onChange={e => setTheta(parseFloat(e.target.value))} />
+              </div>
+
+              <div className="slider-group">
+                <div className="slider-row">
+                  <span>Liquid Density</span>
+                  <span>{rho} kg/m³</span>
+                </div>
+                <input type="range" min="800" max="14000" step="100"
+                  value={rho} onChange={e => setRho(parseFloat(e.target.value))} />
+              </div>
+
+              <div className="slider-group">
+                <div className="slider-row">
+                  <span>Tube Radius</span>
+                  <span>{r.toFixed(2)} mm</span>
+                </div>
+                <input type="range" min="0.1" max="2.0" step="0.1"
+                  value={r} onChange={e => setR(parseFloat(e.target.value))} />
+              </div>
+
+              {/* Jurin's Law */}
+              <div className="formula">
+                <div className="formula-label">Jurin's Law</div>
+                <div className="formula-eq">h = 2T cos θ / ρgr</div>
+                <div>
+                  {[
+                    ["h", `${hSign}${Math.abs(currentH).toFixed(1)} mm`, true],
+                    ["T", `${surfTension.toFixed(3)} N/m`, false],
+                    ["θ", `${theta}°`, false],
+                    ["ρ", `${rho} kg/m³`, false],
+                    ["r", `${r.toFixed(2)} mm`, false],
+                  ].map(([sym, val, accent]) => (
+                    <div key={sym} className={`formula-row${accent ? " accent" : ""}`}>
+                      <span>{sym}</span>
+                      <span>{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Prompt ── */}
+          <div className="prompt">
+            Halve the tube radius. What happens to the rise height?
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Trinity Simulation Lab — Learn by playing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="data.jsx"></script>
+<script type="text/babel" src="pendulum.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect } = React;
+
+const Hero = () => (
+  <section style={{ position: 'relative', padding: '48px 0 56px', overflow: 'hidden' }}>
+    <ScatterGlyphs density={8} />
+    <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: 56, alignItems: 'center', position: 'relative' }}>
+      <div>
+        <div className="eyebrow">For curious high-school minds · est. 2026</div>
+        <h1 className="display" style={{ fontSize: 'clamp(56px, 8vw, 104px)', margin: '20px 0 0' }}>
+          Understand<br/>
+          a concept<br/>
+          by <span style={{ color: 'var(--accent)' }}>playing</span> with it.
+        </h1>
+        <p style={{ maxWidth: 440, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-soft)', marginTop: 28 }}>
+          Trinity is a minimal lab of small, focused simulations — pendulums,
+          titrations, Punnett squares — for students who learn best by doing.
+          No accounts needed to explore.
+        </p>
+        <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
+          <a href="catalog.html" className="btn">Browse simulations <Icon name="arrow-right" size={16}/></a>
+          <button className="btn ghost">How it works</button>
+        </div>
+        <div style={{ display: 'flex', gap: 24, marginTop: 40, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}>
+          <span><b style={{ color: 'var(--ink)', fontSize: 18, fontFamily: 'var(--sans)', fontWeight: 700, marginRight: 6 }}>13</b>simulations</span>
+          <span><b style={{ color: 'var(--ink)', fontSize: 18, fontFamily: 'var(--sans)', fontWeight: 700, marginRight: 6 }}>04</b>subjects</span>
+          <span><b style={{ color: 'var(--ink)', fontSize: 18, fontFamily: 'var(--sans)', fontWeight: 700, marginRight: 6 }}>∞</b>curiosity</span>
+        </div>
+      </div>
+      <div style={{ position: 'relative', aspectRatio: '1/1', border: '1px solid var(--ink)', borderRadius: 10, background: 'var(--paper)', overflow: 'hidden' }}>
+        <div className="stripes" style={{ opacity: 0.5 }}/>
+        <HeroIllustration/>
+        <div style={{ position: 'absolute', top: 14, left: 14, padding: '4px 10px', border: '1px solid var(--ink)', background: 'var(--paper)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Fig. 01 — Harmonic Motion
+        </div>
+        <div style={{ position: 'absolute', bottom: 14, right: 14, fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}>
+          T = 2π√(L/g)
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+const HeroIllustration = () => {
+  const [angle, setAngle] = useState(0.4);
+  useEffect(() => {
+    let raf, start = performance.now();
+    const tick = (now) => {
+      const t = (now - start) / 1000;
+      setAngle(0.55 * Math.cos(t * 1.6));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  const px = 160;
+  const bobX = 200 + Math.sin(angle) * px;
+  const bobY = 60 + Math.cos(angle) * px;
+  return (
+    <svg viewBox="0 0 400 400" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+      <line x1="40" y1="60" x2="360" y2="60" stroke="var(--ink)" strokeWidth="1.2"/>
+      {Array.from({length:10}).map((_,i)=><line key={i} x1={60+i*32} y1="60" x2={52+i*32} y2="50" stroke="var(--ink)" strokeWidth="1"/>)}
+      <path d={`M ${200-Math.sin(0.55)*px} ${60+Math.cos(0.55)*px} A ${px} ${px} 0 0 0 ${200+Math.sin(0.55)*px} ${60+Math.cos(0.55)*px}`} fill="none" stroke="var(--ink)" strokeWidth="0.7" strokeDasharray="3 5" opacity="0.45"/>
+      {[-0.4, -0.15, 0.15, 0.4].map((a, i) => (
+        <g key={i} opacity="0.12">
+          <line x1="200" y1="60" x2={200+Math.sin(a)*px} y2={60+Math.cos(a)*px} stroke="var(--ink)" strokeWidth="0.8"/>
+          <circle cx={200+Math.sin(a)*px} cy={60+Math.cos(a)*px} r="12" fill="var(--ink)"/>
+        </g>
+      ))}
+      <line x1="200" y1="60" x2={bobX} y2={bobY} stroke="var(--ink)" strokeWidth="1.5"/>
+      <circle cx={bobX} cy={bobY} r="18" fill="var(--accent)" stroke="var(--ink)" strokeWidth="1.2"/>
+      <circle cx="200" cy="60" r="3.5" fill="var(--ink)"/>
+      <g fontFamily="JetBrains Mono" fontSize="10" fill="var(--ink)" opacity="0.7">
+        <line x1="200" y1="60" x2="200" y2="240" stroke="var(--ink)" strokeWidth="0.5" strokeDasharray="2 3"/>
+        <text x="206" y="160">L</text>
+        <path d={`M 220 75 A 20 20 0 0 1 ${200+Math.sin(angle)*22} ${60+Math.cos(angle)*22}`} stroke="var(--ink)" strokeWidth="0.8" fill="none"/>
+        <text x="224" y="92">θ</text>
+      </g>
+    </svg>
+  );
+};
+
+const SubjectsStrip = () => {
+  const items = [
+    { name: 'Physics', count: 4 },
+    { name: 'Chemistry', count: 3 },
+    { name: 'Biology', count: 3 },
+    { name: 'Math', count: 3 },
+  ];
+  return (
+    <section style={{ borderTop: '1px solid var(--ink)', borderBottom: '1px solid var(--ink)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      {items.map((s, i) => (
+        <a key={s.name} href="catalog.html" style={{ padding: '28px 24px', borderRight: i < 3 ? '1px solid var(--ink)' : 'none', display: 'flex', flexDirection: 'column', gap: 10, transition: 'background .15s ease' }}
+           onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'}
+           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span className="label-mono">{String(i+1).padStart(2,'0')} / {s.name}</span>
+            <Icon name="arrow-right" size={14}/>
+          </div>
+          <div style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 30, letterSpacing: '-0.02em', lineHeight: 1.05 }}>{s.name}</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-mute)', letterSpacing: '0.08em' }}>
+            {s.count} simulations
+          </div>
+        </a>
+      ))}
+    </section>
+  );
+};
+
+const FeaturedSims = () => {
+  const featured = SIMS.filter(s => s.featured).concat(SIMS.filter(s => s.new).slice(0, 2)).slice(0, 4);
+  return (
+    <section style={{ padding: '72px 0 0' }}>
+      <div style={{ display: 'flex', alignItems: 'end', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div>
+          <div className="eyebrow">§ 01 — Featured</div>
+          <h2 className="display" style={{ fontSize: 48, margin: '8px 0 0' }}>Best opening experiments</h2>
+        </div>
+        <a href="catalog.html" style={{ fontSize: 13, borderBottom: '1px solid var(--ink)', paddingBottom: 2 }}>View all 13 →</a>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+        {featured.map((s, i) => (
+          <a key={s.id} href="#" className="simcard">
+            <SimThumb subject={s.subject} title={s.title.split(' ')[0]} variant={i}/>
+            <div className="meta">
+              <div className="title">{s.title}</div>
+              <div className="row">
+                <span>{s.level}</span>
+                <span>{s.minutes} min</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <span className="label-mono" style={{ color: 'var(--ink-mute)' }}>{s.subject}</span>
+                <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="play" size={11}/>
+                </span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const SimOfWeek = () => (
+  <section style={{ padding: '96px 0 0' }}>
+    <div className="dark-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 40, alignItems: 'stretch' }}>
+      <ScatterGlyphs density={7} dark/>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
+        <div>
+          <div className="eyebrow" style={{ color: 'var(--dark-mute)' }}>§ 02 — This week</div>
+          <h2 className="display" style={{ fontSize: 'clamp(44px, 5.2vw, 64px)', margin: '16px 0 0', lineHeight: 0.95 }}>
+            Why does a<br/>
+            longer string<br/>
+            swing slower?
+          </h2>
+          <p style={{ maxWidth: 360, lineHeight: 1.55, color: 'var(--dark-mute)', marginTop: 24, fontSize: 15 }}>
+            Drag the sliders to change the pendulum's length and gravity.
+            Watch what happens to the period. Try to predict before you move.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+          <a href="#" className="btn accent">Open simulation <Icon name="arrow-right" size={16}/></a>
+          <button className="btn ghost" style={{ color: 'var(--dark-ink)', borderColor: 'var(--dark-ink)' }}>Read theory</button>
+        </div>
+      </div>
+      <div style={{ position: 'relative', minWidth: 0 }}>
+        <PendulumPreview/>
+      </div>
+    </div>
+  </section>
+);
+
+const App = () => {
+  const onNav = (where) => {
+    if (where === 'simulations') window.location.href = 'catalog.html';
+  };
+  return (
+    <div className="shell">
+      <TopNav current="home" onNav={onNav}/>
+      <Hero/>
+      <SubjectsStrip/>
+      <FeaturedSims/>
+      <SimOfWeek/>
+      <Footer/>
+      <TweaksPanel/>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

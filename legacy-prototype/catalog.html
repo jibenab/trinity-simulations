@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Trinity — Simulations Catalog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="data.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+const SUBJECTS = ['All', 'Physics', 'Chemistry', 'Biology', 'Math'];
+const LEVELS = ['All', 'Intro', 'Core', 'Advanced'];
+const GRADES = ['All', 'Class 10', 'Class 11', 'Class 12'];
+
+const CatalogHeader = ({ count }) => (
+  <section style={{ padding: '40px 0 32px', position: 'relative', overflow: 'hidden' }}>
+    <ScatterGlyphs density={6}/>
+    <div style={{ position: 'relative' }}>
+      <div className="eyebrow">§ Catalog · {String(count).padStart(2,'0')} simulations</div>
+      <h1 className="display" style={{ fontSize: 'clamp(56px, 8vw, 96px)', margin: '16px 0 0' }}>
+        Pick a thing.<br/>
+        <span style={{ color: 'var(--accent)' }}>Poke it</span> until it makes sense.
+      </h1>
+    </div>
+  </section>
+);
+
+const Filters = ({ subject, setSubject, level, setLevel, grade, setGrade, chapter, setChapter, chapters, query, setQuery, view, setView, sort, setSort }) => (
+  <div style={{ borderTop: '1px solid var(--ink)', borderBottom: '1px solid var(--ink)', padding: '16px 0', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderRight: '1px solid var(--rule-soft)', paddingRight: 16 }}>
+      <Icon name="search" size={14}/>
+      <input placeholder="Search simulations…" value={query} onChange={e => setQuery(e.target.value)}
+             style={{ border: 0, background: 'transparent', fontFamily: 'var(--sans)', fontSize: 14, outline: 'none', minWidth: 180 }}/>
+    </div>
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      {SUBJECTS.map(s => (
+        <button key={s} className={`chip ${subject === s ? 'active' : ''}`} onClick={() => setSubject(s)}>{s}</button>
+      ))}
+    </div>
+    <div style={{ display: 'flex', gap: 6, borderLeft: '1px solid var(--rule-soft)', paddingLeft: 16, flexWrap: 'wrap' }}>
+      {GRADES.map(g => (
+        <button key={g} className={`chip ${grade === g ? 'active' : ''}`} onClick={() => setGrade(g)}>{g}</button>
+      ))}
+    </div>
+    <div style={{ display: 'flex', gap: 6, borderLeft: '1px solid var(--rule-soft)', paddingLeft: 16, flexWrap: 'wrap' }}>
+      {LEVELS.map(s => (
+        <button key={s} className={`chip ${level === s ? 'active' : ''}`} onClick={() => setLevel(s)}
+                style={{ fontSize: 10 }}>{s}</button>
+      ))}
+    </div>
+    <div style={{ borderLeft: '1px solid var(--rule-soft)', paddingLeft: 16 }}>
+      <select value={chapter} onChange={e => setChapter(e.target.value)}
+              style={{ border: '1px solid var(--ink)', background: 'transparent', padding: '6px 10px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', borderRadius: 999, maxWidth: 220 }}>
+        <option value="All">Chapter · All</option>
+        {chapters.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+    </div>
+    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <select value={sort} onChange={e => setSort(e.target.value)}
+              style={{ border: '1px solid var(--ink)', background: 'transparent', padding: '6px 10px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', borderRadius: 999 }}>
+        <option value="featured">Sort · Featured</option>
+        <option value="newest">Sort · Newest</option>
+        <option value="shortest">Sort · Shortest</option>
+        <option value="az">Sort · A–Z</option>
+      </select>
+      <div style={{ display: 'flex', border: '1px solid var(--ink)', borderRadius: 999, overflow: 'hidden' }}>
+        <button onClick={() => setView('grid')} className="iconbtn" style={{ border: 0, width: 34, height: 30, background: view === 'grid' ? 'var(--ink)' : 'transparent', color: view === 'grid' ? 'var(--bg)' : 'var(--ink)' }}>
+          <Icon name="grid" size={14}/>
+        </button>
+        <button onClick={() => setView('list')} className="iconbtn" style={{ border: 0, width: 34, height: 30, background: view === 'list' ? 'var(--ink)' : 'transparent', color: view === 'list' ? 'var(--bg)' : 'var(--ink)' }}>
+          <Icon name="list" size={14}/>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const GridView = ({ sims }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginTop: 28 }}>
+    {sims.map((s, i) => (
+      <a key={s.id} href="#" className="simcard">
+        <SimThumb subject={s.subject} title={s.title.split(' ')[0]} variant={i}/>
+        <div className="meta">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div className="title">{s.title}</div>
+            {s.new && <span className="label-mono" style={{ color: 'var(--accent)' }}>NEW</span>}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-mute)', lineHeight: 1.5 }}>
+            {s.concepts.join(' · ')}
+          </div>
+          <div className="row" style={{ marginTop: 4 }}>
+            <span className="label-mono">{s.subject} · {s.level}</span>
+            <span className="label-mono">{s.minutes} min</span>
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            <span className="label-mono" style={{ background: 'var(--bg-alt)', padding: '3px 7px', borderRadius: 2 }}>{s.grade}</span>
+            <span className="label-mono" style={{ color: 'var(--ink-mute)', padding: '3px 0' }}>Ch · {s.chapter}</span>
+          </div>
+        </div>
+      </a>
+    ))}
+  </div>
+);
+
+const ListView = ({ sims }) => (
+  <div style={{ marginTop: 28, border: '1px solid var(--ink)', borderRadius: 4, overflow: 'hidden', background: 'var(--paper)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '72px 1.7fr 0.8fr 0.8fr 1.2fr 0.6fr 40px', padding: '12px 20px', borderBottom: '1px solid var(--ink)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}>
+      <span>#</span><span>Title</span><span>Class</span><span>Subject</span><span>Chapter</span><span>Time</span><span></span>
+    </div>
+    {sims.map((s, i) => (
+      <a key={s.id} href="#" style={{ display: 'grid', gridTemplateColumns: '72px 1.7fr 0.8fr 0.8fr 1.2fr 0.6fr 40px', padding: '18px 20px', borderTop: i === 0 ? '0' : '1px solid var(--rule-soft)', alignItems: 'center', transition: 'background .15s ease' }}
+         onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'}
+         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+        <span className="label-mono" style={{ color: 'var(--ink-mute)' }}>SIM·{String(i+1).padStart(2,'0')}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 18, letterSpacing: '-0.01em' }}>{s.title}</span>
+          {s.new && <span className="label-mono" style={{ color: 'var(--accent)' }}>NEW</span>}
+          {s.featured && <span className="label-mono" style={{ color: 'var(--ink-mute)' }}>★</span>}
+        </span>
+        <span className="label-mono">{s.grade}</span>
+        <span className="label-mono">{s.subject}</span>
+        <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{s.chapter}</span>
+        <span className="label-mono">{s.minutes} min</span>
+        <Icon name="arrow-right" size={14}/>
+      </a>
+    ))}
+  </div>
+);
+
+const App = () => {
+  const [subject, setSubject] = useState('All');
+  const [level, setLevel] = useState('All');
+  const [grade, setGrade] = useState('All');
+  const [chapter, setChapter] = useState('All');
+  const [query, setQuery] = useState('');
+  const [view, setView] = useState('grid');
+  const [sort, setSort] = useState('featured');
+
+  // Chapters available given the current subject + grade selection
+  const chapters = useMemo(() => {
+    let pool = SIMS.slice();
+    if (subject !== 'All') pool = pool.filter(s => s.subject === subject);
+    if (grade !== 'All') pool = pool.filter(s => s.grade === grade);
+    return Array.from(new Set(pool.map(s => s.chapter))).sort();
+  }, [subject, grade]);
+
+  // Reset chapter if it's no longer available
+  React.useEffect(() => {
+    if (chapter !== 'All' && !chapters.includes(chapter)) setChapter('All');
+  }, [chapters, chapter]);
+
+  const filtered = useMemo(() => {
+    let out = SIMS.slice();
+    if (subject !== 'All') out = out.filter(s => s.subject === subject);
+    if (level !== 'All') out = out.filter(s => s.level === level);
+    if (grade !== 'All') out = out.filter(s => s.grade === grade);
+    if (chapter !== 'All') out = out.filter(s => s.chapter === chapter);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      out = out.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.concepts.join(' ').toLowerCase().includes(q) ||
+        s.chapter.toLowerCase().includes(q) ||
+        s.grade.toLowerCase().includes(q)
+      );
+    }
+    if (sort === 'featured') out.sort((a,b) => (b.featured?1:0) - (a.featured?1:0));
+    else if (sort === 'newest') out.sort((a,b) => (b.new?1:0) - (a.new?1:0));
+    else if (sort === 'shortest') out.sort((a,b) => a.minutes - b.minutes);
+    else if (sort === 'az') out.sort((a,b) => a.title.localeCompare(b.title));
+    return out;
+  }, [subject, level, grade, chapter, query, sort]);
+
+  const onNav = (where) => {
+    if (where === 'home') window.location.href = 'home.html';
+  };
+
+  return (
+    <div className="shell">
+      <TopNav current="simulations" onNav={onNav}/>
+      <CatalogHeader count={SIMS.length}/>
+      <Filters
+        subject={subject} setSubject={setSubject}
+        level={level} setLevel={setLevel}
+        grade={grade} setGrade={setGrade}
+        chapter={chapter} setChapter={setChapter}
+        chapters={chapters}
+        query={query} setQuery={setQuery}
+        view={view} setView={setView}
+        sort={sort} setSort={setSort}
+      />
+      <div style={{ marginTop: 20, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}>
+        {filtered.length} result{filtered.length === 1 ? '' : 's'}
+      </div>
+      {view === 'grid' ? <GridView sims={filtered}/> : <ListView sims={filtered}/>}
+      <Footer/>
+      <TweaksPanel/>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
