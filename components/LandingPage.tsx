@@ -2,13 +2,89 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "convex/react";
 
+import { api } from "@/convex/_generated/api";
+import type { PublicContent } from "@/lib/content";
 import { seedContent } from "@/convex/seedData";
 
 import { Footer } from "./Footer";
 import { Icon } from "./Icon";
 import { SimCard } from "./SimCard";
 import { TopNav } from "./TopNav";
+
+function DarkProjectileStage() {
+  const [t, setT] = useState(0);
+
+  const v0 = 20, g = 9.8, scale = 5.8;
+  const originX = 28, originY = 196;
+  const theta45 = Math.PI / 4;
+  const T45 = (2 * v0 * Math.sin(theta45)) / g;
+
+  useEffect(() => {
+    let raf = 0;
+    const startedAt = performance.now();
+    const loopDuration = T45 + 0.8;
+    const tick = (now: number) => {
+      const elapsed = (now - startedAt) / 1000;
+      setT(Math.min(elapsed % loopDuration, T45));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [T45]);
+
+  const arcPath = (theta: number) => {
+    const R = ((v0 * v0 * Math.sin(2 * theta)) / g) * scale;
+    const H = (Math.pow(v0 * Math.sin(theta), 2) / (2 * g)) * scale;
+    return `M ${originX} ${originY} Q ${originX + R / 2} ${originY - 2 * H} ${originX + R} ${originY}`;
+  };
+
+  const ballX = originX + v0 * Math.cos(theta45) * t * scale;
+  const ballY = originY - (v0 * Math.sin(theta45) * t - 0.5 * g * t * t) * scale;
+  const currentX = v0 * Math.cos(theta45) * t;
+  const range45 = (v0 * v0 * Math.sin(2 * theta45)) / g;
+
+  return (
+    <div className="relative overflow-hidden rounded border border-[#2A2A2A]" style={{ background: "var(--dark)", aspectRatio: "16/10" }}>
+      <svg viewBox="0 0 360 225" className="absolute inset-0 h-full w-full">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <line key={`v${i}`} x1={i * 40} y1="0" x2={i * 40} y2="225" stroke="#2A2A2A" strokeWidth="0.5" />
+        ))}
+        {Array.from({ length: 6 }).map((_, i) => (
+          <line key={`h${i}`} x1="0" y1={i * 45} x2="360" y2={i * 45} stroke="#2A2A2A" strokeWidth="0.5" />
+        ))}
+        {/* Ground */}
+        <line x1={originX} y1={originY} x2="352" y2={originY} stroke="var(--dark-ink)" strokeWidth="1" opacity="0.5" />
+        {/* Ghost arcs */}
+        {[20, 30, 60, 70].map((deg) => (
+          <path key={deg} d={arcPath((deg * Math.PI) / 180)} fill="none" stroke="var(--dark-mute)" strokeWidth="0.8" strokeDasharray="3 6" opacity="0.35" />
+        ))}
+        {/* Range tick marks for ghost arcs */}
+        {[20, 30, 60, 70].map((deg) => {
+          const R = ((v0 * v0 * Math.sin(2 * (deg * Math.PI) / 180)) / g) * scale;
+          return <line key={`r${deg}`} x1={originX + R} y1={originY} x2={originX + R} y2={originY + 5} stroke="var(--dark-mute)" strokeWidth="0.7" opacity="0.4" />;
+        })}
+        {/* 45° arc path */}
+        <path d={arcPath(theta45)} fill="none" stroke="var(--accent)" strokeWidth="0.9" strokeDasharray="3 6" opacity="0.4" />
+        {/* 45° range tick */}
+        <line x1={originX + range45 * scale} y1={originY} x2={originX + range45 * scale} y2={originY + 7} stroke="var(--accent)" strokeWidth="1.2" opacity="0.8" />
+        {/* Launch angle arc indicator */}
+        <path d={`M ${originX + 22} ${originY} A 22 22 0 0 0 ${originX + 22 * Math.cos(theta45)} ${originY - 22 * Math.sin(theta45)}`} fill="none" stroke="var(--dark-mute)" strokeWidth="0.7" opacity="0.55" />
+        {/* Ball */}
+        <circle cx={ballX} cy={ballY} r="8" fill="var(--accent)" opacity="0.15" />
+        <circle cx={ballX} cy={ballY} r="5.5" fill="var(--accent)" />
+        {/* Launch dot */}
+        <circle cx={originX} cy={originY} r="3" fill="var(--dark-ink)" opacity="0.6" />
+      </svg>
+      <div className="label-mono absolute left-3 top-3 text-[10px] leading-[1.8]" style={{ color: "var(--dark-mute)" }}>
+        θ &nbsp;&nbsp;45°<br />
+        v₀ &nbsp;20 m/s<br />
+        x &nbsp;&nbsp;{currentX.toFixed(1)} m
+      </div>
+    </div>
+  );
+}
 
 function HeroIllustration() {
   const [angle, setAngle] = useState(0.4);
@@ -86,8 +162,44 @@ const subjectStrip = [
   { name: "Math", count: 3 },
 ] as const;
 
+function toFallbackContent(index: number): PublicContent {
+  const item = seedContent[index];
+  const createdAt = index + 1;
+  return {
+    _id: item.slug,
+    _creationTime: createdAt,
+    ...item,
+    concepts: item.concepts ? [...item.concepts] : undefined,
+    svgCode: "",
+    published: true,
+    createdAt,
+    updatedAt: createdAt,
+  };
+}
+
+function pickHomepageFeatured(rows: PublicContent[]) {
+  const featured = rows.filter((item) => item.featured);
+  const usedIds = new Set(featured.map((item) => item._id));
+  const backfill = rows.filter((item) => !usedIds.has(item._id));
+  return [...featured, ...backfill].slice(0, 4);
+}
+
 export function LandingPage() {
-  const featured = useMemo(() => seedContent.filter((item) => item.featured).slice(0, 4), []);
+  const publishedContent = useQuery(api.content.listPublished, {}) as
+    | PublicContent[]
+    | undefined;
+  const fallbackContent = useMemo(
+    () => seedContent.map((_, index) => toFallbackContent(index)),
+    [],
+  );
+  const featured = useMemo(() => {
+    if (publishedContent === undefined) {
+      return pickHomepageFeatured(fallbackContent);
+    }
+
+    return pickHomepageFeatured(publishedContent);
+  }, [fallbackContent, publishedContent]);
+  const totalContentCount = publishedContent?.length ?? fallbackContent.length;
 
   return (
     <div className="shell">
@@ -178,25 +290,12 @@ export function LandingPage() {
             </h2>
           </div>
           <Link href="/catalog" className="text-sm underline underline-offset-4">
-            View all 13
+            View all {totalContentCount}
           </Link>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {featured.map((item, index) => (
-            <SimCard
-              key={item.slug}
-              content={{
-                _id: item.slug,
-                _creationTime: Date.now(),
-                ...item,
-                concepts: [...item.concepts],
-                svgCode: "",
-                published: true,
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-              }}
-              variant={index}
-            />
+            <SimCard key={item._id} content={item} variant={index} />
           ))}
         </div>
       </section>
@@ -207,33 +306,26 @@ export function LandingPage() {
             <div>
               <div className="eyebrow">§ 02 — This week</div>
               <h2 className="display mt-4 text-[clamp(44px,5vw,64px)] text-dark-ink">
-                Why does a
+                Why does 45°
                 <br />
-                longer string
+                send a ball
                 <br />
-                swing slower?
+                the farthest?
               </h2>
               <p className="mt-6 max-w-[360px] text-[15px] leading-7 text-dark-mute">
-                Drag the sliders to change the pendulum&apos;s length and
-                gravity. Watch the period change, then make a prediction before
-                you move again.
+                Adjust the launch angle and watch every arc change. Try to beat
+                45° — then check if the math agrees.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/catalog" className="btn accent">
-                  Open catalog <Icon name="arrow-right" size={16} />
+                <Link href="/sim/projectile" className="btn accent">
+                  Try it <Icon name="arrow-right" size={16} />
                 </Link>
-                <Link href="/login" className="btn ghost border-dark-ink text-dark-ink">
+                <Link href="/login" className="btn ghost" style={{ borderColor: "var(--dark-ink)", color: "var(--dark-ink)" }}>
                   Sign in
                 </Link>
               </div>
             </div>
-            <div className="rounded-md border border-[#2A2A2A] bg-dark p-4">
-              <div className="label-mono text-dark-mute">Preview</div>
-              <p className="mt-3 text-sm leading-6 text-dark-mute">
-                The seeded pendulum simulation is ready in Convex and can be
-                re-pasted or extended from the admin editor.
-              </p>
-            </div>
+            <DarkProjectileStage />
           </div>
         </div>
       </section>

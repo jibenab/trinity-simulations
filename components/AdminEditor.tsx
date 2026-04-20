@@ -2,22 +2,20 @@
 
 import { startTransition, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { usePathname, useRouter } from "next/navigation";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
   CONTENT_TYPES,
   GRADES,
-  LEVELS,
   SUBJECTS,
   type PublicContent,
 } from "@/lib/content";
-import { parseConcepts, titleToSlug } from "@/lib/utils";
+import { titleToSlug } from "@/lib/utils";
 
 import { Button } from "./Button";
-import { Chip } from "./Chip";
 import { CodeEditor } from "./CodeEditor";
 import { Footer } from "./Footer";
 import { SimFrame } from "./SimFrame";
@@ -31,12 +29,8 @@ type FormState = {
   subject: (typeof SUBJECTS)[number];
   grade: string;
   chapter: string;
-  level: (typeof LEVELS)[number];
-  minutes: number;
-  conceptsText: string;
   svgCode: string;
   code: string;
-  prompt: string;
   published: boolean;
   featured: boolean;
 };
@@ -48,29 +42,32 @@ const DEFAULT_FORM: FormState = {
   subject: "Physics",
   grade: "Class 11",
   chapter: "",
-  level: "Intro",
-  minutes: 10,
-  conceptsText: "",
   svgCode: "",
   code: "",
-  prompt: "",
   published: false,
   featured: false,
 };
 
 export function AdminEditor({ id }: { id: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const isNew = id === "new";
   const contentId = id as Id<"content">;
   const doc = useQuery(
     api.content.getById,
     isNew ? "skip" : { id: contentId },
   ) as PublicContent | null | undefined;
+  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  const chapterOptions = useQuery(api.content.listChapters, {
+    subject: form.subject,
+    grade: form.grade,
+  }) as string[] | undefined;
   const upsert = useMutation(api.content.upsert);
   const remove = useMutation(api.content.remove);
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [previewOn, setPreviewOn] = useState(true);
 
   useEffect(() => {
@@ -82,12 +79,8 @@ export function AdminEditor({ id }: { id: string }) {
       subject: doc.subject,
       grade: doc.grade,
       chapter: doc.chapter,
-      level: doc.level,
-      minutes: doc.minutes,
-      conceptsText: doc.concepts.join(", "),
       svgCode: doc.svgCode,
       code: doc.code,
-      prompt: doc.prompt ?? "",
       published: doc.published,
       featured: doc.featured,
     });
@@ -98,10 +91,25 @@ export function AdminEditor({ id }: { id: string }) {
     [form.slug, form.title],
   );
 
+  function redirectToLogin() {
+    router.push(`/login?next=${encodeURIComponent(pathname)}`);
+  }
+
   async function handleSave() {
+    if (authLoading) {
+      setError("Checking your admin session. Please try again in a moment.");
+      return;
+    }
+    if (!isAuthenticated) {
+      setError("Your admin session expired. Please sign in again.");
+      redirectToLogin();
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
+      setNotice(null);
       const nextSlug = form.slug || titleToSlug(form.title);
 
       const payload = {
@@ -112,23 +120,26 @@ export function AdminEditor({ id }: { id: string }) {
         subject: form.subject,
         grade: form.grade,
         chapter: form.chapter.trim(),
-        level: form.level,
-        minutes: Number(form.minutes),
-        concepts: parseConcepts(form.conceptsText),
         svgCode: form.svgCode,
         code: form.code,
-        prompt: form.prompt.trim() || undefined,
         published: form.published,
         featured: form.featured,
       };
 
       const savedId = await upsert(payload);
+      setNotice("Saved.");
       startTransition(() => {
-        router.push(`/admin/edit/${savedId}`);
+        if (pathname !== `/admin/edit/${savedId}`) {
+          router.push(`/admin/edit/${savedId}`);
+        }
         router.refresh();
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      const message = err instanceof Error ? err.message : "Save failed";
+      setError(message);
+      if (message.includes("Unauthenticated")) {
+        redirectToLogin();
+      }
     } finally {
       setSaving(false);
     }
@@ -138,12 +149,26 @@ export function AdminEditor({ id }: { id: string }) {
     if (isNew) return;
     if (!window.confirm("Delete this content item?")) return;
 
+    if (authLoading) {
+      setError("Checking your admin session. Please try again in a moment.");
+      return;
+    }
+    if (!isAuthenticated) {
+      setError("Your admin session expired. Please sign in again.");
+      redirectToLogin();
+      return;
+    }
+
     try {
       await remove({ id: contentId });
       router.push("/admin");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      const message = err instanceof Error ? err.message : "Delete failed";
+      setError(message);
+      if (message.includes("Unauthenticated")) {
+        redirectToLogin();
+      }
     }
   }
 
@@ -167,12 +192,16 @@ export function AdminEditor({ id }: { id: string }) {
             Back to admin
           </Link>
           {!isNew ? (
-            <Button variant="ghost" onClick={handleDelete}>
+            <Button
+              variant="ghost"
+              onClick={handleDelete}
+              disabled={saving || authLoading || !isAuthenticated}
+            >
               Delete
             </Button>
           ) : null}
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
+          <Button onClick={handleSave} disabled={saving || authLoading || !isAuthenticated}>
+            {saving ? "Saving..." : authLoading ? "Checking session..." : "Save"}
           </Button>
         </div>
       </section>
@@ -180,6 +209,11 @@ export function AdminEditor({ id }: { id: string }) {
       {error ? (
         <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {notice}
         </div>
       ) : null}
 
@@ -281,6 +315,7 @@ export function AdminEditor({ id }: { id: string }) {
               <label className="space-y-2">
                 <span className="label-mono text-ink-mute">Chapter</span>
                 <input
+                  list="chapter-options"
                   value={form.chapter}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -290,77 +325,11 @@ export function AdminEditor({ id }: { id: string }) {
                   }
                   className="field-shell w-full"
                 />
-              </label>
-
-              <label className="space-y-2">
-                <span className="label-mono text-ink-mute">Level</span>
-                <select
-                  value={form.level}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      level: event.target.value as FormState["level"],
-                    }))
-                  }
-                  className="field-shell w-full"
-                >
-                  {LEVELS.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
+                <datalist id="chapter-options">
+                  {(chapterOptions ?? []).map((item) => (
+                    <option key={item} value={item} />
                   ))}
-                </select>
-              </label>
-
-              <label className="space-y-2">
-                <span className="label-mono text-ink-mute">Minutes</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={form.minutes}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      minutes: Number(event.target.value),
-                    }))
-                  }
-                  className="field-shell w-full"
-                />
-              </label>
-
-              <label className="space-y-2 md:col-span-2">
-                <span className="label-mono text-ink-mute">Concepts</span>
-                <input
-                  value={form.conceptsText}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      conceptsText: event.target.value,
-                    }))
-                  }
-                  placeholder="Period, Gravity, Harmonic motion"
-                  className="field-shell w-full"
-                />
-                <div className="flex flex-wrap gap-2">
-                  {parseConcepts(form.conceptsText).map((item) => (
-                    <Chip key={item}>{item}</Chip>
-                  ))}
-                </div>
-              </label>
-
-              <label className="space-y-2 md:col-span-2">
-                <span className="label-mono text-ink-mute">Prompt</span>
-                <textarea
-                  value={form.prompt}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      prompt: event.target.value,
-                    }))
-                  }
-                  rows={3}
-                  className="field-shell w-full resize-y"
-                />
+                </datalist>
               </label>
             </div>
           </div>

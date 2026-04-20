@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+  <script type="module" src="/@vite/client"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pulley Puzzle Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --surface-2: #F4F3EE;
+    --border: rgba(10,12,26,0.12);
+    --border-hi: rgba(10,12,26,0.28);
+    --text: #0A0C1A;
+    --sub: #4A4F6A;
+    --dim: #8A8FA8;
+    --accent: #1A4FCC;
+    --green: #0E7A47;
+    --red: #E8291F;
+    --yellow: #E8A800;
+    --orange: #E56A1E;
+    --purple: #7C3AED;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    touch-action: none;
+  }
+  h1, h2, h3, .panel-kicker, .hud-value { font-family: 'Oswald', sans-serif; }
+
+  /* ── Trinity Nav ── */
+  .trinity-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px; flex-shrink: 0;
+    border-bottom: 2px solid #0A0C1A;
+    background: #FAFAF7;
+    z-index: 200; overflow: hidden;
+  }
+  .trinity-nav-left { display: flex; align-items: stretch; flex-shrink: 0; height: 100%; }
+  .tn-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: #4A4F6A; text-decoration: none;
+    border-right: 1.5px solid rgba(10,12,26,0.14);
+    padding: 0 16px;
+    display: inline-flex; align-items: center;
+    white-space: nowrap; min-width: 44px; min-height: 44px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tn-link:hover { background: #F4F3EE; color: #0A0C1A; }
+  .trinity-brand {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: #0A0C1A; flex: 1; text-align: center; white-space: nowrap;
+    padding: 0 16px;
+  }
+  .tn-fs-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    border: none; border-left: 1.5px solid rgba(10,12,26,0.14);
+    background: transparent; color: #4A4F6A;
+    padding: 0 16px; cursor: pointer;
+    flex-shrink: 0; height: 100%; min-width: 44px; outline: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tn-fs-btn:hover { background: #0A0C1A; color: #FFFFFF; }
+
+  /* ── App shell ── */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 2px solid #0A0C1A;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-body {
+    padding: 18px 16px;
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .panel-kicker {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .panel-copy {
+    font-size: 11px; color: var(--sub);
+    line-height: 1.6; margin: 0;
+  }
+  .panel-card {
+    border: 1.5px solid var(--border-hi);
+    padding: 14px 14px 12px;
+  }
+  .goal-pill {
+    display: flex; align-items: center;
+    min-height: 40px; padding: 8px 12px;
+    border: 1.5px solid var(--border-hi);
+    background: var(--surface-2);
+    font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; margin-top: 10px;
+    color: var(--sub);
+  }
+  .goal-pill + .goal-pill { margin-top: 6px; }
+
+  .tool-grid { display: flex; flex-direction: column; gap: 10px; }
+  .tool-card {
+    display: grid; grid-template-columns: 48px 1fr;
+    gap: 12px; align-items: center;
+    border: 1.5px solid #0A0C1A;
+    background: var(--surface);
+    padding: 10px 12px;
+    cursor: pointer; text-align: left; width: 100%;
+    min-height: 64px;
+    transition: background 0.12s;
+  }
+  .tool-card:hover { background: var(--surface-2); }
+  .tool-card:active { transform: translateY(1px); }
+  .tool-icon {
+    width: 48px; height: 48px;
+    border: 1.5px solid var(--border-hi);
+    background: var(--surface);
+    display: grid; place-items: center;
+  }
+  .tool-icon svg { width: 34px; height: 34px; }
+  .tool-card h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 17px; text-transform: uppercase; margin-bottom: 2px;
+  }
+  .tool-card p { font-size: 10px; color: var(--sub); line-height: 1.4; margin: 0; }
+
+  .sidebar-footer {
+    padding: 14px 16px;
+    border-top: 1.5px solid var(--border-hi);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .btn {
+    min-height: 44px; padding: 0 14px;
+    border: 1.5px solid var(--border-hi);
+    background: transparent; color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn-primary:hover { background: #0A643B; }
+  .btn-accent  { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-accent:hover  { background: #143EA7; }
+  .btn-warn    { background: var(--yellow); color: var(--text); border-color: var(--yellow); }
+  .btn-warn:hover    { background: #D59500; }
+
+  /* ── Main panel ── */
+  .main-panel {
+    display: grid; grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+  .level-header {
+    background: var(--surface);
+    border-bottom: 2px solid #0A0C1A;
+    padding: 16px 22px;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  }
+  .level-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 26px; text-transform: uppercase;
+    letter-spacing: 0.03em; color: var(--accent); margin-bottom: 4px;
+  }
+  .level-desc { font-size: 12px; color: var(--sub); line-height: 1.6; margin: 0; max-width: 600px; }
+  .header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+  /* ── Canvas ── */
+  .canvas-wrap {
+    position: relative;
+    background: linear-gradient(180deg, #FFFFFF 0%, #FCFAF4 100%);
+    overflow: hidden;
+  }
+  canvas {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: block; touch-action: none;
+  }
+
+  /* ── HUD ── */
+  .hud {
+    position: absolute; top: 14px; right: 14px;
+    display: grid; grid-template-columns: repeat(3, minmax(72px, auto));
+    gap: 8px; pointer-events: none;
+  }
+  .hud-box {
+    background: rgba(255,255,255,0.94);
+    border: 1.5px solid var(--border-hi);
+    padding: 8px 12px; min-height: 56px;
+  }
+  .hud-label {
+    display: block; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--sub); margin-bottom: 2px;
+  }
+  .hud-value { font-family: 'Oswald', sans-serif; font-size: 20px; line-height: 1; }
+
+  /* ── Toast ── */
+  .toast {
+    position: absolute; left: 50%; bottom: 20px;
+    transform: translateX(-50%);
+    background: rgba(10,12,26,0.90); color: #fff;
+    padding: 12px 18px;
+    border: 1.5px solid rgba(255,255,255,0.14);
+    max-width: min(680px, calc(100% - 28px));
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s; z-index: 20;
+    font-size: 11px; line-height: 1.6; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── Success overlay ── */
+  .success-overlay {
+    position: absolute; inset: 0;
+    background: rgba(250,250,247,0.94);
+    display: grid; place-items: center; padding: 24px;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s; z-index: 50;
+  }
+  .success-overlay.show { opacity: 1; pointer-events: auto; }
+  .success-card {
+    width: min(480px, 100%);
+    border: 2px solid #0A0C1A;
+    background: var(--surface);
+    padding: 28px; text-align: center;
+  }
+  .success-card h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 36px; text-transform: uppercase;
+    color: var(--green); margin-bottom: 10px;
+  }
+  .success-card p { font-size: 12px; color: var(--sub); line-height: 1.7; margin-bottom: 20px; }
+
+  .shake { animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-2px,0,0); }
+    20%, 80% { transform: translate3d(4px,0,0); }
+    30%, 50%, 70% { transform: translate3d(-6px,0,0); }
+    40%, 60% { transform: translate3d(6px,0,0); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .app-shell { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 2px solid #0A0C1A; max-height: 38vh; }
+    .sidebar-body { padding: 12px 14px; gap: 10px; }
+    .tool-grid { flex-direction: row; flex-wrap: wrap; }
+    .tool-card { flex: 1; min-width: 120px; }
+    .hud { grid-template-columns: repeat(3, minmax(0, 1fr)); left: 12px; right: 12px; }
+    .level-header { flex-direction: column; align-items: flex-start; }
+    .trinity-brand { display: none; }
+  }
+  @media (max-width: 600px) {
+    .tn-link { font-size: 10px; padding: 0 12px; }
+    .level-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="trinity-nav">
+  <div class="trinity-nav-left">
+    <a class="tn-link" href="../../../index.html">← Home</a>
+    <a class="tn-link" href="../../../class-xi.html">← Class XI</a>
+  </div>
+  <div class="trinity-brand">Trinity Centre for Learning</div>
+  <button class="tn-fs-btn" id="tn-fs-btn" onclick="tnToggleFullscreen()">⊞ Fullscreen</button>
+</nav>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-body">
+
+      <div class="panel-card">
+        <div class="panel-kicker">Pulley Puzzle</div>
+        <p class="panel-copy">Build real pulley systems by placing pulleys, a load, and an effort point. Connect coloured nodes with rope, then check whether the machine meets the goal.</p>
+        <div class="goal-pill" id="goal-pill">Goal: Pull down and lift up</div>
+        <div class="goal-pill" id="progress-pill">Level 1 of 5</div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-kicker">Tools</div>
+        <div class="tool-grid">
+          <button class="tool-card" type="button" onclick="spawnItem('pulley')">
+            <div class="tool-icon">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <path d="M35 50 L35 25 L50 15 L65 25 L65 50 M35 50 L35 75 L50 85 L65 75 L65 50" fill="none" stroke="#4A4F6A" stroke-width="4"/>
+                <circle cx="50" cy="15" r="5" fill="none" stroke="#4A4F6A" stroke-width="3"/>
+                <circle cx="50" cy="85" r="5" fill="none" stroke="#4A4F6A" stroke-width="3"/>
+                <circle cx="50" cy="50" r="20" fill="#DADFE9" stroke="#0A0C1A" stroke-width="4"/>
+                <circle cx="50" cy="50" r="4" fill="#0A0C1A"/>
+              </svg>
+            </div>
+            <div><h3>Pulley</h3><p>Connect top to fix to ceiling</p></div>
+          </button>
+          <button class="tool-card" type="button" onclick="spawnItem('load')">
+            <div class="tool-icon">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="24" y="30" width="52" height="48" fill="#7C3AED" stroke="#0A0C1A" stroke-width="4"/>
+                <circle cx="50" cy="20" r="8" fill="none" stroke="#0A0C1A" stroke-width="4"/>
+                <text x="50" y="62" font-family="Oswald" font-size="28" fill="#FFFFFF" text-anchor="middle">W</text>
+              </svg>
+            </div>
+            <div><h3>Load</h3><p>The weight to be lifted</p></div>
+          </button>
+          <button class="tool-card" type="button" onclick="spawnItem('effort')">
+            <div class="tool-icon">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="30" fill="#E56A1E" stroke="#0A0C1A" stroke-width="4"/>
+                <text x="50" y="61" font-family="Oswald" font-size="28" fill="#FFFFFF" text-anchor="middle">E</text>
+              </svg>
+            </div>
+            <div><h3>Effort</h3><p>The end you pull</p></div>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-kicker">How To Play</div>
+        <p class="panel-copy">Drag items to move them. Drag from a coloured node to another to connect rope. Release near the top beam to snap to a ceiling anchor. Double-tap a rope to delete it. Double-tap a pulley, load, or effort to remove it.</p>
+      </div>
+
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-warn" type="button" onclick="showHint()">Hint</button>
+      <button class="btn" type="button" onclick="clearCanvas()">Clear All</button>
+    </div>
+  </aside>
+
+  <main class="main-panel">
+    <div class="level-header">
+      <div>
+        <div class="level-title" id="level-title">Level 1: Direction Change</div>
+        <p class="level-desc" id="level-desc">Build a system where pulling the rope down lifts the load up.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" type="button" id="check-btn" onclick="checkSolution()">Check</button>
+        <button class="btn btn-accent" type="button" onclick="nextLevel()" id="skip-btn" style="display:none">Next</button>
+      </div>
+    </div>
+
+    <section class="canvas-wrap" id="canvas-wrap">
+      <canvas id="gameCanvas"></canvas>
+
+      <div class="hud">
+        <div class="hud-box">
+          <span class="hud-label">Velocity Ratio</span>
+          <span class="hud-value" id="hud-vr">0</span>
+        </div>
+        <div class="hud-box">
+          <span class="hud-label">Effort</span>
+          <span class="hud-value" id="hud-effort">—</span>
+        </div>
+        <div class="hud-box">
+          <span class="hud-label">Pulleys</span>
+          <span class="hud-value" id="hud-pulleys">F0 M0</span>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+      <div class="success-overlay" id="success-overlay">
+        <div class="success-card">
+          <h2>Level Complete</h2>
+          <p id="success-msg">Your pulley system matches the goal.</p>
+          <button class="btn btn-accent" type="button" id="next-btn" onclick="nextLevel()">Next Level</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* ── Fullscreen ── */
+  function tnToggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    else document.exitFullscreen();
+  }
+  document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('tn-fs-btn');
+    if (btn) btn.textContent = document.fullscreenElement ? '✕ Exit Full' : '⊞ Fullscreen';
+  });
+
+  /* =========================================================
+     LEVEL CONFIGURATION
+  ========================================================= */
+  const levels = [
+    {
+      title: 'Level 1: Change in Direction',
+      problem: 'Build a system where pulling the rope DOWN lifts the load UP.',
+      goal: 'Goal: Pull down and lift up',
+      hint: 'Place a Pulley. Connect its TOP anchor to the ceiling. Connect Effort to one side, Load to the other.',
+      validate: (sys) => sys.path === 'E-F-L' && sys.effortDir === 'down'
+    },
+    {
+      title: 'Level 2: Force Multiplier',
+      problem: 'Build a system where you need only HALF the force to lift the load.',
+      goal: 'Goal: Create a force multiplier (VR 2)',
+      hint: 'Use a Pulley but DO NOT connect its top to the ceiling. Hook the Load to its bottom, and anchor one rope end to the ceiling.',
+      validate: (sys) => (sys.path === 'E-M-C' || sys.path === 'E-F-M-C') && sys.isLoadHookedToMovable
+    },
+    {
+      title: 'Level 3: Direction & Multiplier',
+      problem: 'Use a movable pulley AND change effort direction — pull DOWN to lift.',
+      goal: 'Goal: Pull down with VR 2',
+      hint: 'Combine two Pulleys. Connect one to the ceiling (Fixed) and hook the other to the load (Movable).',
+      validate: (sys) => sys.path === 'E-F-M-C' && sys.effortDir === 'down' && sys.isLoadHookedToMovable
+    },
+    {
+      title: 'Level 4: Block and Tackle (VR = 4)',
+      problem: 'Build a block and tackle using 4 pulleys to achieve VR = 4.',
+      goal: 'Goal: Make VR 4 with four pulleys',
+      hint: '2 Pulleys to ceiling, 2 hanging. Route rope: Effort → Fixed → Movable → Fixed → Movable → Ceiling. Hook movables to load.',
+      validate: (sys) => sys.path === 'E-F-M-F-M-C' && sys.f >= 2 && sys.m >= 2 && sys.isLoadHookedToMovable
+    },
+    {
+      title: 'Level 5: The Tricky Anchor (VR = 3)',
+      problem: 'Get a VR of 3 using two pulleys — one fixed, one movable.',
+      goal: 'Goal: Make VR 3 using a top anchor',
+      hint: 'Try anchoring one rope end directly to the TOP anchor of the movable pulley frame!',
+      validate: (sys) => sys.path === 'E-M-F-M(anchor)' || sys.vr === 3
+    }
+  ];
+
+  /* =========================================================
+     GAME STATE
+  ========================================================= */
+  let currentLevel = 0;
+  let items = [];
+  let ropes = [];
+  let itemIdCounter = 1;
+  let ropeIdCounter = 1;
+
+  let isDraggingItem = false;
+  let draggedItem = null;
+  let isDrawingRope = false;
+  let startNode = null;
+  let pointerPos = { x: 0, y: 0 };
+  let lastTap = 0;
+  let ropeOffset = 0;
+  let lastEffortY = 0;
+  let toastTimeout = null;
+
+  /* =========================================================
+     CANVAS SETUP
+  ========================================================= */
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('canvas-wrap');
+
+  function resize() {
+    const rect = wrap.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    draw();
+  }
+  window.addEventListener('resize', resize);
+  new ResizeObserver(resize).observe(wrap);
+
+  /* =========================================================
+     GAME ITEM CLASS
+  ========================================================= */
+  class GameItem {
+    constructor(type, x, y) {
+      this.id = 'item_' + itemIdCounter++;
+      this.type = type;
+      this.x = x;
+      this.y = y;
+      this.nodes = [];
+      this.subType = null;
+      this.initNodes();
+    }
+
+    initNodes() {
+      const n = (id, type, color) => ({ id, type, color, x: 0, y: 0, itemId: this.id });
+      if (this.type === 'pulley') {
+        this.nodes = [n('left','groove','#0E7A47'), n('right','groove','#0E7A47'),
+                      n('top','anchor','#1A4FCC'), n('bottom','hook','#E8291F')];
+      } else if (this.type === 'load') {
+        this.nodes = [n('top','anchor','#1A4FCC')];
+      } else if (this.type === 'effort') {
+        this.nodes = [n('top','anchor','#1A4FCC')];
+      } else if (this.type === 'ceiling') {
+        this.nodes = [n('bottom','anchor','#1A4FCC')];
+      }
+      this.updateNodes();
+    }
+
+    updateNodes() {
+      const set = (id, x, y) => { const nd = this.nodes.find(n => n.id === id); if (nd) { nd.x = x; nd.y = y; } };
+      if (this.type === 'pulley') {
+        set('left',  this.x - 28, this.y);
+        set('right', this.x + 28, this.y);
+        set('top',   this.x,      this.y - 46);
+        set('bottom',this.x,      this.y + 46);
+      } else if (this.type === 'load') {
+        set('top', this.x, this.y - 25);
+      } else if (this.type === 'effort') {
+        set('top', this.x, this.y - 20);
+      } else if (this.type === 'ceiling') {
+        set('bottom', this.x, this.y);
+      }
+    }
+
+    draw(sys) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+
+      if (this.type === 'pulley') {
+        /* Frame */
+        ctx.beginPath();
+        ctx.moveTo(-14, 0); ctx.lineTo(-14, -24); ctx.lineTo(0, -46); ctx.lineTo(14, -24); ctx.lineTo(14, 0);
+        ctx.moveTo(-14, 0); ctx.lineTo(-14,  24); ctx.lineTo(0,  46); ctx.lineTo(14,  24); ctx.lineTo(14, 0);
+        ctx.strokeStyle = '#4A4F6A'; ctx.lineWidth = 4; ctx.stroke();
+        /* Frame hooks */
+        ctx.beginPath(); ctx.arc(0, -46, 6, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0,  46, 6, 0, Math.PI * 2); ctx.stroke();
+        /* Wheel */
+        ctx.save();
+        if (sys && sys.activePulleys && sys.activePulleys.has(this.id)) ctx.rotate(ropeOffset * 0.05);
+        ctx.beginPath(); ctx.arc(0, 0, 28, 0, Math.PI * 2);
+        ctx.fillStyle = this.subType === 'fixed' ? '#D7DEE9' : '#E9D9FF';
+        ctx.fill(); ctx.strokeStyle = '#0A0C1A'; ctx.lineWidth = 3; ctx.stroke();
+        /* Spokes */
+        [[0,-14],[0,14],[-14,0],[14,0]].forEach(([x,y]) => {
+          ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fillStyle='#4A4F6A'; ctx.fill();
+        });
+        ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI*2); ctx.fillStyle='#0A0C1A'; ctx.fill();
+        ctx.restore();
+        /* Label */
+        if (this.subType) {
+          ctx.font = '600 11px "IBM Plex Mono"';
+          ctx.textAlign = 'center'; ctx.fillStyle = '#0A0C1A';
+          ctx.fillText(this.subType === 'fixed' ? 'FIXED' : 'MOV', 0, 68);
+        }
+
+      } else if (this.type === 'load') {
+        ctx.fillStyle = '#7C3AED'; ctx.fillRect(-26, -20, 52, 42);
+        ctx.strokeStyle = '#0A0C1A'; ctx.lineWidth = 3; ctx.strokeRect(-26, -20, 52, 42);
+        ctx.fillStyle = '#FFFFFF'; ctx.font = '600 22px Oswald';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('W', 0, 2);
+        /* Hook ring */
+        ctx.beginPath(); ctx.arc(0, -25, 5, 0, Math.PI*2);
+        ctx.strokeStyle = '#4A4F6A'; ctx.lineWidth = 2.5; ctx.stroke();
+
+      } else if (this.type === 'effort') {
+        ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI*2);
+        ctx.fillStyle = '#E56A1E'; ctx.fill();
+        ctx.strokeStyle = '#0A0C1A'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = '#FFFFFF'; ctx.font = '600 22px Oswald';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('E', 0, 2);
+
+      } else if (this.type === 'ceiling') {
+        ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI*2);
+        ctx.fillStyle = '#4A4F6A'; ctx.fill();
+        ctx.strokeStyle = '#0A0C1A'; ctx.lineWidth = 2; ctx.stroke();
+      }
+
+      ctx.restore();
+
+      /* Draw nodes */
+      this.nodes.forEach(nd => {
+        const r = isDrawingRope ? 9 : 7;
+        ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, Math.PI*2);
+        ctx.fillStyle = nd.color; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(nd.x, nd.y, r + 2, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(10,12,26,0.20)'; ctx.lineWidth = 1; ctx.stroke();
+      });
+    }
+
+    contains(x, y) {
+      if (this.type === 'ceiling') return false;
+      const w = this.type === 'effort' ? 56 : (this.type === 'pulley' ? 80 : 72);
+      const h = this.type === 'pulley' ? 116 : 64;
+      return x >= this.x - w/2 && x <= this.x + w/2 && y >= this.y - h/2 && y <= this.y + h/2;
+    }
+  }
+
+  /* =========================================================
+     SYSTEM ANALYSIS — provided code logic, verbatim
+  ========================================================= */
+  function analyzeSystem() {
+    let sys = { f:0, m:0, vr:0, effortDir:'none', path:'', isLoadHookedToMovable:false,
+                activeRopes: new Set(), activePulleys: new Set() };
+
+    items.forEach(i => { if (i.type === 'pulley') i.subType = null; });
+    let resolving = true;
+    while (resolving) {
+      resolving = false;
+      items.forEach(i => {
+        if (i.type === 'pulley' && !i.subType) {
+          let topRope = findRope(i.id, 'top');
+          if (topRope) {
+            let other = getOtherNode(topRope, i.id, 'top');
+            let otherItem = items.find(x => x.id === other.itemId);
+            if (otherItem && otherItem.type === 'ceiling') {
+              i.subType = 'fixed'; resolving = true;
+            } else if (otherItem && otherItem.type === 'pulley' && otherItem.subType === 'fixed' && other.nodeId === 'bottom') {
+              i.subType = 'fixed'; resolving = true;
+            }
+          }
+        }
+      });
+    }
+
+    items.forEach(i => {
+      if (i.type === 'pulley') {
+        if (!i.subType) i.subType = 'movable';
+        if (i.subType === 'fixed') sys.f++;
+        if (i.subType === 'movable') sys.m++;
+      }
+    });
+
+    let effort = items.find(i => i.type === 'effort');
+    let load   = items.find(i => i.type === 'load');
+    if (!effort || !load) return sys;
+
+    let eRope = findRope(effort.id, 'top');
+    if (eRope) {
+      let other = getOtherNode(eRope, effort.id, 'top');
+      let otherItem = items.find(i => i.id === other.itemId);
+      if (otherItem) sys.effortDir = (effort.y > otherItem.y) ? 'down' : 'up';
+    }
+
+    let lRope = findRope(load.id, 'top');
+    if (lRope) {
+      let lOther = getOtherNode(lRope, load.id, 'top');
+      let curr = items.find(i => i.id === lOther.itemId);
+      while (curr && curr.type === 'pulley' && curr.subType === 'movable') {
+        sys.isLoadHookedToMovable = true;
+        let nextRope = findRope(curr.id, 'top');
+        if (!nextRope) break;
+        let nextOther = getOtherNode(nextRope, curr.id, 'top');
+        if (nextOther.nodeId !== 'bottom') break;
+        curr = items.find(i => i.id === nextOther.itemId);
+      }
+    }
+
+    let path = 'E';
+    let currItem = effort;
+    let currNodeId = 'top';
+    let visitedRopes = new Set();
+    let calculatedVR = 0;
+
+    while (true) {
+      let rope = findRope(currItem.id, currNodeId);
+      if (!rope || visitedRopes.has(rope.id)) break;
+      visitedRopes.add(rope.id);
+      sys.activeRopes.add(rope.id);
+
+      let other = getOtherNode(rope, currItem.id, currNodeId);
+      let nextItem = items.find(i => i.id === other.itemId);
+      if (!nextItem) break;
+
+      if (nextItem.type === 'pulley') sys.activePulleys.add(nextItem.id);
+      if (currItem.type === 'pulley') sys.activePulleys.add(currItem.id);
+
+      if (nextItem.type === 'pulley' && nextItem.subType === 'movable' &&
+          (other.nodeId==='left'||other.nodeId==='right'||other.nodeId==='top')) {
+        let srcY  = currItem.nodes.find(n=>n.id===currNodeId).y;
+        let destY = nextItem.nodes.find(n=>n.id===other.nodeId).y;
+        if (srcY < destY) calculatedVR++;
+      }
+      if (currItem.type === 'pulley' && currItem.subType === 'movable' &&
+          (currNodeId==='left'||currNodeId==='right'||currNodeId==='top')) {
+        let srcY  = nextItem.nodes.find(n=>n.id===other.nodeId).y;
+        let destY = currItem.nodes.find(n=>n.id===currNodeId).y;
+        if (srcY < destY) calculatedVR++;
+      }
+
+      if (nextItem.type === 'pulley') {
+        if (other.nodeId === 'left' || other.nodeId === 'right') {
+          path += nextItem.subType === 'fixed' ? '-F' : '-M';
+          currNodeId = other.nodeId === 'left' ? 'right' : 'left';
+        } else if (other.nodeId === 'top') {
+          path += nextItem.subType === 'fixed' ? '-F(anchor)' : '-M(anchor)';
+          break;
+        } else if (other.nodeId === 'bottom') {
+          path += nextItem.subType === 'fixed' ? '-F(hook)' : '-M(hook)';
+          break;
+        }
+      } else if (nextItem.type === 'load') {
+        path += '-L'; break;
+      } else if (nextItem.type === 'ceiling') {
+        path += '-C'; break;
+      } else break;
+
+      currItem = nextItem;
+    }
+
+    sys.path = path;
+    sys.vr   = calculatedVR;
+    if (currentLevel === 4 && path === 'E-F-M-C') sys.vr = 3;
+
+    return sys;
+  }
+
+  function findRope(itemId, nodeId) {
+    return ropes.find(r =>
+      (r.n1.itemId === itemId && r.n1.nodeId === nodeId) ||
+      (r.n2.itemId === itemId && r.n2.nodeId === nodeId)
+    );
+  }
+
+  function getOtherNode(rope, itemId, nodeId) {
+    if (rope.n1.itemId === itemId && rope.n1.nodeId === nodeId) return rope.n2;
+    return rope.n1;
+  }
+
+  /* =========================================================
+     POINTER POSITION — provided code logic
+  ========================================================= */
+  function getEventPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const evt = e.touches ? e.touches[0] : e;
+    return {
+      x: (evt.clientX - rect.left) * (canvas.width / rect.width),
+      y: (evt.clientY - rect.top)  * (canvas.height / rect.height)
+    };
+  }
+
+  /* =========================================================
+     INPUT HANDLERS — provided code logic (+ isDrawingRope guard)
+  ========================================================= */
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    pointerPos = getEventPos(e);
+
+    /* Guard: mid-draw, let pointerup complete the connection */
+    if (isDrawingRope) { draw(); return; }
+
+    /* Double-tap → delete item or rope */
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      /* 1. Item deletion (pulley / load / effort) — check items first */
+      for (let i = items.length - 1; i >= 0; i--) {
+        if (items[i].type !== 'ceiling' && items[i].contains(pointerPos.x, pointerPos.y)) {
+          const deadId = items[i].id;
+          ropes = ropes.filter(r => r.n1.itemId !== deadId && r.n2.itemId !== deadId);
+          items.splice(i, 1);
+          /* Remove ceiling anchors that lost their rope */
+          items = items.filter(it => it.type !== 'ceiling' ||
+            ropes.some(r => r.n1.itemId === it.id || r.n2.itemId === it.id));
+          updateLiveStats(); draw(); return;
+        }
+      }
+      /* 2. Rope deletion — point-to-line-segment distance */
+      let minDist = 20; let idx = -1;
+      ropes.forEach((r, i) => {
+        let i1 = items.find(x => x.id === r.n1.itemId);
+        let i2 = items.find(x => x.id === r.n2.itemId);
+        if (!i1 || !i2) return;
+        let n1 = i1.nodes.find(n => n.id === r.n1.nodeId);
+        let n2 = i2.nodes.find(n => n.id === r.n2.nodeId);
+        let A=pointerPos.x-n1.x, B=pointerPos.y-n1.y, C=n2.x-n1.x, D=n2.y-n1.y;
+        let dot=A*C+B*D, len2=C*C+D*D, param=len2!==0?dot/len2:-1;
+        let xx,yy;
+        if(param<0){xx=n1.x;yy=n1.y;}else if(param>1){xx=n2.x;yy=n2.y;}else{xx=n1.x+param*C;yy=n1.y+param*D;}
+        let d=Math.hypot(pointerPos.x-xx, pointerPos.y-yy);
+        if(d<minDist){minDist=d;idx=i;}
+      });
+      if (idx > -1) {
+        ropes.splice(idx, 1);
+        updateLiveStats(); draw(); return;
+      }
+    }
+    lastTap = now;
+
+    /* Check node click (start rope) */
+    for (let i = items.length - 1; i >= 0; i--) {
+      for (let nd of items[i].nodes) {
+        let dx = pointerPos.x - nd.x, dy = pointerPos.y - nd.y;
+        if (dx*dx + dy*dy < 144) { /* radius 12 */
+          if (findRope(items[i].id, nd.id)) { showToast('That node already has a rope.'); return; }
+          isDrawingRope = true;
+          startNode = nd;
+          draw(); return;
+        }
+      }
+    }
+
+    /* Check item drag */
+    for (let i = items.length - 1; i >= 0; i--) {
+      if (items[i].contains(pointerPos.x, pointerPos.y)) {
+        isDraggingItem = true;
+        draggedItem = items[i];
+        if (draggedItem.type === 'effort') lastEffortY = pointerPos.y;
+        items.push(items.splice(i, 1)[0]);
+        draw(); return;
+      }
+    }
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    e.preventDefault();
+    pointerPos = getEventPos(e);
+
+    if (isDraggingItem && draggedItem) {
+      if (draggedItem.type === 'effort') {
+        ropeOffset += pointerPos.y - lastEffortY;
+        lastEffortY = pointerPos.y;
+      }
+      draggedItem.x = Math.max(30, Math.min(canvas.width - 30, pointerPos.x));
+      draggedItem.y = Math.max(70, Math.min(canvas.height - 30, pointerPos.y));
+      draggedItem.updateNodes();
+      updateLiveStats(); draw();
+    } else if (isDrawingRope) {
+      draw();
+    }
+  });
+
+  canvas.addEventListener('pointerup', (e) => {
+    e.preventDefault();
+
+    if (isDrawingRope) {
+      let targetNode = null;
+      const pos = pointerPos;
+
+      /* Find closest node on a different item */
+      for (let item of items) {
+        for (let nd of item.nodes) {
+          if (nd.itemId === startNode.itemId) continue; /* same item */
+          let dx = pos.x - nd.x, dy = pos.y - nd.y;
+          if (dx*dx + dy*dy < 600) { targetNode = nd; break; } /* radius ~24 */
+        }
+        if (targetNode) break;
+      }
+
+      /* Snap to ceiling beam */
+      if (!targetNode && pos.y < 60) {
+        const snapX = Math.max(28, Math.min(canvas.width - 28, Math.round(pos.x / 24) * 24));
+        const existing = items.find(it => it.type === 'ceiling' && Math.abs(it.x - snapX) < 18);
+        const anchor = existing || new GameItem('ceiling', snapX, 20);
+        if (!existing) items.push(anchor);
+        targetNode = anchor.nodes[0];
+      }
+
+      if (targetNode && !findRope(targetNode.itemId, targetNode.id)) {
+        ropes.push({
+          id: 'rope_' + ropeIdCounter++,
+          n1: { itemId: startNode.itemId, nodeId: startNode.id },
+          n2: { itemId: targetNode.itemId, nodeId: targetNode.id }
+        });
+      }
+
+      isDrawingRope = false;
+      startNode = null;
+      updateLiveStats(); draw();
+    }
+
+    isDraggingItem = false;
+    draggedItem = null;
+  });
+
+  canvas.addEventListener('pointercancel', () => {
+    isDrawingRope = false; startNode = null;
+    isDraggingItem = false; draggedItem = null;
+    draw();
+  });
+
+  /* =========================================================
+     RENDER — Trinity visual style, provided code structure
+  ========================================================= */
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    /* Background grid */
+    ctx.strokeStyle = 'rgba(10,12,26,0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 56) { ctx.beginPath(); ctx.moveTo(x, 22); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 22; y < H; y += 56) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    /* Ceiling beam */
+    ctx.fillStyle = '#D8D2C6'; ctx.fillRect(0, 0, W, 22);
+    ctx.strokeStyle = '#0A0C1A'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, 22); ctx.lineTo(W, 22); ctx.stroke();
+    ctx.strokeStyle = 'rgba(10,12,26,0.15)';
+    for (let x = 0; x < W; x += 32) {
+      ctx.beginPath(); ctx.moveTo(x, 22); ctx.lineTo(x + 16, 6); ctx.stroke();
+    }
+
+    const sys = analyzeSystem();
+    const pathValid = sys.path.length > 2;
+
+    /* Pulley groove arc (rope wrapping the wheel) */
+    items.forEach(it => {
+      if (it.type !== 'pulley') return;
+      if (!findRope(it.id, 'left') || !findRope(it.id, 'right')) return;
+      ctx.save();
+      ctx.beginPath();
+      if (it.subType === 'fixed') ctx.arc(it.x, it.y, 28, Math.PI, 0);
+      else                        ctx.arc(it.x, it.y, 28, 0, Math.PI);
+      const isActive = sys.activePulleys.has(it.id);
+      ctx.strokeStyle = isActive ? '#0E7A47' : '#0A0C1A';
+      ctx.lineWidth = 4;
+      if (isActive) { ctx.setLineDash([12, 12]); ctx.lineDashOffset = -ropeOffset; }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    });
+
+    /* Ropes */
+    ctx.lineWidth = 4;
+    ropes.forEach(r => {
+      let i1 = items.find(i => i.id === r.n1.itemId);
+      let i2 = items.find(i => i.id === r.n2.itemId);
+      if (!i1 || !i2) return;
+      let n1 = i1.nodes.find(n => n.id === r.n1.nodeId);
+      let n2 = i2.nodes.find(n => n.id === r.n2.nodeId);
+      if (!n1 || !n2) return;
+
+      const isCeiling = i1.type === 'ceiling' || i2.type === 'ceiling';
+      const isActive  = sys.activeRopes.has(r.id) && !isCeiling;
+
+      ctx.strokeStyle = isActive ? '#0E7A47' : '#0A0C1A';
+      ctx.lineWidth   = isCeiling ? 3 : 4;
+      if (isActive) { ctx.setLineDash([12, 12]); ctx.lineDashOffset = -ropeOffset; }
+
+      ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    /* Live rope preview */
+    if (isDrawingRope && startNode) {
+      const target = pointerPos.y < 60
+        ? { x: Math.round(pointerPos.x / 24) * 24, y: 22 }
+        : pointerPos;
+      ctx.strokeStyle = 'rgba(10,12,26,0.40)';
+      ctx.lineWidth = 3; ctx.setLineDash([6, 8]);
+      ctx.beginPath(); ctx.moveTo(startNode.x, startNode.y); ctx.lineTo(target.x, target.y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    /* Items */
+    items.forEach(it => it.draw(sys));
+  }
+
+  /* =========================================================
+     GAME FLOW
+  ========================================================= */
+  function spawnItem(type) {
+    const x = canvas.width  * 0.52 + (Math.random() * 40 - 20);
+    const y = type === 'pulley' ? 220 : canvas.height * 0.55 + (Math.random() * 40 - 20);
+    items.push(new GameItem(type, x, y));
+    updateLiveStats(); draw();
+  }
+
+  function clearCanvas() {
+    items = []; ropes = [];
+    updateLiveStats(); draw();
+  }
+
+  function loadLevel() {
+    clearCanvas();
+    const lvl = levels[currentLevel];
+    document.getElementById('level-title').textContent   = lvl.title;
+    document.getElementById('level-desc').textContent    = lvl.problem;
+    document.getElementById('goal-pill').textContent     = lvl.goal;
+    document.getElementById('progress-pill').textContent = 'Level ' + (currentLevel + 1) + ' of ' + levels.length;
+    document.getElementById('success-overlay').classList.remove('show');
+    document.getElementById('next-btn').style.display = 'inline-flex';
+    document.getElementById('next-btn').textContent   = 'Next Level';
+    document.getElementById('success-msg').textContent = 'Your pulley system matches the goal.';
+  }
+
+  function showHint() {
+    showToast(levels[currentLevel].hint);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  function updateLiveStats() {
+    const sys = analyzeSystem();
+    document.getElementById('hud-vr').textContent = String(sys.vr);
+    document.getElementById('hud-pulleys').textContent = 'F' + sys.f + ' M' + sys.m;
+    const effortEl = document.getElementById('hud-effort');
+    if      (sys.effortDir === 'down') { effortEl.textContent = '↓'; effortEl.style.color = '#E56A1E'; }
+    else if (sys.effortDir === 'up')   { effortEl.textContent = '↑'; effortEl.style.color = '#1A4FCC'; }
+    else                               { effortEl.textContent = '—'; effortEl.style.color = '#0A0C1A'; }
+  }
+
+  function checkSolution() {
+    const sys = analyzeSystem();
+    if (levels[currentLevel].validate(sys)) {
+      triggerConfetti();
+      if (currentLevel === levels.length - 1) {
+        document.getElementById('success-msg').textContent = 'You mastered all pulley systems!';
+        document.getElementById('next-btn').textContent = 'Play Again';
+      }
+      document.getElementById('success-overlay').classList.add('show');
+    } else {
+      const btn = document.getElementById('check-btn');
+      btn.classList.remove('shake');
+      void btn.offsetWidth;
+      btn.classList.add('shake');
+      showToast('Not quite right. Check the velocity ratio, effort direction, and whether the load is attached to the movable block.');
+    }
+  }
+
+  function nextLevel() {
+    if (currentLevel < levels.length - 1) {
+      currentLevel++;
+      loadLevel();
+    } else {
+      currentLevel = 0;
+      loadLevel();
+    }
+  }
+
+  function triggerConfetti() {
+    for (let i = 0; i < 48; i++) {
+      const p = document.createElement('div');
+      p.style.cssText = 'position:absolute;width:10px;height:14px;left:50%;top:50%;z-index:100;';
+      p.style.background = ['#E8291F','#1A4FCC','#0E7A47','#E8A800'][i % 4];
+      wrap.appendChild(p);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 4 + Math.random() * 12;
+      const vx = Math.cos(angle) * speed;
+      let vy = Math.sin(angle) * speed - 2;
+      let frame = 0;
+      (function anim() {
+        frame++; vy += 0.28;
+        p.style.transform = `translate(${vx*frame}px,${vy*frame}px) rotate(${frame*14}deg)`;
+        p.style.opacity = String(Math.max(0, 1 - frame / 55));
+        if (frame < 55) requestAnimationFrame(anim); else p.remove();
+      })();
+    }
+  }
+
+  /* Init */
+  resize();
+  loadLevel();
+  updateLiveStats();
+</script>
+</body>
+</html>

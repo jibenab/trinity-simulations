@@ -4,21 +4,28 @@ import { isAdminEmail } from "../lib/isAdmin";
 import { query, mutation } from "./_generated/server";
 import { requireIdentity } from "./users";
 
+const subjectValidator = v.union(
+  v.literal("Physics"),
+  v.literal("Chemistry"),
+  v.literal("Biology"),
+  v.literal("Math"),
+);
+const levelValidator = v.union(
+  v.literal("Intro"),
+  v.literal("Core"),
+  v.literal("Advanced"),
+);
+
 const contentArgs = {
   slug: v.string(),
   type: v.union(v.literal("simulation"), v.literal("game")),
   title: v.string(),
-  subject: v.union(
-    v.literal("Physics"),
-    v.literal("Chemistry"),
-    v.literal("Biology"),
-    v.literal("Math"),
-  ),
+  subject: subjectValidator,
   grade: v.string(),
   chapter: v.string(),
-  level: v.union(v.literal("Intro"), v.literal("Core"), v.literal("Advanced")),
-  minutes: v.number(),
-  concepts: v.array(v.string()),
+  level: v.optional(levelValidator),
+  minutes: v.optional(v.number()),
+  concepts: v.optional(v.array(v.string())),
   svgCode: v.string(),
   code: v.string(),
   prompt: v.optional(v.string()),
@@ -65,6 +72,29 @@ export const getById = query({
   },
 });
 
+export const listChapters = query({
+  args: {
+    subject: v.optional(subjectValidator),
+    grade: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db.query("content").collect();
+
+    return Array.from(
+      new Set(
+        rows
+          .filter((item) => {
+            if (args.subject && item.subject !== args.subject) return false;
+            if (args.grade && item.grade !== args.grade) return false;
+            return true;
+          })
+          .map((item) => item.chapter.trim())
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+  },
+});
+
 export const upsert = mutation({
   args: {
     id: v.optional(v.id("content")),
@@ -86,19 +116,38 @@ export const upsert = mutation({
     }
 
     const now = Date.now();
+    const { id, ...contentFields } = args;
 
-    if (args.id) {
-      await ctx.db.patch(args.id, {
-        ...args,
+    if (id) {
+      await ctx.db.patch(id, {
+        ...contentFields,
         updatedAt: now,
       });
-      return args.id;
+      return id;
     }
 
     return await ctx.db.insert("content", {
-      ...args,
+      ...contentFields,
       createdAt: now,
       updatedAt: now,
+    });
+  },
+});
+
+export const setFeatured = mutation({
+  args: {
+    id: v.id("content"),
+    featured: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireIdentity(ctx);
+    if (!isAdminEmail(identity.email)) {
+      throw new Error("Forbidden");
+    }
+
+    await ctx.db.patch(args.id, {
+      featured: args.featured,
+      updatedAt: Date.now(),
     });
   },
 });

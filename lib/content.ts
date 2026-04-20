@@ -6,16 +6,13 @@ export const GRADES = [
   "Class 11",
   "Class 12",
 ] as const;
-export const LEVELS = ["Intro", "Core", "Advanced"] as const;
 export const CONTENT_TYPES = ["simulation", "game"] as const;
 
 export type Subject = (typeof SUBJECTS)[number];
 export type Grade = (typeof GRADES)[number];
-export type Level = (typeof LEVELS)[number];
 export type ContentType = (typeof CONTENT_TYPES)[number];
 
 export const subjectOptions = ["All", ...SUBJECTS] as const;
-export const levelOptions = ["All", ...LEVELS] as const;
 export const gradeOptions = ["All", ...GRADES] as const;
 
 export type PublicContent = {
@@ -27,9 +24,9 @@ export type PublicContent = {
   subject: Subject;
   grade: string;
   chapter: string;
-  level: Level;
-  minutes: number;
-  concepts: string[];
+  level?: "Intro" | "Core" | "Advanced";
+  minutes?: number;
+  concepts?: string[];
   svgCode: string;
   code: string;
   prompt?: string;
@@ -45,5 +42,6 @@ export type LeaderboardRow = {
   userId: string;
   userName: string;
   score: number;
+  timeTaken?: number;
   createdAt: number;
 };

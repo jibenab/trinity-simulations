@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
 
@@ -18,14 +17,17 @@ const NAV_ITEMS = [
 ] as const;
 
 export function TopNav({ current }: { current?: string }) {
-  const router = useRouter();
   const { isAuthenticated, isLoading } = useConvexAuth();
   const viewer = useQuery(api.users.viewer, {});
 
   async function handleSignOut() {
-    await authClient.signOut();
-    router.push("/");
-    router.refresh();
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = "/";
+        },
+      },
+    });
   }
 
   return (
@@ -56,9 +58,9 @@ export function TopNav({ current }: { current?: string }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button className="iconbtn" aria-label="Search">
+        <Link href="/catalog?focus=search" className="iconbtn" aria-label="Search">
           <Icon name="search" size={16} />
-        </button>
+        </Link>
         {!isLoading && !isAuthenticated ? (
           <Link href="/login" className="btn ghost">
             Student login

@@ -17,7 +17,7 @@ export function LeaderboardClient({ slug }: { slug: string }) {
     | undefined;
   const scores = useQuery(api.leaderboard.topScores, {
     slug,
-    limit: 10,
+    limit: 20,
   }) as LeaderboardRow[] | undefined;
 
   if (content === undefined || scores === undefined) {
@@ -55,20 +55,26 @@ export function LeaderboardClient({ slug }: { slug: string }) {
       </section>
 
       <section className="panel overflow-hidden">
-        <div className="grid grid-cols-[80px_1fr_120px] gap-4 border-b border-ink px-5 py-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
+        <div className="grid grid-cols-[80px_1fr_120px_100px] gap-4 border-b border-ink px-5 py-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
           <span>Rank</span>
           <span>Student</span>
           <span>Score</span>
+          <span>Time</span>
         </div>
         {scores.length ? (
           scores.map((row, index) => (
             <div
               key={row._id}
-              className="grid grid-cols-[80px_1fr_120px] gap-4 border-t border-[var(--rule-soft)] px-5 py-4"
+              className="grid grid-cols-[80px_1fr_120px_100px] gap-4 border-t border-[var(--rule-soft)] px-5 py-4"
             >
               <span className="label-mono text-ink-mute">#{index + 1}</span>
               <span className="text-base font-medium">{row.userName}</span>
               <span className="label-mono text-accent">{row.score}</span>
+              <span className="label-mono text-ink-mute">
+                {row.timeTaken !== undefined
+                  ? `${Math.floor(row.timeTaken / 60)}:${String(row.timeTaken % 60).padStart(2, "0")}`
+                  : "—"}
+              </span>
             </div>
           ))
         ) : (

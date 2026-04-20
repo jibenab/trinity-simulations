@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
-import { gradeOptions, levelOptions, subjectOptions, type PublicContent } from "@/lib/content";
+import { gradeOptions, subjectOptions, type PublicContent } from "@/lib/content";
 
 import { ChipButton } from "./Chip";
 import { Footer } from "./Footer";
@@ -14,20 +15,26 @@ import { SimCard } from "./SimCard";
 import { TopNav } from "./TopNav";
 
 type ViewMode = "grid" | "list";
-type SortMode = "featured" | "newest" | "shortest" | "az";
+type SortMode = "featured" | "newest" | "az";
+
+const PAGE_SIZE = 12;
+const toolbarControlClassName =
+  "h-11 rounded-pill border border-ink bg-transparent px-4 font-mono text-[11px] uppercase tracking-[0.08em]";
 
 export function CatalogClient() {
+  const searchParams = useSearchParams();
   const content = useQuery(api.content.listPublished, {}) as
     | PublicContent[]
     | undefined;
   const [subject, setSubject] = useState<(typeof subjectOptions)[number]>("All");
-  const [level, setLevel] = useState<(typeof levelOptions)[number]>("All");
   const [grade, setGrade] = useState<(typeof gradeOptions)[number]>("All");
   const [chapter, setChapter] = useState("All");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("grid");
   const [sort, setSort] = useState<SortMode>("featured");
+  const [page, setPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const chapters = useMemo(() => {
     const pool = (content ?? []).filter((item) => {
@@ -42,7 +49,6 @@ export function CatalogClient() {
   const filtered = useMemo(() => {
     const rows = (content ?? []).filter((item) => {
       if (subject !== "All" && item.subject !== subject) return false;
-      if (level !== "All" && item.level !== level) return false;
       if (grade !== "All" && item.grade !== grade) return false;
       if (chapter !== "All" && item.chapter !== chapter) return false;
 
@@ -50,7 +56,7 @@ export function CatalogClient() {
         const q = deferredQuery.toLowerCase();
         return (
           item.title.toLowerCase().includes(q) ||
-          item.concepts.join(" ").toLowerCase().includes(q) ||
+          (item.concepts ?? []).join(" ").toLowerCase().includes(q) ||
           item.chapter.toLowerCase().includes(q) ||
           item.grade.toLowerCase().includes(q)
         );
@@ -65,12 +71,39 @@ export function CatalogClient() {
         return b.updatedAt - a.updatedAt;
       }
       if (sort === "newest") return b.updatedAt - a.updatedAt;
-      if (sort === "shortest") return a.minutes - b.minutes;
       return a.title.localeCompare(b.title);
     });
 
     return rows;
-  }, [chapter, content, deferredQuery, grade, level, sort, subject]);
+  }, [chapter, content, deferredQuery, grade, sort, subject]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [subject, grade, chapter, sort, deferredQuery]);
+
+  useEffect(() => {
+    if (chapter !== "All" && !chapters.includes(chapter)) {
+      setChapter("All");
+    }
+  }, [chapter, chapters]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  useEffect(() => {
+    if (searchParams.get("focus") === "search") {
+      inputRef.current?.focus();
+    }
+  }, [searchParams]);
 
   return (
     <div className="shell">
@@ -86,122 +119,123 @@ export function CatalogClient() {
       </section>
 
       <section className="border-y border-ink py-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <label className="field-shell flex min-w-[220px] items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex min-w-[220px] flex-1 basis-full items-center gap-3 rounded-pill border border-ink px-4 sm:basis-[280px]">
+            <span className="text-ink-mute">
               <Icon name="search" size={14} />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search simulations..."
-                className="w-full border-0 bg-transparent text-sm outline-none"
-              />
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {subjectOptions.map((item) => (
-                <ChipButton
-                  key={item}
-                  active={subject === item}
-                  onClick={() => setSubject(item)}
-                >
-                  {item}
-                </ChipButton>
-              ))}
-            </div>
-          </div>
+            </span>
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search simulations..."
+              className="h-11 w-full border-0 bg-transparent text-sm outline-none"
+            />
+          </label>
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap gap-2">
-              {gradeOptions.map((item) => (
-                <ChipButton key={item} active={grade === item} onClick={() => setGrade(item)}>
-                  {item}
-                </ChipButton>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex flex-wrap gap-2">
-                {levelOptions.map((item) => (
-                  <ChipButton key={item} active={level === item} onClick={() => setLevel(item)}>
-                    {item}
-                  </ChipButton>
-                ))}
-              </div>
-              <select
-                value={chapter}
-                onChange={(event) => setChapter(event.target.value)}
-                className="rounded-pill border border-ink bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.08em]"
-              >
-                <option value="All">Chapter · All</option>
-                {chapters.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortMode)}
-                className="rounded-pill border border-ink bg-transparent px-4 py-2 font-mono text-[11px] uppercase tracking-[0.08em]"
-              >
-                <option value="featured">Sort · Featured</option>
-                <option value="newest">Sort · Newest</option>
-                <option value="shortest">Sort · Shortest</option>
-                <option value="az">Sort · A–Z</option>
-              </select>
-              <div className="flex overflow-hidden rounded-pill border border-ink">
-                <button
-                  className={`h-9 w-9 ${view === "grid" ? "bg-ink text-bg" : ""}`}
-                  onClick={() => setView("grid")}
-                  aria-label="Grid view"
-                >
-                  <Icon name="grid" size={14} />
-                </button>
-                <button
-                  className={`h-9 w-9 ${view === "list" ? "bg-ink text-bg" : ""}`}
-                  onClick={() => setView("list")}
-                  aria-label="List view"
-                >
-                  <Icon name="list" size={14} />
-                </button>
-              </div>
-            </div>
+          <select
+            value={subject}
+            onChange={(event) =>
+              setSubject(event.target.value as (typeof subjectOptions)[number])
+            }
+            className={toolbarControlClassName}
+          >
+            {subjectOptions.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={grade}
+            onChange={(event) =>
+              setGrade(event.target.value as (typeof gradeOptions)[number])
+            }
+            className={toolbarControlClassName}
+          >
+            {gradeOptions.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={chapter}
+            onChange={(event) => setChapter(event.target.value)}
+            className={toolbarControlClassName}
+          >
+            <option value="All">All</option>
+            {chapters.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as SortMode)}
+            className={toolbarControlClassName}
+          >
+            <option value="featured">Featured</option>
+            <option value="newest">Newest</option>
+            <option value="az">A–Z</option>
+          </select>
+
+          <div className="ml-auto flex overflow-hidden rounded-pill border border-ink">
+            <button
+              className={`h-11 w-11 ${view === "grid" ? "bg-ink text-bg" : ""}`}
+              onClick={() => setView("grid")}
+              aria-label="Grid view"
+              type="button"
+            >
+              <Icon name="grid" size={14} />
+            </button>
+            <button
+              className={`h-11 w-11 ${view === "list" ? "bg-ink text-bg" : ""}`}
+              onClick={() => setView("list")}
+              aria-label="List view"
+              type="button"
+            >
+              <Icon name="list" size={14} />
+            </button>
           </div>
         </div>
       </section>
 
-      <div className="mt-5 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-mute">
-        {filtered.length} result{filtered.length === 1 ? "" : "s"}
-      </div>
-
       {view === "grid" ? (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {filtered.map((item, index) => (
-            <SimCard key={item._id} content={item} variant={index} />
+          {pageRows.map((item, index) => (
+            <SimCard
+              key={item._id}
+              content={item}
+              variant={(page - 1) * PAGE_SIZE + index}
+            />
           ))}
         </div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-md border border-ink bg-paper">
-          <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr_0.9fr_40px] gap-4 border-b border-ink px-5 py-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
+          <div className="grid grid-cols-[minmax(0,1.5fr)_0.8fr_0.8fr_40px] gap-4 border-b border-ink px-5 py-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
             <span>Title</span>
             <span>Class</span>
             <span>Subject</span>
-            <span>Time</span>
             <span />
           </div>
-          {filtered.map((item) => {
+          {pageRows.map((item) => {
             const href = item.type === "game" ? `/game/${item.slug}` : `/sim/${item.slug}`;
             return (
               <Link
                 key={item._id}
                 href={href}
-                className="grid grid-cols-[1.4fr_0.8fr_0.8fr_0.9fr_40px] gap-4 border-t border-[var(--rule-soft)] px-5 py-4 transition hover:bg-bg-alt"
+                className="grid grid-cols-[minmax(0,1.5fr)_0.8fr_0.8fr_40px] gap-4 border-t border-[var(--rule-soft)] px-5 py-4 transition hover:bg-bg-alt"
               >
                 <span className="text-[18px] font-semibold leading-tight tracking-[-0.01em]">
                   {item.title}
                 </span>
                 <span className="label-mono">{item.grade}</span>
                 <span className="label-mono">{item.subject}</span>
-                <span className="label-mono">{item.minutes} min</span>
                 <span className="flex items-center justify-end">
                   <Icon name="arrow-right" size={14} />
                 </span>
@@ -210,6 +244,30 @@ export function CatalogClient() {
           })}
         </div>
       )}
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-mute">
+        <div>
+          {filtered.length} result{filtered.length === 1 ? "" : "s"} · Page {page} of {totalPages}
+        </div>
+        <div className="flex items-center gap-2">
+          <ChipButton
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={page === 1}
+            className="disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Prev
+          </ChipButton>
+          <ChipButton
+            type="button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            disabled={page === totalPages}
+            className="disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </ChipButton>
+        </div>
+      </div>
 
       <Footer />
     </div>

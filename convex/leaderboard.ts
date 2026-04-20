@@ -18,12 +18,21 @@ export const topScores = query({
       return [];
     }
 
-    const limit = Math.max(1, Math.min(args.limit ?? 10, 50));
-    return await ctx.db
+    const limit = Math.max(1, Math.min(args.limit ?? 20, 20));
+    const rows = await ctx.db
       .query("leaderboard")
       .withIndex("by_content_score", (q) => q.eq("contentId", content._id))
       .order("desc")
-      .take(limit);
+      .take(100);
+
+    return rows
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        const ta = a.timeTaken ?? Infinity;
+        const tb = b.timeTaken ?? Infinity;
+        return ta - tb;
+      })
+      .slice(0, limit);
   },
 });
 
@@ -31,6 +40,7 @@ export const submitScore = mutation({
   args: {
     slug: v.string(),
     score: v.number(),
+    timeTaken: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
@@ -61,13 +71,21 @@ export const submitScore = mutation({
         userId,
         userName,
         score: normalizedScore,
+        timeTaken: args.timeTaken,
         createdAt: Date.now(),
       });
     }
 
-    if (normalizedScore > existing.score) {
+    const betterScore = normalizedScore > existing.score;
+    const sameScoreFasterTime =
+      normalizedScore === existing.score &&
+      args.timeTaken !== undefined &&
+      args.timeTaken < (existing.timeTaken ?? Infinity);
+
+    if (betterScore || sameScoreFasterTime) {
       await ctx.db.patch(existing._id, {
         score: normalizedScore,
+        timeTaken: args.timeTaken,
         userName,
         createdAt: Date.now(),
       });

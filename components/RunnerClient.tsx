@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
@@ -26,8 +26,6 @@ export function RunnerClient({
   const viewer = useQuery(api.users.viewer, {});
   const submitScore = useMutation(api.leaderboard.submitScore);
   const [lastScore, setLastScore] = useState<number | null>(null);
-
-  const prompt = useMemo(() => content?.prompt?.trim(), [content?.prompt]);
 
   if (content === undefined || viewer === undefined) {
     return <div className="shell py-20 text-sm text-ink-mute">Loading…</div>;
@@ -73,8 +71,6 @@ export function RunnerClient({
             <div className="flex flex-wrap items-center gap-4">
               <span className="label-mono text-ink-mute">{content.grade}</span>
               <span className="label-mono text-ink-mute">{content.chapter}</span>
-              <span className="label-mono text-ink-mute">{content.level}</span>
-              <span className="label-mono text-ink-mute">{content.minutes} min</span>
               {lastScore !== null ? (
                 <span className="label-mono text-accent">Last score · {lastScore}</span>
               ) : null}
@@ -89,22 +85,16 @@ export function RunnerClient({
               userName={viewer?.name}
               onScore={
                 content.type === "game"
-                  ? (score) => {
+                  ? (score, timeTaken) => {
                       setLastScore(score);
                       startTransition(() => {
-                        void submitScore({ slug: content.slug, score });
+                        void submitScore({ slug: content.slug, score, timeTaken });
                       });
                     }
                   : undefined
               }
             />
           </div>
-
-          {prompt ? (
-            <div className="border-t border-[var(--rule-soft)] px-4 py-4 text-[15px] leading-7 text-ink-soft sm:px-6">
-              {prompt}
-            </div>
-          ) : null}
         </div>
       </section>
 

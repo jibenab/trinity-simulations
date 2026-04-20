@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lorentz Force — 3D Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../assets/trinity-nav.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --surface-2: #F4F3EE;
+    --border: rgba(10,12,26,0.12);
+    --border-hi: rgba(10,12,26,0.28);
+    --text: #0A0C1A;
+    --sub: #4A4F6A;
+    --dim: #8A8FA8;
+    --red: #E8291F;
+    --blue: #1A4FCC;
+    --yellow: #E8A800;
+    --green: #0E7A47;
+    --accent: #E8291F;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ── App Layout ── */
+  #app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+
+  /* ── Controls Panel ── */
+  #controls {
+    background: #0A0C1A;
+    color: #E8E9F0;
+    overflow-y: auto;
+    border-right: 2px solid #1A2030;
+    padding: 0;
+  }
+  #controls::-webkit-scrollbar { width: 6px; }
+  #controls::-webkit-scrollbar-track { background: #0A0C1A; }
+  #controls::-webkit-scrollbar-thumb { background: #2A3050; }
+
+  .ctrl-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid #1A2030;
+  }
+  .ctrl-section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.20em; text-transform: uppercase;
+    color: #5A6080;
+    margin-bottom: 10px;
+  }
+
+  /* Sliders */
+  .slider-row {
+    margin-bottom: 10px;
+  }
+  .slider-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: #A0A8C0;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .slider-label span { color: #E8E9F0; font-weight: 600; }
+  input[type=range] {
+    width: 100%;
+    height: 6px;
+    appearance: none;
+    background: #1E2840;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    width: 22px; height: 22px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #0A0C1A;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 22px; height: 22px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #0A0C1A;
+  }
+
+  /* Toggle buttons */
+  .toggle-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .toggle-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    min-height: 44px; padding: 0 14px;
+    border: 1.5px solid #2A3850;
+    background: #141E30; color: #5A6080;
+    cursor: pointer; outline: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .toggle-btn.active {
+    background: var(--accent); color: #FFFFFF;
+    border-color: var(--accent);
+  }
+  .toggle-btn.active-blue {
+    background: #1A4FCC; color: #FFFFFF;
+    border-color: #1A4FCC;
+  }
+  .field-label {
+    font-size: 11px; color: #A0A8C0; font-weight: 500;
+  }
+  .field-label strong { color: #E8E9F0; }
+
+  /* Preset grid */
+  .preset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .preset-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.10em; text-transform: uppercase;
+    min-height: 44px; padding: 0 8px;
+    border: 1.5px solid #2A3850;
+    background: #141E30; color: #A0A8C0;
+    cursor: pointer; outline: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    text-align: center; line-height: 1.3;
+  }
+  .preset-btn:hover { background: #1E2840; color: #E8E9F0; border-color: #3A4870; }
+
+  /* Sim controls */
+  .sim-ctrl-row {
+    display: flex; gap: 8px;
+  }
+  .sim-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    min-height: 44px; flex: 1; padding: 0 12px;
+    border: 1.5px solid #2A3850;
+    background: #141E30; color: #A0A8C0;
+    cursor: pointer; outline: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .sim-btn:hover { background: #1E2840; color: #E8E9F0; }
+  .sim-btn.playing { background: #0E7A47; color: #FFFFFF; border-color: #0E7A47; }
+  .sim-btn.reset-btn:hover { background: #E8291F; color: #FFFFFF; border-color: #E8291F; }
+
+  /* Live data */
+  .live-data {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px; font-weight: 500;
+    color: #A0A8C0;
+    line-height: 1.8;
+    background: #060A10;
+    padding: 10px 12px;
+    border: 1px solid #1A2030;
+  }
+  .live-data .data-key { color: #4A7FFF; display: inline-block; width: 40px; }
+  .live-data .data-val { color: #E8E9F0; }
+
+  /* vx/vy display */
+  .vcomp-display {
+    font-size: 10.5px; color: #6A78A0; margin-top: 4px; font-weight: 500;
+  }
+
+  /* Formula */
+  .formula-text {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px; font-weight: 600;
+    color: #E8291F;
+    letter-spacing: 0.05em;
+    text-align: center;
+    padding: 4px 0;
+  }
+  .formula-sub {
+    font-size: 10px; color: #5A6080;
+    text-align: center; margin-top: 4px;
+    font-weight: 400;
+  }
+
+  /* ── Canvas Panel ── */
+  #canvas-wrap {
+    position: relative;
+    background: #0D1117;
+    overflow: hidden;
+  }
+  #sim-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #legend {
+    position: absolute;
+    bottom: 12px; left: 12px;
+    background: rgba(10,12,26,0.75);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    color: #A0A8C0;
+    line-height: 1.8;
+    pointer-events: none;
+  }
+  .legend-e { color: #FF3B2F; }
+  .legend-b { color: #4A7FFF; }
+  .legend-v { color: #00FF88; }
+  .legend-f { color: #FF6600; }
+
+  #orbit-hint {
+    position: absolute;
+    top: 10px; right: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; color: rgba(160,168,192,0.6);
+    pointer-events: none;
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  /* ── Responsive (≤900px) ── */
+  @media (max-width: 900px) {
+    html, body { overflow: auto; }
+    #app {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+      height: auto;
+      min-height: calc(100vh - 52px);
+    }
+    #controls {
+      max-height: 45vh;
+      overflow-y: auto;
+      border-right: none;
+      border-bottom: 2px solid #1A2030;
+    }
+    #canvas-wrap {
+      height: 55vh;
+      min-height: 300px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- TRINITY NAV -->
+<nav class="trinity-nav">
+  <div class="trinity-nav-left">
+    <a class="tn-link" href="../../../index.html">← Home</a>
+    <a class="tn-link" href="../../../class-xii.html">← Class XII</a>
+  </div>
+  <div class="trinity-brand">Trinity Centre for Learning</div>
+  <button class="tn-fs-btn" id="tn-fs-btn" onclick="tnToggleFullscreen()">⊞ Fullscreen</button>
+</nav>
+
+<div id="app">
+  <!-- LEFT: Controls Panel -->
+  <div id="controls">
+
+    <!-- Section 1: Particle Velocity -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Particle Velocity</div>
+      <div class="slider-row">
+        <div class="slider-label">
+          Speed (v) <span id="label-vmag">5.0</span>
+        </div>
+        <input type="range" id="sl-vmag" min="1" max="10" step="0.1" value="5">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          Angle &theta; <span id="label-angle">0°</span>
+        </div>
+        <input type="range" id="sl-angle" min="0" max="360" step="1" value="0">
+      </div>
+      <div class="vcomp-display" id="vcomp-display">vx = 5.00 &nbsp; vy = 0.00</div>
+    </div>
+
+    <!-- Section 2: Electric Field E -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Electric Field E</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="btn-e-toggle">E: ON</button>
+        <div class="field-label"><strong id="label-emag-display">E = 3.0 N/C</strong> &darr; (&minus;Y)</div>
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          Magnitude <span id="label-emag">3.0</span>
+        </div>
+        <input type="range" id="sl-emag" min="0.5" max="8" step="0.1" value="3">
+      </div>
+    </div>
+
+    <!-- Section 3: Magnetic Field B -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Magnetic Field B</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active-blue" id="btn-b-toggle">B: ON</button>
+        <div class="field-label"><strong id="label-bmag-display">B = 2.0 T</strong> &otimes; (&minus;Z)</div>
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          Magnitude <span id="label-bmag">2.0</span>
+        </div>
+        <input type="range" id="sl-bmag" min="0.5" max="8" step="0.1" value="2">
+      </div>
+    </div>
+
+    <!-- Section 4: Presets -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Presets</div>
+      <div class="preset-grid">
+        <button class="preset-btn" id="preset-circular">
+          Circular<br><span style="color:#5A6080;font-size:9px">Cyclotron</span>
+        </button>
+        <button class="preset-btn" id="preset-parabola">
+          Parabola<br><span style="color:#5A6080;font-size:9px">E only</span>
+        </button>
+        <button class="preset-btn" id="preset-vfilter">
+          Vel. Filter<br><span style="color:#5A6080;font-size:9px">Straight line</span>
+        </button>
+        <button class="preset-btn" id="preset-cycloid">
+          Cycloid<br><span style="color:#5A6080;font-size:9px">E + B</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 5: Simulation Controls -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Simulation</div>
+      <div class="sim-ctrl-row">
+        <button class="sim-btn playing" id="btn-playpause">⏸ Pause</button>
+        <button class="sim-btn reset-btn" id="btn-reset">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Section 6: Live Data -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">Live Data</div>
+      <div class="live-data" id="live-data">
+        <div><span class="data-key">pos</span> <span class="data-val" id="ld-pos">x: 0.00  y: 0.00</span></div>
+        <div><span class="data-key">vel</span> <span class="data-val" id="ld-vel">x: 5.00  y: 0.00</span></div>
+        <div><span class="data-key">F</span> <span class="data-val" id="ld-force">x: 0.00  y: 0.00</span></div>
+        <div><span class="data-key">path</span> <span class="data-val" id="ld-path">0.0</span></div>
+        <div><span class="data-key">t</span> <span class="data-val" id="ld-time">0.000s</span></div>
+      </div>
+    </div>
+
+    <!-- Section 7: Formula -->
+    <div class="ctrl-section">
+      <div class="formula-text">F = q(E + v &times; B)</div>
+      <div class="formula-sub">Lorentz Force Law &mdash; Class XII Physics</div>
+    </div>
+
+  </div><!-- end #controls -->
+
+  <!-- RIGHT: Canvas Panel -->
+  <div id="canvas-wrap">
+    <canvas id="sim-canvas"></canvas>
+    <div id="legend">
+      <div><span class="legend-e">&#8595; E field</span> (red arrows)</div>
+      <div><span class="legend-b">&#8855; B field</span> (blue arrows, into page)</div>
+      <div><span class="legend-v">&#8594; velocity</span> (green arrow)</div>
+      <div><span class="legend-f">&#8594; force</span> (orange arrow)</div>
+    </div>
+    <div id="orbit-hint">
+      Drag to rotate<br>
+      Scroll to zoom<br>
+      Right-drag to pan
+    </div>
+  </div>
+</div><!-- end #app -->
+
+<!-- Three.js importmap -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const state = {
+    playing: true,
+    eOn: true,
+    bOn: true,
+    eMag: 3.0,
+    bMag: 2.0,
+    vMag: 5.0,
+    angleDeg: 0,
+    // Particle
+    px: 0, py: 0,
+    vx: 5, vy: 0,
+    // Trail
+    trailPositions: [],
+    maxTrail: 400,
+    // Metrics
+    pathLength: 0,
+    simTime: 0,
+    prevPx: 0, prevPy: 0,
+  };
+
+  // ── Three.js Setup ─────────────────────────────────────────────────────────
+  const canvas = document.getElementById('sim-canvas');
+  const canvasWrap = document.getElementById('canvas-wrap');
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x0D1117, 1);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0D1117);
+
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
+  camera.position.set(4, 5, 14);
+  camera.lookAt(0, 1, 0);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 1, 0);
+
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(5, 10, 5);
+  scene.add(dirLight);
+
+  // ── Grid ──────────────────────────────────────────────────────────────────
+  const grid = new THREE.GridHelper(24, 24, 0x1E2A3A, 0x1E2A3A);
+  grid.position.y = 0;
+  scene.add(grid);
+
+  // ── Coordinate Axes ───────────────────────────────────────────────────────
+  // X axis (red, right)
+  const axisX = new THREE.ArrowHelper(
+    new THREE.Vector3(1, 0, 0), new THREE.Vector3(-11, 0, 0),
+    3, 0xFF2020, 0.4, 0.25
+  );
+  scene.add(axisX);
+  // Y axis (green, up)
+  const axisY = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(-11, 0, 0),
+    3, 0x20FF60, 0.4, 0.25
+  );
+  scene.add(axisY);
+  // Z axis (blue, out of screen)
+  const axisZ = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 0, 1), new THREE.Vector3(-11, 0, 0),
+    3, 0x4080FF, 0.4, 0.25
+  );
+  scene.add(axisZ);
+
+  // Axis label sprites
+  function makeTextSprite(text, color) {
+    const cv = document.createElement('canvas');
+    cv.width = 128; cv.height = 64;
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, 128, 64);
+    ctx.font = 'bold 36px monospace';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 64, 32);
+    const tex = new THREE.CanvasTexture(cv);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(1.2, 0.6, 1);
+    return sp;
+  }
+  const labelX = makeTextSprite('X', '#FF4040');
+  labelX.position.set(-11 + 3.4, 0, 0);
+  scene.add(labelX);
+  const labelY = makeTextSprite('Y', '#40FF80');
+  labelY.position.set(-11, 3.4, 0);
+  scene.add(labelY);
+  const labelZ = makeTextSprite('Z', '#6090FF');
+  labelZ.position.set(-11, 0, 3.4);
+  scene.add(labelZ);
+
+  // ── E Field Arrows ────────────────────────────────────────────────────────
+  const eGroup = new THREE.Group();
+  scene.add(eGroup);
+  const eDir = new THREE.Vector3(0, -1, 0);
+  const ePositions = [-8, -4, 0, 4, 8];
+  for (const x of ePositions) {
+    for (const z of ePositions) {
+      const arrow = new THREE.ArrowHelper(eDir, new THREE.Vector3(x, 6, z), 4, 0xFF3B2F, 0.6, 0.4);
+      eGroup.add(arrow);
+    }
+  }
+
+  // ── B Field Arrows ────────────────────────────────────────────────────────
+  const bGroup = new THREE.Group();
+  scene.add(bGroup);
+  const bDir = new THREE.Vector3(0, 0, -1); // into page (-Z)
+  const bXPos = [-8, -4, 0, 4, 8];
+  const bYPos = [-6, -3, 0, 3, 6];
+  for (const x of bXPos) {
+    for (const y of bYPos) {
+      const arrow = new THREE.ArrowHelper(bDir, new THREE.Vector3(x, y, 4), 3, 0x4A7FFF, 0.5, 0.4);
+      bGroup.add(arrow);
+    }
+  }
+
+  // ── Particle ──────────────────────────────────────────────────────────────
+  const particleGeo = new THREE.SphereGeometry(0.35, 20, 20);
+  const particleMat = new THREE.MeshStandardMaterial({
+    color: 0xFFCC00, emissive: 0xAA8800, emissiveIntensity: 0.5
+  });
+  const particleMesh = new THREE.Mesh(particleGeo, particleMat);
+  scene.add(particleMesh);
+
+  // Particle glow light
+  const particleLight = new THREE.PointLight(0xFFDD00, 1.5, 8);
+  scene.add(particleLight);
+
+  // ── Velocity Arrow ────────────────────────────────────────────────────────
+  const velArrow = new THREE.ArrowHelper(
+    new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 2, 0x00FF88, 0.4, 0.25
+  );
+  scene.add(velArrow);
+
+  // ── Force Arrow ───────────────────────────────────────────────────────────
+  const forceArrow = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 1.5, 0xFF6600, 0.4, 0.25
+  );
+  forceArrow.visible = false;
+  scene.add(forceArrow);
+
+  // ── Trail ─────────────────────────────────────────────────────────────────
+  const maxTrail = 400;
+  const trailPositionsBuffer = new Float32Array(maxTrail * 3);
+  const trailGeo = new THREE.BufferGeometry();
+  trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositionsBuffer, 3));
+  trailGeo.setDrawRange(0, 0);
+  const trailMat = new THREE.LineBasicMaterial({ color: 0xFFDD88, opacity: 0.6, transparent: true });
+  const trailLine = new THREE.Line(trailGeo, trailMat);
+  scene.add(trailLine);
+
+  let trailCount = 0;
+  let trailHead = 0; // ring buffer head
+  // We'll use a simple array approach (not ring buffer) for simplicity — just shift when full
+
+  // ── Physics ───────────────────────────────────────────────────────────────
+  const DT = 0.008;
+  const SUBSTEPS = 3;
+
+  function computeForce(vx, vy) {
+    const Fex = 0;
+    const Fey = state.eOn ? -state.eMag : 0;
+    // v × B where B=(0,0,-Bmag): cross(v, B) = (vy*(-Bmag) - 0, 0 - vx*(-Bmag), 0) = (-vy*Bmag, vx*Bmag, 0)
+    const bMag = state.bOn ? state.bMag : 0;
+    const Fbx = -vy * bMag;
+    const Fby = vx * bMag;
+    return { fx: Fex + Fbx, fy: Fey + Fby };
+  }
+
+  function resetParticle() {
+    const theta = (state.angleDeg * Math.PI) / 180;
+    state.px = 0; state.py = 0;
+    state.vx = state.vMag * Math.cos(theta);
+    state.vy = state.vMag * Math.sin(theta);
+    state.pathLength = 0;
+    state.simTime = 0;
+    state.prevPx = 0; state.prevPy = 0;
+    state.trailPositions = [];
+    trailCount = 0;
+    // Reset trail buffer
+    for (let i = 0; i < trailPositionsBuffer.length; i++) trailPositionsBuffer[i] = 0;
+    trailGeo.setDrawRange(0, 0);
+    trailGeo.attributes.position.needsUpdate = true;
+  }
+
+  function stepPhysics() {
+    for (let s = 0; s < SUBSTEPS; s++) {
+      const { fx, fy } = computeForce(state.vx, state.vy);
+      state.vx += fx * DT;
+      state.vy += fy * DT;
+      const prevX = state.px;
+      const prevY = state.py;
+      state.px += state.vx * DT;
+      state.py += state.vy * DT;
+
+      // Path length accumulation
+      const dx = state.px - prevX;
+      const dy = state.py - prevY;
+      state.pathLength += Math.sqrt(dx * dx + dy * dy);
+      state.simTime += DT;
+
+      // Add to trail
+      state.trailPositions.push(state.px, state.py, 0);
+      if (state.trailPositions.length > maxTrail * 3) {
+        state.trailPositions.splice(0, 3);
+      }
+    }
+
+    // Boundary check
+    if (Math.abs(state.px) > 18 || Math.abs(state.py) > 18) {
+      resetParticle();
+    }
+  }
+
+  function updateTrailBuffer() {
+    const pts = state.trailPositions;
+    const n = pts.length / 3;
+    for (let i = 0; i < n; i++) {
+      trailPositionsBuffer[i * 3 + 0] = pts[i * 3 + 0];
+      trailPositionsBuffer[i * 3 + 1] = pts[i * 3 + 1];
+      trailPositionsBuffer[i * 3 + 2] = pts[i * 3 + 2];
+    }
+    trailGeo.setDrawRange(0, n);
+    trailGeo.attributes.position.needsUpdate = true;
+  }
+
+  function updateVisuals() {
+    // Particle position
+    particleMesh.position.set(state.px, state.py, 0);
+    particleLight.position.set(state.px, state.py, 0);
+
+    // Velocity arrow
+    const vLen = Math.sqrt(state.vx * state.vx + state.vy * state.vy);
+    if (vLen > 0.0001) {
+      velArrow.position.set(state.px, state.py, 0);
+      velArrow.setDirection(new THREE.Vector3(state.vx / vLen, state.vy / vLen, 0));
+      velArrow.setLength(2, 0.4, 0.25);
+      velArrow.visible = true;
+    } else {
+      velArrow.visible = false;
+    }
+
+    // Force arrow
+    const { fx, fy } = computeForce(state.vx, state.vy);
+    const fLen = Math.sqrt(fx * fx + fy * fy);
+    if (fLen > 0.01) {
+      forceArrow.position.set(state.px, state.py, 0);
+      forceArrow.setDirection(new THREE.Vector3(fx / fLen, fy / fLen, 0));
+      forceArrow.setLength(1.5, 0.4, 0.25);
+      forceArrow.visible = true;
+    } else {
+      forceArrow.visible = false;
+    }
+
+    // Trail
+    updateTrailBuffer();
+
+    // Update live data
+    document.getElementById('ld-pos').textContent =
+      `x: ${state.px.toFixed(2).padStart(6)}  y: ${state.py.toFixed(2).padStart(6)}`;
+    document.getElementById('ld-vel').textContent =
+      `x: ${state.vx.toFixed(2).padStart(6)}  y: ${state.vy.toFixed(2).padStart(6)}`;
+    document.getElementById('ld-force').textContent =
+      `x: ${fx.toFixed(2).padStart(6)}  y: ${fy.toFixed(2).padStart(6)}`;
+    document.getElementById('ld-path').textContent = state.pathLength.toFixed(1);
+    document.getElementById('ld-time').textContent = state.simTime.toFixed(3) + 's';
+  }
+
+  // ── Resize Handling ───────────────────────────────────────────────────────
+  function onResize() {
+    const w = canvasWrap.clientWidth;
+    const h = canvasWrap.clientHeight;
+    if (w === 0 || h === 0) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+
+  const resizeObserver = new ResizeObserver(onResize);
+  resizeObserver.observe(canvasWrap);
+  onResize();
+
+  // ── Animation Loop ────────────────────────────────────────────────────────
+  function animate() {
+    requestAnimationFrame(animate);
+    if (state.playing) {
+      stepPhysics();
+      updateVisuals();
+    }
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // ── UI Controls ───────────────────────────────────────────────────────────
+
+  // Helpers
+  function syncVcomp() {
+    const theta = (state.angleDeg * Math.PI) / 180;
+    const vx = (state.vMag * Math.cos(theta)).toFixed(2);
+    const vy = (state.vMag * Math.sin(theta)).toFixed(2);
+    document.getElementById('vcomp-display').innerHTML =
+      `vx = ${vx} &nbsp;&nbsp; vy = ${vy}`;
+  }
+
+  // Speed slider
+  document.getElementById('sl-vmag').addEventListener('input', function () {
+    state.vMag = parseFloat(this.value);
+    document.getElementById('label-vmag').textContent = state.vMag.toFixed(1);
+    syncVcomp();
+    resetParticle();
+  });
+
+  // Angle slider
+  document.getElementById('sl-angle').addEventListener('input', function () {
+    state.angleDeg = parseFloat(this.value);
+    document.getElementById('label-angle').textContent = state.angleDeg + '°';
+    syncVcomp();
+    resetParticle();
+  });
+
+  // E magnitude slider
+  document.getElementById('sl-emag').addEventListener('input', function () {
+    state.eMag = parseFloat(this.value);
+    document.getElementById('label-emag').textContent = state.eMag.toFixed(1);
+    document.getElementById('label-emag-display').textContent = `E = ${state.eMag.toFixed(1)} N/C`;
+    resetParticle();
+  });
+
+  // B magnitude slider
+  document.getElementById('sl-bmag').addEventListener('input', function () {
+    state.bMag = parseFloat(this.value);
+    document.getElementById('label-bmag').textContent = state.bMag.toFixed(1);
+    document.getElementById('label-bmag-display').textContent = `B = ${state.bMag.toFixed(1)} T`;
+    resetParticle();
+  });
+
+  // E toggle
+  document.getElementById('btn-e-toggle').addEventListener('click', function () {
+    state.eOn = !state.eOn;
+    this.textContent = state.eOn ? 'E: ON' : 'E: OFF';
+    this.classList.toggle('active', state.eOn);
+    eGroup.visible = state.eOn;
+    resetParticle();
+  });
+
+  // B toggle
+  document.getElementById('btn-b-toggle').addEventListener('click', function () {
+    state.bOn = !state.bOn;
+    this.textContent = state.bOn ? 'B: ON' : 'B: OFF';
+    this.classList.toggle('active-blue', state.bOn);
+    bGroup.visible = state.bOn;
+    resetParticle();
+  });
+
+  // Helper to sync sliders and labels
+  function applySettings({ eMag, bMag, vMag, angleDeg, eOn, bOn }) {
+    state.eMag = eMag;
+    state.bMag = bMag;
+    state.vMag = vMag;
+    state.angleDeg = angleDeg;
+    state.eOn = eOn;
+    state.bOn = bOn;
+
+    document.getElementById('sl-emag').value = eMag;
+    document.getElementById('sl-bmag').value = bMag;
+    document.getElementById('sl-vmag').value = vMag;
+    document.getElementById('sl-angle').value = angleDeg;
+
+    document.getElementById('label-emag').textContent = eMag.toFixed(1);
+    document.getElementById('label-bmag').textContent = bMag.toFixed(1);
+    document.getElementById('label-vmag').textContent = vMag.toFixed(1);
+    document.getElementById('label-angle').textContent = angleDeg + '°';
+    document.getElementById('label-emag-display').textContent = `E = ${eMag.toFixed(1)} N/C`;
+    document.getElementById('label-bmag-display').textContent = `B = ${bMag.toFixed(1)} T`;
+
+    const eBtn = document.getElementById('btn-e-toggle');
+    eBtn.textContent = eOn ? 'E: ON' : 'E: OFF';
+    eBtn.classList.toggle('active', eOn);
+    eGroup.visible = eOn;
+
+    const bBtn = document.getElementById('btn-b-toggle');
+    bBtn.textContent = bOn ? 'B: ON' : 'B: OFF';
+    bBtn.classList.toggle('active-blue', bOn);
+    bGroup.visible = bOn;
+
+    syncVcomp();
+    resetParticle();
+    state.playing = true;
+    document.getElementById('btn-playpause').textContent = '⏸ Pause';
+    document.getElementById('btn-playpause').classList.add('playing');
+  }
+
+  // Presets
+  document.getElementById('preset-circular').addEventListener('click', () => {
+    applySettings({ eOn: false, bOn: true, vMag: 5, angleDeg: 0, eMag: 3.0, bMag: 2.0 });
+  });
+  document.getElementById('preset-parabola').addEventListener('click', () => {
+    applySettings({ eOn: true, bOn: false, vMag: 5, angleDeg: 0, eMag: 3.0, bMag: 2.0 });
+  });
+  document.getElementById('preset-vfilter').addEventListener('click', () => {
+    const eMag = 3.0, bMag = 2.0;
+    const vMag = eMag / bMag; // 1.5 — straight line
+    applySettings({ eOn: true, bOn: true, vMag, angleDeg: 0, eMag, bMag });
+  });
+  document.getElementById('preset-cycloid').addEventListener('click', () => {
+    applySettings({ eOn: true, bOn: true, vMag: 5, angleDeg: 90, eMag: 3.0, bMag: 2.0 });
+  });
+
+  // Play/Pause
+  document.getElementById('btn-playpause').addEventListener('click', function () {
+    state.playing = !state.playing;
+    this.textContent = state.playing ? '⏸ Pause' : '▶ Play';
+    this.classList.toggle('playing', state.playing);
+  });
+
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    resetParticle();
+    state.playing = true;
+    const ppBtn = document.getElementById('btn-playpause');
+    ppBtn.textContent = '⏸ Pause';
+    ppBtn.classList.add('playing');
+  });
+
+  // Initialize
+  syncVcomp();
+  resetParticle();
+
+</script>
+
+<!-- Fullscreen function — outside module scope -->
+<script src="../../../assets/trinity-nav.js"></script>
+</body>
+</html>

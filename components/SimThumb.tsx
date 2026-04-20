@@ -22,6 +22,31 @@ export function SimThumb({
   const sanitized = svgCode
     ? DOMPurify.sanitize(svgCode, {
         USE_PROFILES: { svg: true, svgFilters: true },
+        ADD_TAGS: [
+          "style",
+          "animate",
+          "animateTransform",
+          "animateMotion",
+          "set",
+          "mpath",
+        ],
+        ADD_ATTR: [
+          "dur",
+          "repeatCount",
+          "begin",
+          "end",
+          "from",
+          "to",
+          "values",
+          "keyTimes",
+          "keySplines",
+          "calcMode",
+          "attributeName",
+          "attributeType",
+          "additive",
+          "accumulate",
+          "fill",
+        ],
       })
     : "";
 

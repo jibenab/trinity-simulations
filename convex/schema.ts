@@ -18,9 +18,9 @@ export default defineSchema({
     subject,
     grade: v.string(),
     chapter: v.string(),
-    level,
-    minutes: v.number(),
-    concepts: v.array(v.string()),
+    level: v.optional(level),
+    minutes: v.optional(v.number()),
+    concepts: v.optional(v.array(v.string())),
     svgCode: v.string(),
     code: v.string(),
     prompt: v.optional(v.string()),
@@ -37,6 +37,7 @@ export default defineSchema({
     userId: v.id("users"),
     userName: v.string(),
     score: v.number(),
+    timeTaken: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_content_score", ["contentId", "score"])
