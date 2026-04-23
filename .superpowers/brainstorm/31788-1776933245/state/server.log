@@ -1,0 +1,7 @@
+{"type":"server-started","port":56351,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:56351","screen_dir":"/Users/jibenab/Documents/trinity App/Trinity-simulations/.superpowers/brainstorm/31788-1776933245/content","state_dir":"/Users/jibenab/Documents/trinity App/Trinity-simulations/.superpowers/brainstorm/31788-1776933245/state"}
+{"type":"screen-added","file":"/Users/jibenab/Documents/trinity App/Trinity-simulations/.superpowers/brainstorm/31788-1776933245/content/animation-style.html"}
+{"source":"user-event","type":"click","text":"C\n    \n      Both layers\n      Container view at top, particle close-up at bottom. Connects macroscopic observation to molecular explanation in one stage.","choice":"c","id":null,"timestamp":1776933328591}
+{"source":"user-event","type":"click","text":"C\n    \n      Both layers\n      Container view at top, particle close-up at bottom. Connects macroscopic observation to molecular explanation in one stage.","choice":"c","id":null,"timestamp":1776933330152}
+{"type":"screen-added","file":"/Users/jibenab/Documents/trinity App/Trinity-simulations/.superpowers/brainstorm/31788-1776933245/content/substance-type.html"}
+{"source":"user-event","type":"click","text":"A\n    \n      Water — fixed at 0 °C and 100 °C\n      Familiar and curriculum-standard. Melting and boiling points are labelled and cannot be moved. Good for learning the shape of the heating curve.","choice":"a","id":null,"timestamp":1776933370518}
+{"type":"server-stopped","reason":"owner process exited"}

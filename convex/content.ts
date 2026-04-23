@@ -2,7 +2,7 @@ import { v } from "convex/values";
 
 import { isAdminEmail } from "../lib/isAdmin";
 import { query, mutation } from "./_generated/server";
-import { requireIdentity } from "./users";
+import { requireAdminIdentity, requireIdentity } from "./users";
 
 const subjectValidator = v.union(
   v.literal("Physics"),
@@ -49,6 +49,7 @@ export const listPublished = query({
 export const listAdmin = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdminIdentity(ctx);
     return (await ctx.db.query("content").collect()).sort(
       (a, b) => b.updatedAt - a.updatedAt,
     );
@@ -68,6 +69,7 @@ export const getBySlug = query({
 export const getById = query({
   args: { id: v.id("content") },
   handler: async (ctx, args) => {
+    await requireAdminIdentity(ctx);
     return await ctx.db.get(args.id);
   },
 });
@@ -78,6 +80,7 @@ export const listChapters = query({
     grade: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdminIdentity(ctx);
     const rows = await ctx.db.query("content").collect();
 
     return Array.from(

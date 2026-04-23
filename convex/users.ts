@@ -15,6 +15,16 @@ export async function requireIdentity(
   return identity;
 }
 
+export async function requireAdminIdentity(
+  ctx: GenericQueryCtx<any> | GenericMutationCtx<any>,
+) {
+  const identity = await requireIdentity(ctx);
+  if (!isAdminEmail(identity.email)) {
+    throw new Error("Forbidden");
+  }
+  return identity;
+}
+
 export async function ensureViewerRecord(
   ctx: GenericMutationCtx<any>,
   identity: ViewerIdentity,
