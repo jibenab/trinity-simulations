@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atomic Size Trends — Trinity Simulation Lab</title>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="_shared/projector-mode.css">
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -24,7 +25,7 @@
       --accent-ink: #F7F8FA;
       --sans: "Manrope", system-ui, sans-serif;
       --mono: "JetBrains Mono", ui-monospace, monospace;
-      --stage-rule: rgba(239, 242, 245, 0.08);
+      --stage-rule: rgba(239, 242, 245, 0.04);
       --stage-grid: rgba(127, 136, 146, 0.26);
       --stage-fill-muted: rgba(239, 242, 245, 0.12);
       --stage-fill-soft: rgba(239, 242, 245, 0.08);
@@ -314,6 +315,7 @@
     .bar-ghost {
       transition: all 0.3s ease;
     }
+
 
     @media (max-width: 700px) {
       html,
@@ -952,5 +954,6 @@
 
     ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   </script>
+  <script src="_shared/projector-mode.js"></script>
 </body>
 </html>

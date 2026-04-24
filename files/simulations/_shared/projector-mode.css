@@ -1,0 +1,68 @@
+/* ── Projector mode ────────────────────────────────────────────────
+   Shared across every Trinity simulation. Toggled by the `P` key,
+   the injected header button, or `?mode=projector` in the URL.
+
+   Flips the dark stage to light and thickens strokes so lines and
+   labels survive projection in a classroom. Design tokens only —
+   no per-sim markup required. */
+
+body.projector {
+  /* Ink + chrome */
+  --ink-mute: #3A4148;
+  --rule-soft: rgba(12, 17, 21, 0.32);
+  --accent: oklch(0.52 0.14 200);
+
+  /* Stage flips to light */
+  --dark: #F7F8FA;
+  --dark-ink: #0C1115;
+  --dark-mute: #3A4148;
+
+  /* Stage decorations on the now-light background */
+  --stage-rule: rgba(12, 17, 21, 0.1);
+  --stage-grid: rgba(12, 17, 21, 0.06);
+  --stage-axis: rgba(12, 17, 21, 0.45);
+  --stage-dash: rgba(12, 17, 21, 0.55);
+  --stage-fill-muted: rgba(12, 17, 21, 0.12);
+  --stage-fill-soft: rgba(12, 17, 21, 0.06);
+  --stage-ghost: rgba(12, 17, 21, 0.7);
+  --stage-chip: rgba(12, 17, 21, 0.92);
+}
+
+/* Readability bumps — labels and text grow a touch */
+body.projector .title { font-size: 32px; }
+body.projector .eyebrow { font-size: 13px; letter-spacing: 0.12em; }
+body.projector .label-mono { font-size: 12px; letter-spacing: 0.06em; }
+body.projector .view-btn { font-size: 16px; min-height: 44px; }
+body.projector .btn { font-size: 16px; }
+body.projector .prompt { font-size: 15px; color: var(--ink); }
+
+/* Thicken SVG lines + grow text inside any .stage */
+body.projector .stage svg text { font-size: 13px !important; }
+body.projector .stage svg [stroke-width="0.5"] { stroke-width: 1; }
+body.projector .stage svg [stroke-width="1"] { stroke-width: 1.6; }
+
+/* The floating toggle button injected by projector-mode.js */
+.projector-toggle {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-soft, rgba(12, 17, 21, 0.14));
+  background: var(--paper, #F7F8FA);
+  color: var(--ink, #0C1115);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9999;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.projector-toggle:hover { border-color: var(--ink, #0C1115); }
+.projector-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.projector .projector-toggle {
+  background: var(--ink, #0C1115);
+  color: var(--bg, #EFF2F5);
+  border-color: var(--ink, #0C1115);
+}

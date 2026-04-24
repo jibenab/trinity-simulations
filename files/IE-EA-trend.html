@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ionization Energy & Electron Affinity — Trinity Simulation Lab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #EFF2F5;
+      --bg-alt: #E2E7EC;
+      --paper: #F7F8FA;
+      --ink: #0C1115;
+      --ink-soft: #2B333A;
+      --ink-mute: #6B7680;
+      --rule-soft: rgba(12,17,21,0.14);
+      --dark: #0C1115;
+      --dark-ink: #EFF2F5;
+      --dark-mute: #7F8892;
+      --accent: oklch(0.52 0.12 200);
+      --accent-ink: #F7F8FA;
+      --sans: "Manrope", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    .sim-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 22px;
+      border-bottom: 1px solid var(--rule-soft);
+      background: var(--bg);
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .sim-title {
+      margin-top: 4px;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .header-controls { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .btn-circle {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--rule-soft);
+      background: transparent;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    .btn-circle:hover { background: var(--bg-alt); border-color: var(--ink-mute); }
+    .btn-circle:active { opacity: 0.6; }
+    .btn-circle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── STAGE ── */
+    .sim-stage {
+      flex: 1;
+      background: var(--dark);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+    }
+
+    .stage-readouts {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+      line-height: 1.9;
+      z-index: 10;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+    .stage-readouts .readout-val { color: var(--dark-ink); transition: color 0.2s; }
+    .stage-readouts .readout-accent { color: var(--accent); transition: color 0.2s; }
+
+    .chart-wrapper {
+      flex: 1;
+      position: relative;
+      padding: 50px 24px 48px 60px;
+    }
+
+    /* Faint grid */
+    .stage-grid {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .y-axis {
+      position: absolute;
+      left: 8px;
+      top: 50px;
+      bottom: 48px;
+      width: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-right: 8px;
+    }
+    .y-axis span {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dark-mute);
+      letter-spacing: 0.04em;
+    }
+
+    .x-axis-line {
+      position: absolute;
+      bottom: 48px;
+      left: 60px;
+      right: 24px;
+      height: 1px;
+      background: rgba(239,242,245,0.10);
+    }
+
+    #trendline-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      overflow: visible;
+    }
+
+    .chart-area {
+      position: relative;
+      height: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+    }
+
+    /* ── BARS ── */
+    .bar-group {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+      height: 100%;
+      flex: 1;
+      cursor: pointer;
+      padding: 0 3px;
+    }
+
+    .bar {
+      width: 11px;
+      margin: 0 1px;
+      border-radius: 2px 2px 0 0;
+      transition:
+        height 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        opacity 0.2s,
+        filter 0.2s;
+      position: relative;
+      opacity: 0.6;
+      transform-origin: bottom;
+    }
+
+    .bar-group:hover .bar { opacity: 0.9; }
+
+    .bar.ie { background: rgba(239,242,245,0.82); }
+    .bar.ea { background: var(--accent); opacity: 0.6; }
+    .bar.ea.positive { background: var(--dark-mute); opacity: 0.45; }
+
+    .bar-group.selected .bar.ie { opacity: 1; background: var(--dark-ink); }
+    .bar-group.selected .bar.ea:not(.positive) { opacity: 1; }
+    .bar-group.selected .bar.ea.positive { opacity: 0.7; }
+
+    /* Period separator line */
+    .period-sep {
+      width: 1px;
+      height: 80%;
+      background: rgba(239,242,245,0.06);
+      flex-shrink: 0;
+      align-self: flex-end;
+      margin-bottom: 0;
+    }
+
+    .bar-label {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.05em;
+      color: var(--dark-mute);
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+    .bar-group.selected .bar-label { color: var(--dark-ink); }
+
+    .val-label {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--dark-mute);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      text-align: center;
+      white-space: nowrap;
+      line-height: 1.5;
+    }
+    .bar-group.selected .val-label { opacity: 1; }
+
+    /* Selection caret */
+    .bar-group.selected::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 4px solid var(--dark-mute);
+    }
+
+    .exception-arrow {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dark-mute);
+      animation: nudge 2.5s ease-in-out infinite;
+    }
+
+    @keyframes nudge {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(3px); }
+    }
+
+    /* Stage legend strip */
+    .stage-legend {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      padding: 6px 24px 10px;
+      justify-content: flex-end;
+    }
+    .legend-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--dark-mute);
+    }
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 1px;
+      flex-shrink: 0;
+    }
+
+    /* ── PARAMS ── */
+    .sim-params {
+      flex-shrink: 0;
+      background: var(--bg);
+      border-top: 1px solid var(--rule-soft);
+      padding: 14px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .params-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .label-mono {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      white-space: nowrap;
+      min-width: 58px;
+    }
+
+    .period-strip { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; }
+    .period-strip::-webkit-scrollbar { height: 3px; }
+    .period-strip::-webkit-scrollbar-thumb { background: var(--rule-soft); }
+
+    .element-tile {
+      width: 50px;
+      height: 60px;
+      background: var(--paper);
+      border: 1px solid var(--rule-soft);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s, border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .element-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 4px 4px 0 var(--ink);
+      border-color: var(--ink);
+    }
+    .element-tile.selected {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink);
+      transform: translateY(-2px);
+    }
+
+    /* Type bottom border */
+    .element-tile.metal    { border-bottom: 2px solid rgba(12,17,21,0.18); }
+    .element-tile.metalloid { border-bottom: 2px solid rgba(12,17,21,0.32); }
+    .element-tile.nonmetal  { border-bottom: 2px solid rgba(12,17,21,0.50); }
+    .element-tile.noblegas  { border-bottom: 1px dashed rgba(12,17,21,0.25); }
+
+    .el-z {
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink-mute);
+      transition: color 0.15s;
+    }
+    .element-tile.selected .el-z { color: rgba(239,242,245,0.45); }
+
+    .el-symbol {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .el-vals {
+      font-family: var(--mono);
+      font-size: 8px;
+      color: var(--ink-mute);
+      margin-top: 2px;
+      text-align: center;
+      line-height: 1.3;
+      transition: color 0.15s;
+    }
+    .element-tile.selected .el-vals { color: rgba(239,242,245,0.45); }
+
+    /* Toggles */
+    .toggle-group { display: flex; gap: 4px; }
+    .toggle-btn {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid var(--rule-soft);
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .toggle-btn:hover { border-color: var(--ink-mute); background: var(--paper); }
+    .toggle-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+    /* Type legend pills */
+    .type-legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .type-chip {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      color: var(--ink-mute);
+      text-transform: uppercase;
+    }
+
+    /* ── PROMPT ── */
+    .sim-prompt {
+      flex-shrink: 0;
+      padding: 11px 22px;
+      border-top: 1px solid var(--rule-soft);
+    }
+    .prompt-text { font-size: 14px; color: var(--ink-soft); }
+
+    /* ── INFO CARD ── */
+    .sim-info {
+      flex-shrink: 0;
+      padding: 0 22px 22px;
+    }
+
+    .info-card {
+      background: var(--paper);
+      border: 1px solid var(--rule-soft);
+      border-radius: 4px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .el-header { display: flex; align-items: center; gap: 14px; }
+    .big-symbol {
+      font-size: 52px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1;
+    }
+    .el-name { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+    .el-config {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: var(--ink-mute);
+      margin-top: 4px;
+    }
+
+    .stat-row { display: flex; gap: 10px; margin-top: 14px; }
+    .stat-box {
+      flex: 1;
+      background: var(--bg-alt);
+      border: 1px solid var(--rule-soft);
+      border-left: 3px solid var(--ink);
+      border-radius: 4px;
+      padding: 11px 12px;
+    }
+    .stat-box.ea-box { border-left-color: var(--accent); }
+    .stat-val {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 3px;
+    }
+    .stat-val.ea-val { color: var(--accent); }
+    .stat-val.ea-end-val { color: var(--ink-mute); }
+    .stat-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+    .alert-box {
+      margin-top: 11px;
+      padding: 10px 13px;
+      border: 1px solid var(--rule-soft);
+      border-left: 3px solid var(--ink-mute);
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      background: var(--bg);
+      line-height: 1.4;
+    }
+
+    /* Orbital */
+    .orbital-section {
+      background: var(--bg);
+      border: 1px solid var(--rule-soft);
+      border-radius: 4px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .orbital-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 16px;
+    }
+    .orbital-container { display: flex; gap: 20px; align-items: flex-end; }
+    .subshell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .boxes { display: flex; gap: 3px; }
+    .box {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 2px;
+      background: var(--paper);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .arrow { position: absolute; width: 10px; height: 18px; }
+    .arrow-up { transform: translateX(-3px); }
+    .arrow-down { transform: translateX(3px) scaleY(-1); }
+    .arrow path { stroke: var(--ink-soft); stroke-width: 2; fill: none; }
+    .arrow.highlight path { stroke: var(--accent); stroke-width: 2.5; }
+    .subshell-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-mute);
+      letter-spacing: 0.06em;
+    }
+    .orbital-note { margin-top: 12px; font-size: 12px; color: var(--ink-mute); text-align: center; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      color: var(--ink-mute);
+      text-align: center;
+      font-size: 14px;
+      gap: 10px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 4px;
+      background: var(--paper);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .info-card { grid-template-columns: 1fr; }
+      .sim-title { font-size: 20px; }
+      .element-tile { width: 42px; height: 52px; }
+      .el-symbol { font-size: 14px; }
+      .el-vals { display: none; }
+      .chart-wrapper { padding-left: 52px; padding-right: 10px; }
+      .bar { width: 9px; }
+      .type-legend { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .sim-title { font-size: 17px; }
+      .eyebrow { font-size: 9px; }
+      .toggle-btn { font-size: 9px; padding: 0 9px; }
+    }
+
+    /* ── ENTRY ANIMATION ── */
+    @keyframes barEntry {
+      from { transform: scaleY(0); opacity: 0; }
+      to   { transform: scaleY(1); opacity: var(--bar-final-opacity, 0.6); }
+    }
+
+    .bar.animating {
+      animation: barEntry 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      animation-delay: var(--stagger, 0s);
+      transform-origin: bottom;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Zone 1: Header -->
+  <header class="sim-header">
+    <div>
+      <div class="eyebrow">Simulation · Chemistry — Trends across a Period</div>
+      <h1 class="sim-title">Ionization Energy & Electron Affinity</h1>
+    </div>
+    <div class="header-controls">
+      <button class="btn-circle" id="btn-reset" title="Reset">
+        <svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Zone 2: Stage (dark, chart lives here) -->
+  <div class="sim-stage">
+    <!-- Readouts top-left -->
+    <div class="stage-readouts">
+      <span id="readout-element">ELEMENT&nbsp;&nbsp;—</span><br>
+      <span id="readout-ie">IE₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;—</span><br>
+      <span id="readout-ea">EA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;—</span>
+    </div>
+
+    <div class="chart-wrapper">
+      <!-- Faint grid -->
+      <svg class="stage-grid" preserveAspectRatio="none">
+        <defs>
+          <pattern id="stageGrid" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#2A2A2A" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#stageGrid)"/>
+      </svg>
+
+      <div class="y-axis">
+        <span>2000</span>
+        <span>1500</span>
+        <span>1000</span>
+        <span>500</span>
+        <span>0</span>
+      </div>
+
+      <div class="x-axis-line"></div>
+
+      <svg id="trendline-svg"></svg>
+
+      <div class="chart-area" id="chart-area"></div>
+    </div>
+
+    <!-- Legend inside stage -->
+    <div class="stage-legend">
+      <span class="legend-chip">
+        <span class="legend-swatch" style="background:rgba(239,242,245,0.82);"></span>
+        IE₁ (kJ/mol)
+      </span>
+      <span class="legend-chip">
+        <span class="legend-swatch" style="background:var(--accent);opacity:0.7;"></span>
+        EA exothermic
+      </span>
+      <span class="legend-chip">
+        <span class="legend-swatch" style="background:var(--dark-mute);opacity:0.55;"></span>
+        EA endothermic
+      </span>
+    </div>
+  </div>
+
+  <!-- Zone 3: Parameters -->
+  <div class="sim-params">
+    <div class="params-row" id="row-p2-wrapper">
+      <span class="label-mono">Period 2</span>
+      <div class="period-strip" id="tiles-p2"></div>
+    </div>
+    <div class="params-row" id="row-p3-wrapper">
+      <span class="label-mono">Period 3</span>
+      <div class="period-strip" id="tiles-p3"></div>
+    </div>
+    <div class="params-row" style="justify-content:space-between;">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span class="label-mono">Period</span>
+        <div class="toggle-group" id="period-toggles">
+          <button class="toggle-btn" data-val="2">P2</button>
+          <button class="toggle-btn" data-val="3">P3</button>
+          <button class="toggle-btn active" data-val="all">Both</button>
+        </div>
+        <span class="label-mono" style="margin-left:6px;">View</span>
+        <div class="toggle-group" id="view-toggles">
+          <button class="toggle-btn" data-val="ie">IE</button>
+          <button class="toggle-btn" data-val="ea">EA</button>
+          <button class="toggle-btn active" data-val="both">Both</button>
+        </div>
+      </div>
+      <div class="type-legend">
+        <span class="type-chip">─ Metal</span>
+        <span class="type-chip">── Metalloid</span>
+        <span class="type-chip">─── Non-metal</span>
+        <span class="type-chip">- - Noble Gas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone 4: Prompt -->
+  <div class="sim-prompt">
+    <p class="prompt-text">Select an element. Does the trend break where you predict?</p>
+  </div>
+
+  <!-- Info panel (populates on selection) -->
+  <div class="sim-info">
+    <div id="explanation-panel" class="empty-state">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;">
+        <path d="M15 15l6 6m-11-4a7 7 0 110-14 7 7 0 010 14z"/>
+      </svg>
+      <span>Tap an element above to see its values, orbital filling, and trend exceptions.</span>
+    </div>
+  </div>
+
+  <script>
+    const elementsData = [
+      { symbol: 'Li', name: 'Lithium',    z: 3,  p: 2, type: 'metal',    ie: 520,  ea: -60,  config: '[He] 2s¹',  n: 2, s: 1, p_orbs: 0 },
+      { symbol: 'Be', name: 'Beryllium',  z: 4,  p: 2, type: 'metal',    ie: 899,  ea: 48,   config: '[He] 2s²',  n: 2, s: 2, p_orbs: 0,
+        eaMsg: "Full 2s² subshell — added electron must enter higher-energy 2p orbital." },
+      { symbol: 'B',  name: 'Boron',      z: 5,  p: 2, type: 'metalloid',ie: 801,  ea: -27,  config: '[He] 2s² 2p¹', n: 2, s: 2, p_orbs: 1, ieExc: true,
+        ieMsg: "2p electron is higher energy and shielded by 2s — easier to remove than Be's 2s." },
+      { symbol: 'C',  name: 'Carbon',     z: 6,  p: 2, type: 'nonmetal', ie: 1086, ea: -122, config: '[He] 2s² 2p²', n: 2, s: 2, p_orbs: 2 },
+      { symbol: 'N',  name: 'Nitrogen',   z: 7,  p: 2, type: 'nonmetal', ie: 1402, ea: 7,    config: '[He] 2s² 2p³', n: 2, s: 2, p_orbs: 3,
+        eaMsg: "Half-filled 2p³ is stable — added electron causes repulsion in paired orbital." },
+      { symbol: 'O',  name: 'Oxygen',     z: 8,  p: 2, type: 'nonmetal', ie: 1314, ea: -141, config: '[He] 2s² 2p⁴', n: 2, s: 2, p_orbs: 4, ieExc: true,
+        ieMsg: "Half-filled 2p in N is extra stable — paired electron in O causes repulsion." },
+      { symbol: 'F',  name: 'Fluorine',   z: 9,  p: 2, type: 'nonmetal', ie: 1681, ea: -322, config: '[He] 2s² 2p⁵', n: 2, s: 2, p_orbs: 5 },
+      { symbol: 'Ne', name: 'Neon',       z: 10, p: 2, type: 'noblegas', ie: 2081, ea: 29,   config: '[He] 2s² 2p⁶', n: 2, s: 2, p_orbs: 6,
+        eaMsg: "Full valence shell — no room for extra electron." },
+      { symbol: 'Na', name: 'Sodium',     z: 11, p: 3, type: 'metal',    ie: 496,  ea: -53,  config: '[Ne] 3s¹',  n: 3, s: 1, p_orbs: 0 },
+      { symbol: 'Mg', name: 'Magnesium',  z: 12, p: 3, type: 'metal',    ie: 738,  ea: 21,   config: '[Ne] 3s²',  n: 3, s: 2, p_orbs: 0,
+        eaMsg: "Full 3s² subshell — added electron must enter higher-energy 3p orbital." },
+      { symbol: 'Al', name: 'Aluminum',   z: 13, p: 3, type: 'metal',    ie: 577,  ea: -43,  config: '[Ne] 3s² 3p¹', n: 3, s: 2, p_orbs: 1, ieExc: true,
+        ieMsg: "3p electron is higher energy and shielded by 3s — easier to remove than Mg's 3s." },
+      { symbol: 'Si', name: 'Silicon',    z: 14, p: 3, type: 'metalloid',ie: 786,  ea: -134, config: '[Ne] 3s² 3p²', n: 3, s: 2, p_orbs: 2 },
+      { symbol: 'P',  name: 'Phosphorus', z: 15, p: 3, type: 'nonmetal', ie: 1012, ea: -72,  config: '[Ne] 3s² 3p³', n: 3, s: 2, p_orbs: 3 },
+      { symbol: 'S',  name: 'Sulfur',     z: 16, p: 3, type: 'nonmetal', ie: 1000, ea: -200, config: '[Ne] 3s² 3p⁴', n: 3, s: 2, p_orbs: 4, ieExc: true,
+        ieMsg: "Half-filled 3p in P is extra stable — paired electron in S causes repulsion." },
+      { symbol: 'Cl', name: 'Chlorine',   z: 17, p: 3, type: 'nonmetal', ie: 1251, ea: -349, config: '[Ne] 3s² 3p⁵', n: 3, s: 2, p_orbs: 5 },
+      { symbol: 'Ar', name: 'Argon',      z: 18, p: 3, type: 'noblegas', ie: 1521, ea: 35,   config: '[Ne] 3s² 3p⁶', n: 3, s: 2, p_orbs: 6,
+        eaMsg: "Full valence shell — no room for extra electron." }
+    ];
+
+    const MAX_Y = 2200;
+
+    let currentPeriodFilter = 'all';
+    let currentViewFilter   = 'both';
+    let selectedElementId   = null;
+
+    const tilesP2        = document.getElementById('tiles-p2');
+    const tilesP3        = document.getElementById('tiles-p3');
+    const rowP2Wrapper   = document.getElementById('row-p2-wrapper');
+    const rowP3Wrapper   = document.getElementById('row-p3-wrapper');
+    const chartArea      = document.getElementById('chart-area');
+    const explanationPanel = document.getElementById('explanation-panel');
+    const trendlineSvg   = document.getElementById('trendline-svg');
+
+    // ── Readouts
+    function updateReadouts(el) {
+      const rEl  = document.getElementById('readout-element');
+      const rIe  = document.getElementById('readout-ie');
+      const rEa  = document.getElementById('readout-ea');
+      if (!el) {
+        rEl.innerHTML = 'ELEMENT&nbsp;&nbsp;—';
+        rIe.innerHTML = 'IE₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;—';
+        rEa.innerHTML = 'EA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;—';
+        return;
+      }
+      rEl.innerHTML = `ELEMENT&nbsp;&nbsp;<span class="readout-val">${el.symbol}  ${el.name}</span>`;
+      rIe.innerHTML = `IE₁&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="readout-val">${el.ie} kJ/mol</span>`;
+      const eaColor = el.ea <= 0 ? 'readout-accent' : '';
+      const eaSign  = el.ea > 0 ? '+' : '';
+      rEa.innerHTML = `EA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="${eaColor}">${eaSign}${el.ea} kJ/mol</span>`;
+    }
+
+    // ── Init
+    function init() {
+      renderTiles();
+      renderChart();
+      setupEventListeners();
+
+      document.getElementById('btn-reset').addEventListener('click', resetSelection);
+
+      setTimeout(() => {
+        document.querySelectorAll('.bar').forEach((bar, i) => {
+          bar.style.setProperty('--stagger', `${i * 28}ms`);
+          bar.classList.add('animating');
+          bar.style.height = bar.dataset.targetHeight;
+          bar.addEventListener('animationend', () => bar.classList.remove('animating'), { once: true });
+        });
+        drawTrendline();
+      }, 80);
+
+      window.addEventListener('resize', drawTrendline);
+    }
+
+    function resetSelection() {
+      selectedElementId = null;
+      document.querySelectorAll('.element-tile').forEach(t => t.classList.remove('selected'));
+      document.querySelectorAll('.bar-group').forEach(bg => bg.classList.remove('selected'));
+      updateReadouts(null);
+      explanationPanel.className = 'empty-state';
+      explanationPanel.innerHTML = `
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;">
+          <path d="M15 15l6 6m-11-4a7 7 0 110-14 7 7 0 010 14z"/>
+        </svg>
+        <span>Tap an element above to see its values, orbital filling, and trend exceptions.</span>
+      `;
+    }
+
+    function setupEventListeners() {
+      document.querySelectorAll('#period-toggles .toggle-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          document.querySelectorAll('#period-toggles .toggle-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          currentPeriodFilter = e.target.dataset.val;
+          updateVisibility();
+        });
+      });
+
+      document.querySelectorAll('#view-toggles .toggle-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          document.querySelectorAll('#view-toggles .toggle-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          currentViewFilter = e.target.dataset.val;
+          updateVisibility();
+        });
+      });
+    }
+
+    function selectElement(symbol) {
+      selectedElementId = symbol;
+
+      document.querySelectorAll('.element-tile').forEach(t => t.classList.remove('selected'));
+      const tile = document.querySelector(`.element-tile[data-symbol="${symbol}"]`);
+      if (tile) tile.classList.add('selected');
+
+      document.querySelectorAll('.bar-group').forEach(bg => bg.classList.remove('selected'));
+      const bg = document.querySelector(`.bar-group[data-symbol="${symbol}"]`);
+      if (bg) bg.classList.add('selected');
+
+      const el = elementsData.find(e => e.symbol === symbol);
+      updateReadouts(el);
+      renderExplanation(el);
+      explanationPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function renderTiles() {
+      elementsData.forEach(el => {
+        const tile = document.createElement('div');
+        tile.className = `element-tile ${el.type}`;
+        tile.dataset.symbol = el.symbol;
+        tile.innerHTML = `
+          <div class="el-z">${el.z}</div>
+          <div class="el-symbol">${el.symbol}</div>
+          <div class="el-vals">${el.ie}<br>${Math.abs(el.ea)}</div>
+        `;
+        tile.addEventListener('click', () => selectElement(el.symbol));
+        (el.p === 2 ? tilesP2 : tilesP3).appendChild(tile);
+      });
+    }
+
+    function renderChart() {
+      chartArea.innerHTML = '';
+
+      elementsData.forEach((el, index) => {
+        const group = document.createElement('div');
+        group.className = 'bar-group';
+        group.dataset.symbol = el.symbol;
+        group.dataset.period = el.p;
+        group.addEventListener('click', () => selectElement(el.symbol));
+
+        // IE bar
+        const hIe = (el.ie / MAX_Y) * 100;
+        const barIe = document.createElement('div');
+        barIe.className = 'bar ie';
+        barIe.dataset.targetHeight = `${hIe}%`;
+        barIe.style.height = '0%';
+
+        if (el.ieExc) {
+          const exc = document.createElement('div');
+          exc.className = 'exception-arrow';
+          exc.innerHTML = '↓';
+          barIe.appendChild(exc);
+        }
+
+        // EA bar
+        const hEa = (Math.abs(el.ea) / MAX_Y) * 100;
+        const barEa = document.createElement('div');
+        barEa.className = `bar ea${el.ea > 0 ? ' positive' : ''}`;
+        barEa.dataset.targetHeight = `${hEa}%`;
+        barEa.style.height = '0%';
+
+        if (el.ea > 0) {
+          const plus = document.createElement('div');
+          plus.style.cssText = 'position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--dark-mute);';
+          plus.textContent = '+';
+          barEa.appendChild(plus);
+        }
+
+        // Symbol label
+        const label = document.createElement('div');
+        label.className = 'bar-label';
+        label.textContent = el.symbol;
+
+        // Value popup
+        const valLabel = document.createElement('div');
+        valLabel.className = 'val-label';
+        valLabel.innerHTML = `<span style="color:var(--dark-ink)">${el.ie}</span><br><span style="color:var(--accent)">${el.ea > 0 ? '+' : ''}${el.ea}</span>`;
+
+        group.appendChild(barIe);
+        group.appendChild(barEa);
+        group.appendChild(label);
+        group.appendChild(valLabel);
+        chartArea.appendChild(group);
+      });
+    }
+
+    function updateVisibility() {
+      rowP2Wrapper.style.display = (currentPeriodFilter === 'all' || currentPeriodFilter === '2') ? 'flex' : 'none';
+      rowP3Wrapper.style.display = (currentPeriodFilter === 'all' || currentPeriodFilter === '3') ? 'flex' : 'none';
+
+      document.querySelectorAll('.bar-group').forEach(group => {
+        const p = group.dataset.period;
+        const showGroup = (currentPeriodFilter === 'all' || currentPeriodFilter === p);
+        group.style.display = showGroup ? 'flex' : 'none';
+
+        const barIe  = group.querySelector('.bar.ie');
+        const barEa  = group.querySelector('.bar.ea');
+        const excArrow = group.querySelector('.exception-arrow');
+
+        const showIe = (currentViewFilter === 'both' || currentViewFilter === 'ie');
+        const showEa = (currentViewFilter === 'both' || currentViewFilter === 'ea');
+        barIe.style.display = showIe ? 'block' : 'none';
+        barEa.style.display = showEa ? 'block' : 'none';
+        if (excArrow) excArrow.style.display = (showIe ? 'block' : 'none');
+      });
+
+      setTimeout(drawTrendline, 50);
+    }
+
+    function drawTrendline() {
+      trendlineSvg.innerHTML = '';
+      if (currentViewFilter === 'ea') return;
+
+      const allGroups = Array.from(document.querySelectorAll('.bar-group')).filter(g => g.style.display !== 'none');
+      drawPathForGroups(allGroups.filter(g => g.dataset.period === '2'));
+      drawPathForGroups(allGroups.filter(g => g.dataset.period === '3'));
+    }
+
+    function drawPathForGroups(groups) {
+      if (groups.length < 2) return;
+      const svgRect = trendlineSvg.getBoundingClientRect();
+      const points  = [];
+
+      groups.forEach(group => {
+        const barIe = group.querySelector('.bar.ie');
+        if (barIe && barIe.style.display !== 'none') {
+          const rect = barIe.getBoundingClientRect();
+          points.push(`${rect.left + rect.width / 2 - svgRect.left},${rect.top - svgRect.top}`);
+        }
+      });
+
+      if (points.length > 1) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        path.setAttribute('points', points.join(' '));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'rgba(239,242,245,0.22)');
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('stroke-dasharray', '4 4');
+        trendlineSvg.appendChild(path);
+      }
+    }
+
+    function getArrowSVG(dir, highlight) {
+      const cls = highlight ? 'highlight' : '';
+      return `<svg class="arrow arrow-${dir} ${cls}" viewBox="0 0 10 18"><path d="M5 17 L5 1 M1 5 L5 1 L9 5"/></svg>`;
+    }
+
+    function generateOrbitalDiagram(s, p) {
+      let html = '<div class="orbital-container">';
+
+      // s
+      html += `<div class="subshell"><div class="boxes"><div class="box">`;
+      if (s >= 1) html += getArrowSVG('up', s === 1);
+      if (s >= 2) html += getArrowSVG('down', p === 0 && s === 2);
+      html += `</div></div><div class="subshell-label">ns</div></div>`;
+
+      // p (always show if we have them, or if s=2 to show empty context)
+      if (p > 0 || s === 2) {
+        html += `<div class="subshell"><div class="boxes">`;
+        for (let i = 0; i < 3; i++) {
+          html += `<div class="box">`;
+          if (p > i)     html += getArrowSVG('up',   p <= 3 && p - 1 === i);
+          if (p > i + 3) html += getArrowSVG('down', p - 4 === i);
+          html += `</div>`;
+        }
+        html += `</div><div class="subshell-label">np</div></div>`;
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function renderExplanation(el) {
+      const eaIsExo = el.ea <= 0;
+      const eaValClass = eaIsExo ? 'ea-val' : 'ea-end-val';
+      const eaSign = el.ea > 0 ? '+' : '';
+
+      const ieAlert = el.ieExc
+        ? `<div class="alert-box"><strong>IE exception:</strong> ${el.ieMsg}</div>`
+        : '';
+      const eaAlert = el.ea > 0
+        ? `<div class="alert-box"><strong>Endothermic EA:</strong> ${el.eaMsg}</div>`
+        : '';
+
+      explanationPanel.className = 'info-card';
+      explanationPanel.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <div class="el-header">
+            <div class="big-symbol">${el.symbol}</div>
+            <div>
+              <div class="el-name">${el.name}</div>
+              <div class="el-config">Z = ${el.z} &nbsp;·&nbsp; ${el.config}</div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="stat-val">${el.ie} kJ/mol</div>
+              <div class="stat-desc">IE₁ — energy to remove outermost electron</div>
+            </div>
+            <div class="stat-box ea-box">
+              <div class="stat-val ${eaValClass}">${eaSign}${el.ea} kJ/mol</div>
+              <div class="stat-desc">EA — energy change when one electron is added</div>
+            </div>
+          </div>
+          ${ieAlert}
+          ${eaAlert}
+        </div>
+        <div class="orbital-section">
+          <div class="orbital-title">Valence shell orbital filling</div>
+          ${generateOrbitalDiagram(el.s, el.p_orbs)}
+          <div class="orbital-note">Outermost electron shown in <span style="color:var(--accent)">teal</span>.</div>
+        </div>
+      `;
+    }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
