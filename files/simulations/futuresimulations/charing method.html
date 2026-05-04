@@ -3,159 +3,147 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Charging Methods</title>
+<title>Charging Methods — Trinity Simulation Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-  /* --- Shared Design Tokens --- */
   :root {
-    --ink: #171717;
-    --ink-light: #525252;
-    --surface: #ffffff;
-    --surface-alt: #f5f5f5;
-    --border: #e5e5e5;
-    --accent: #0d9488;
-    --focus: rgba(13, 148, 136, 0.2);
-    
-    --font-mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --bg: #EFF2F5;
+    --bg-alt: #E2E7EC;
+    --paper: #F7F8FA;
+    --ink: #0C1115;
+    --ink-soft: #2B333A;
+    --ink-mute: #6B7680;
+    --rule-soft: rgba(12,17,21,0.14);
+    --dark: #FFFFFF;
+    --dark-ink: #0C1115;
+    --dark-mute: #4A5560;
+    --accent: oklch(0.52 0.12 200);
+    --accent-ink: #F7F8FA;
+    --stage-grid: rgba(12,17,21,0.07);
+    --stage-rule: rgba(12,17,21,0.12);
+    --sans: "Manrope", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --ink: #f5f5f5;
-      --ink-light: #a3a3a3;
-      --surface: #0a0a0a;
-      --surface-alt: #171717;
-      --border: #262626;
-      --accent: #2dd4bf;
-    }
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { box-sizing: border-box; }
-  
+  html, body { height: 100%; }
+
   body {
-    margin: 0;
-    padding: 0;
-    background-color: var(--surface);
+    background: var(--bg);
     color: var(--ink);
-    font-family: var(--font-body);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow-x: hidden;
   }
 
-  /* --- Page Shell --- */
-  .app-container {
+  .app {
     width: 100%;
-    max-width: 900px;
-    height: 100vh;
-    max-height: 800px;
+    max-width: 1000px;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    background: var(--surface);
-    border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.05);
-    border: 1px solid var(--border);
-    overflow: hidden;
+    border-left: 1px solid var(--rule-soft);
+    border-right: 1px solid var(--rule-soft);
   }
 
-  @media (max-width: 900px) {
-    .app-container {
-      height: 100vh;
-      max-height: none;
-      border-radius: 0;
-      border: none;
-    }
-  }
-
-  /* --- Header --- */
+  /* Header Strip */
   .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--rule-soft);
+    background: var(--paper);
+    flex-shrink: 0;
   }
 
-  .header-left .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 10px;
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--ink-light);
-    margin-bottom: 4px;
+    letter-spacing: 0.14em;
+    color: var(--ink-mute);
+    margin-bottom: 6px;
   }
 
-  .header-left .title {
-    font-size: 18px;
-    font-weight: 500;
-    margin: 0;
+  .sim-title {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1.1;
   }
 
   .header-controls {
     display: flex;
-    gap: 12px;
+    gap: 10px;
   }
 
   .icon-btn {
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    border: 1.2px solid var(--border);
+    border: 1px solid var(--ink);
     background: transparent;
     color: var(--ink);
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: all 0.2s;
+    transition: background 0.15s ease, color 0.15s ease;
   }
 
   .icon-btn:hover {
-    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .icon-btn:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
-  
+
   .icon-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     fill: currentColor;
   }
 
-  /* --- Tab Strip --- */
+  /* Tab Strip */
   .tab-strip {
     display: flex;
-    padding: 16px 24px;
+    padding: 14px 24px;
     gap: 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--rule-soft);
+    background: var(--paper);
     overflow-x: auto;
     scrollbar-width: none;
+    flex-shrink: 0;
   }
-  
+
   .tab-strip::-webkit-scrollbar { display: none; }
 
   .tab-pill {
-    font-family: var(--font-mono);
+    font-family: var(--mono);
     font-size: 11px;
     text-transform: uppercase;
-    padding: 8px 16px;
+    letter-spacing: 0.08em;
+    padding: 8px 18px;
     border: 1px solid var(--ink);
     background: transparent;
     color: var(--ink);
     border-radius: 999px;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.2s;
+    transition: background 0.15s ease, color 0.15s ease;
+    line-height: 1;
   }
 
   .tab-pill.active {
     background: var(--ink);
-    color: var(--surface);
+    color: var(--paper);
   }
 
   .tab-pill:focus-visible {
@@ -163,86 +151,72 @@
     outline-offset: 2px;
   }
 
-  /* --- Main Content Area --- */
+  /* Main Content */
   .main-content {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
+    flex: 1;
+    min-height: 0;
     position: relative;
   }
 
   .tab-view {
     display: none;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
     position: absolute;
-    top: 0; left: 0;
+    inset: 0;
   }
 
   .tab-view.active {
     display: flex;
   }
 
-  /* --- Stage --- */
+  /* Stage */
   .stage-container {
-    flex-grow: 1;
+    flex: 1;
+    min-height: 0;
     position: relative;
-    background-image: linear-gradient(var(--border) 0.5px, transparent 0.5px), linear-gradient(90deg, var(--border) 0.5px, transparent 0.5px);
+    background-color: var(--dark);
+    background-image:
+      linear-gradient(var(--stage-grid) 0.5px, transparent 0.5px),
+      linear-gradient(90deg, var(--stage-grid) 0.5px, transparent 0.5px);
     background-size: 40px 40px;
-    background-position: center center;
+    border-bottom: 1px solid var(--stage-rule);
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    touch-action: none; /* Prevent scroll while dragging */
+    touch-action: none;
   }
 
   .stage-svg {
     width: 100%;
     height: 100%;
-    max-width: 800px;
   }
 
-  .object-outline {
-    fill: none;
-    stroke: var(--ink);
-    stroke-width: 1.2px;
-  }
-
-  .draggable {
-    cursor: grab;
-  }
-  
-  .draggable:active, .is-dragging {
-    cursor: grabbing;
-  }
+  .draggable { cursor: grab; }
+  .draggable:active, .is-dragging { cursor: grabbing; }
 
   .object-label {
-    font-family: var(--font-mono);
+    font-family: var(--mono);
     font-size: 10px;
-    fill: var(--ink-light);
+    fill: var(--dark-mute);
     text-anchor: middle;
     pointer-events: none;
+    letter-spacing: 0.06em;
   }
 
-  /* --- Readouts & Controls --- */
+  /* Lower Panel */
   .lower-panel {
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 16px 24px;
+    background: var(--paper);
+    padding: 14px 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    z-index: 10;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
   .readout-bar {
     display: flex;
-    gap: 16px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--ink-light);
+    gap: 8px;
     flex-wrap: wrap;
   }
 
@@ -250,127 +224,80 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--surface-alt);
-    padding: 4px 8px;
+    background: var(--bg-alt);
+    border: 1px solid var(--rule-soft);
+    padding: 5px 10px;
     border-radius: 4px;
-    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-mute);
   }
 
   .readout-val {
     color: var(--ink);
-    font-weight: bold;
+    font-weight: 500;
   }
 
   .controls-strip {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    min-height: 44px;
     flex-wrap: wrap;
   }
 
-  /* Toggle Switch */
   .toggle-btn {
-    font-family: var(--font-mono);
+    font-family: var(--mono);
     font-size: 11px;
-    padding: 10px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0 16px;
+    height: 44px;
+    background: transparent;
+    border: 1px solid var(--ink);
     color: var(--ink);
-    cursor: pointer;
     border-radius: 4px;
-    transition: all 0.2s;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
   }
 
-  .toggle-btn:hover { border-color: var(--ink); }
-  .toggle-btn.active { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .toggle-btn:hover { background: var(--bg-alt); }
 
-  /* Text areas */
-  .prompt {
+  .toggle-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .sim-prompt {
     font-size: 14px;
     font-weight: 500;
-    color: var(--ink);
-  }
-
-  .caption {
-    font-size: 13px;
+    color: var(--ink-soft);
     line-height: 1.5;
-    color: var(--ink-light);
   }
 
-  /* --- Compare Tab Specifics --- */
-  .compare-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    padding: 24px;
-    overflow-y: auto;
-    height: 100%;
-  }
-
-  @media (max-width: 600px) { .compare-grid { grid-template-columns: 1fr; } }
-
-  .compare-col {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-  }
-
-  .compare-thumb {
-    width: 100%;
-    height: 120px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .compare-thumb svg { width: 100%; height: 100%; }
-
-  .compare-table {
-    width: 100%;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    border-collapse: collapse;
-  }
-
-  .compare-table td {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-  }
-
-  .compare-table tr:last-child td { border-bottom: none; }
-  .compare-label { color: var(--ink-light); width: 30%; padding-right: 8px; }
-
-  .compare-summary {
-    grid-column: 1 / -1;
+  .sim-caption {
     font-size: 13px;
-    text-align: center;
-    color: var(--ink);
-    padding: 16px;
-    background: var(--surface-alt);
-    border-radius: 4px;
-    border: 1px solid var(--border);
+    color: var(--ink-mute);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .sim-title { font-size: 22px; }
+    .header, .tab-strip, .lower-panel { padding-left: 16px; padding-right: 16px; }
   }
 </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app">
   <header class="header">
-    <div class="header-left">
+    <div>
       <div class="eyebrow">Simulation &middot; Physics</div>
-      <h1 class="title">Charging Methods</h1>
+      <h1 class="sim-title">Charging Methods</h1>
     </div>
     <div class="header-controls" id="header-controls">
       <button class="icon-btn" id="btn-play-pause" aria-label="Play or Pause" title="Play/Pause">
@@ -386,31 +313,30 @@
     <button class="tab-pill" role="tab" data-tab="friction">Friction</button>
     <button class="tab-pill" role="tab" data-tab="conduction">Conduction</button>
     <button class="tab-pill" role="tab" data-tab="induction">Induction</button>
-    <button class="tab-pill" role="tab" data-tab="compare">Compare</button>
   </nav>
 
   <main class="main-content">
-    
-    <!-- ================= FRICTION TAB ================= -->
+
+    <!-- FRICTION TAB -->
     <div class="tab-view" id="view-friction" role="tabpanel">
       <div class="stage-container">
         <svg class="stage-svg" viewBox="0 0 600 300" id="svg-friction">
           <g id="friction-trails"></g>
-          
+
           <g id="fric-silk-group" transform="translate(400, 150)">
-            <path class="object-outline" d="M-50,-40 C-20,-60 50,-50 60,-20 C70,10 50,60 0,50 C-40,40 -60,0 -50,-40 Z"/>
-            <text class="object-label" x="0" y="75">SILK</text>
+            <path fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" d="M-50,-40 C-20,-60 50,-50 60,-20 C70,10 50,60 0,50 C-40,40 -60,0 -50,-40 Z"/>
+            <text class="object-label" x="0" y="75">Silk</text>
             <g transform="translate(0, -65)">
-              <rect x="-20" y="-12" width="40" height="18" fill="var(--surface)" stroke="var(--border)" rx="2"/>
+              <rect x="-22" y="-11" width="44" height="18" fill="var(--dark)" stroke="var(--rule-soft)" stroke-width="1" rx="2"/>
               <text class="object-label" id="fric-read-silk" x="0" y="0" dominant-baseline="middle">0</text>
             </g>
           </g>
 
           <g id="fric-rod-group" class="draggable" transform="translate(180, 150)" pointer-events="all">
-            <rect class="object-outline" x="-80" y="-20" width="160" height="40" rx="20" fill="var(--surface)"/>
-            <text class="object-label" x="0" y="45">ROD (DRAG ME)</text>
+            <rect fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" x="-80" y="-20" width="160" height="40" rx="20"/>
+            <text class="object-label" x="0" y="45">Rod — drag me</text>
             <g transform="translate(0, -40)">
-              <rect x="-20" y="-12" width="40" height="18" fill="var(--surface)" stroke="var(--border)" rx="2"/>
+              <rect x="-22" y="-11" width="44" height="18" fill="var(--dark)" stroke="var(--rule-soft)" stroke-width="1" rx="2"/>
               <text class="object-label" id="fric-read-rod" x="0" y="0" dominant-baseline="middle">0</text>
             </g>
           </g>
@@ -421,37 +347,37 @@
       </div>
       <div class="lower-panel">
         <div class="readout-bar">
-          <div class="readout-chip">NET-ROD <span class="readout-val" id="fric-val-rod">0</span></div>
-          <div class="readout-chip">NET-SILK <span class="readout-val" id="fric-val-silk">0</span></div>
-          <div class="readout-chip">e⁻ TRANSFERRED <span class="readout-val" id="fric-val-e">0</span></div>
+          <div class="readout-chip">Net-Rod <span class="readout-val" id="fric-val-rod">0</span></div>
+          <div class="readout-chip">Net-Silk <span class="readout-val" id="fric-val-silk">0</span></div>
+          <div class="readout-chip">e⁻ transferred <span class="readout-val" id="fric-val-e">0</span></div>
         </div>
-        <div class="prompt">Drag the rod and rub it against the silk. Which way do the electrons move, and which object becomes positive?</div>
-        <div class="caption">Friction does not create charge. It transfers <em>electrons</em> from one surface to the other through direct mechanical rubbing. The total charge of the pair stays zero.</div>
+        <p class="sim-prompt">Drag the rod and rub it against the silk. Which way do the electrons move, and which object becomes positive?</p>
+        <p class="sim-caption">Friction does not create charge. It transfers <em>electrons</em> from one surface to the other through direct mechanical rubbing. The total charge of the pair stays zero.</p>
       </div>
     </div>
 
-    <!-- ================= CONDUCTION TAB ================= -->
+    <!-- CONDUCTION TAB -->
     <div class="tab-view" id="view-conduction" role="tabpanel">
       <div class="stage-container">
         <svg class="stage-svg" viewBox="0 0 600 300" id="svg-conduction">
           <g id="conduction-trails"></g>
-          
+
           <g id="cond-sphere-group" transform="translate(420, 150)">
-            <rect class="object-outline" x="-5" y="40" width="10" height="60" fill="var(--surface)"/>
-            <rect class="object-outline" x="-30" y="100" width="60" height="8" rx="2" fill="var(--surface)"/>
-            <circle class="object-outline" cx="0" cy="0" r="40"/>
-            <text class="object-label" x="0" y="125">SPHERE</text>
+            <rect fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" x="-5" y="40" width="10" height="60"/>
+            <rect fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" x="-30" y="100" width="60" height="8" rx="2"/>
+            <circle fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" cx="0" cy="0" r="40"/>
+            <text class="object-label" x="0" y="125">Sphere</text>
             <g transform="translate(0, -60)">
-              <rect x="-20" y="-12" width="40" height="18" fill="var(--surface)" stroke="var(--border)" rx="2"/>
+              <rect x="-22" y="-11" width="44" height="18" fill="var(--dark)" stroke="var(--rule-soft)" stroke-width="1" rx="2"/>
               <text class="object-label" id="cond-read-sphere" x="0" y="0" dominant-baseline="middle">0</text>
             </g>
           </g>
 
           <g id="cond-rod-group" class="draggable" transform="translate(150, 150)" pointer-events="all">
-            <rect class="object-outline" x="-80" y="-15" width="160" height="30" rx="15" fill="var(--surface)"/>
-            <text class="object-label" x="0" y="35">ROD (DRAG ME)</text>
+            <rect fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" x="-80" y="-15" width="160" height="30" rx="15"/>
+            <text class="object-label" x="0" y="35">Rod — drag me</text>
             <g transform="translate(0, -35)">
-              <rect x="-20" y="-12" width="40" height="18" fill="var(--surface)" stroke="var(--border)" rx="2"/>
+              <rect x="-22" y="-11" width="44" height="18" fill="var(--dark)" stroke="var(--rule-soft)" stroke-width="1" rx="2"/>
               <text class="object-label" id="cond-read-rod" x="0" y="0" dominant-baseline="middle">−6e</text>
             </g>
           </g>
@@ -462,48 +388,46 @@
       </div>
       <div class="lower-panel">
         <div class="readout-bar">
-          <div class="readout-chip">NET-ROD <span class="readout-val" id="cond-val-rod">−6e</span></div>
-          <div class="readout-chip">NET-SPHERE <span class="readout-val" id="cond-val-sphere">0</span></div>
-          <div class="readout-chip">CONTACT <span class="readout-val" id="cond-val-touch">NO</span></div>
+          <div class="readout-chip">Net-Rod <span class="readout-val" id="cond-val-rod">−6e</span></div>
+          <div class="readout-chip">Net-Sphere <span class="readout-val" id="cond-val-sphere">0</span></div>
+          <div class="readout-chip">Contact <span class="readout-val" id="cond-val-touch">No</span></div>
         </div>
-        <div class="prompt">Drag the negatively charged rod until it touches the neutral sphere. Observe how the electrons redistribute.</div>
-        <div class="caption">Conduction transfers charge through direct physical contact. The excess electrons on the rod repel each other and flow into the neutral sphere until both reach the same potential.</div>
+        <p class="sim-prompt">Drag the negatively charged rod until it touches the neutral sphere. Observe how the electrons redistribute.</p>
+        <p class="sim-caption">Conduction transfers charge through direct physical contact. The excess electrons on the rod repel each other and flow into the neutral sphere until both reach the same potential.</p>
       </div>
     </div>
 
-    <!-- ================= INDUCTION TAB ================= -->
+    <!-- INDUCTION TAB -->
     <div class="tab-view" id="view-induction" role="tabpanel">
       <div class="stage-container">
         <svg class="stage-svg" viewBox="0 0 600 300" id="svg-induction">
           <g id="induction-trails"></g>
-          
+
           <g id="ind-earth-wire" opacity="0.3">
-            <path d="M420,250 L420,270 L500,270 L500,285" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="4,4" id="ind-wire-path"/>
-            <line x1="490" y1="285" x2="510" y2="285" stroke="var(--ink)" stroke-width="1.2"/>
-            <line x1="495" y1="289" x2="505" y2="289" stroke="var(--ink)" stroke-width="1.2"/>
-            <line x1="498" y1="293" x2="502" y2="293" stroke="var(--ink)" stroke-width="1.2"/>
+            <path d="M420,250 L420,270 L500,270 L500,285" fill="none" stroke="var(--dark-ink)" stroke-width="1.2" stroke-dasharray="4,4" id="ind-wire-path"/>
+            <line x1="490" y1="285" x2="510" y2="285" stroke="var(--dark-ink)" stroke-width="1.2"/>
+            <line x1="495" y1="289" x2="505" y2="289" stroke="var(--dark-ink)" stroke-width="1.2"/>
+            <line x1="498" y1="293" x2="502" y2="293" stroke="var(--dark-ink)" stroke-width="1.2"/>
           </g>
 
           <g id="ind-sphere-group" transform="translate(420, 150)">
-            <rect class="object-outline" x="-5" y="40" width="10" height="60" fill="var(--surface)"/>
-            <rect class="object-outline" x="-30" y="100" width="60" height="8" rx="2" fill="var(--surface)"/>
-            <circle class="object-outline" cx="0" cy="0" r="40"/>
-            <text class="object-label" x="0" y="125">SPHERE</text>
-            
-            <text class="object-label" x="-25" y="-35" id="ind-near-lbl" opacity="0">NEAR</text>
-            <text class="object-label" x="25" y="-35" id="ind-far-lbl" opacity="0">FAR</text>
-
+            <rect fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" x="-5" y="40" width="10" height="60"/>
+            <rect fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" x="-30" y="100" width="60" height="8" rx="2"/>
+            <circle fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" cx="0" cy="0" r="40"/>
+            <text class="object-label" x="0" y="125">Sphere</text>
+            <text class="object-label" x="-25" y="-35" id="ind-near-lbl" opacity="0">Near</text>
+            <text class="object-label" x="25" y="-35" id="ind-far-lbl" opacity="0">Far</text>
             <g transform="translate(0, -60)">
-              <rect x="-20" y="-12" width="40" height="18" fill="var(--surface)" stroke="var(--border)" rx="2"/>
+              <rect x="-22" y="-11" width="44" height="18" fill="var(--dark)" stroke="var(--rule-soft)" stroke-width="1" rx="2"/>
               <text class="object-label" id="ind-read-sphere" x="0" y="0" dominant-baseline="middle">0</text>
             </g>
           </g>
 
           <g id="ind-rod-group" class="draggable" transform="translate(150, 150)" pointer-events="all">
-            <rect class="object-outline" x="-80" y="-15" width="160" height="30" rx="15" fill="var(--surface)"/>
-            <text class="object-label" x="0" y="35">ROD (DRAG ME)</text>
+            <rect fill="var(--dark)" stroke="var(--dark-ink)" stroke-width="1.2" x="-80" y="-15" width="160" height="30" rx="15"/>
+            <text class="object-label" x="0" y="35">Rod — drag me</text>
             <g transform="translate(0, -35)">
-              <rect x="-20" y="-12" width="40" height="18" fill="var(--surface)" stroke="var(--border)" rx="2"/>
+              <rect x="-22" y="-11" width="44" height="18" fill="var(--dark)" stroke="var(--rule-soft)" stroke-width="1" rx="2"/>
               <text class="object-label" id="ind-read-rod" x="0" y="0" dominant-baseline="middle">−6e</text>
             </g>
           </g>
@@ -514,54 +438,18 @@
       </div>
       <div class="lower-panel">
         <div class="readout-bar">
-          <div class="readout-chip">NET-SPHERE <span class="readout-val" id="ind-val-sphere">0</span></div>
-          <div class="readout-chip">NEAR SIDE <span class="readout-val" id="ind-val-near">0</span></div>
-          <div class="readout-chip">FAR SIDE <span class="readout-val" id="ind-val-far">0</span></div>
+          <div class="readout-chip">Net-Sphere <span class="readout-val" id="ind-val-sphere">0</span></div>
+          <div class="readout-chip">Near side <span class="readout-val" id="ind-val-near">0</span></div>
+          <div class="readout-chip">Far side <span class="readout-val" id="ind-val-far">0</span></div>
         </div>
         <div class="controls-strip">
           <button class="toggle-btn" id="btn-earth">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></div>
-            EARTH CONNECTION
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="3.5"/><circle cx="5" cy="5" r="1" fill="currentColor" stroke="none"/></svg>
+            Earth connection
           </button>
         </div>
-        <div class="prompt">Drag the rod close to the sphere to polarise it. Toggle the Earth connection while the rod is near to permanently charge it.</div>
-        <div class="caption">Induction charges a conductor without contact. The nearby charge repels the sphere's free electrons. Earthing drains these repelled electrons away. When earthing is removed, the sphere is left with a positive charge.</div>
-      </div>
-    </div>
-
-    <!-- ================= COMPARE TAB ================= -->
-    <div class="tab-view" id="view-compare" role="tabpanel">
-      <div class="compare-grid">
-        <div class="compare-col">
-          <div class="compare-thumb" id="thumb-friction"></div>
-          <table class="compare-table">
-            <tr><td class="compare-label">METHOD</td><td><strong>FRICTION</strong></td></tr>
-            <tr><td class="compare-label">CONTACT</td><td>rubbing</td></tr>
-            <tr><td class="compare-label">WHAT MOVES</td><td>electrons between insulators</td></tr>
-            <tr><td class="compare-label">FINAL SIGN</td><td>opposite signs</td></tr>
-          </table>
-        </div>
-        <div class="compare-col">
-          <div class="compare-thumb" id="thumb-conduction"></div>
-          <table class="compare-table">
-            <tr><td class="compare-label">METHOD</td><td><strong>CONDUCTION</strong></td></tr>
-            <tr><td class="compare-label">CONTACT</td><td>direct touch</td></tr>
-            <tr><td class="compare-label">WHAT MOVES</td><td>electrons between conductors</td></tr>
-            <tr><td class="compare-label">FINAL SIGN</td><td>same sign as source</td></tr>
-          </table>
-        </div>
-        <div class="compare-col">
-          <div class="compare-thumb" id="thumb-induction"></div>
-          <table class="compare-table">
-            <tr><td class="compare-label">METHOD</td><td><strong>INDUCTION</strong></td></tr>
-            <tr><td class="compare-label">CONTACT</td><td>none</td></tr>
-            <tr><td class="compare-label">WHAT MOVES</td><td>electrons to ground</td></tr>
-            <tr><td class="compare-label">FINAL SIGN</td><td>opposite sign to source</td></tr>
-          </table>
-        </div>
-        <div class="compare-summary">
-          In all three methods the total charge of the universe is conserved — only the location of the electrons changes.
-        </div>
+        <p class="sim-prompt">Drag the rod close to the sphere to polarise it. Toggle the earth connection while the rod is near to permanently charge it.</p>
+        <p class="sim-caption">Induction charges a conductor without contact. The nearby charge repels the sphere's free electrons. Earthing drains these repelled electrons away. When earthing is removed, the sphere is left with a positive charge.</p>
       </div>
     </div>
 
@@ -569,20 +457,14 @@
 </div>
 
 <script>
-/**
- * Trinity Simulation Lab - Charging Methods (Interactive Drag Redesign)
- */
-
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LERP = prefersReducedMotion ? 1 : 0.15;
 const formatCharge = (c) => c === 0 ? "0" : (c > 0 ? `+${c}e` : `${c}e`);
 
-// Core State
 const AppState = {
   activeTab: 'friction',
   isPaused: false,
-  drag: { active: false, objId: null, offsetX: 0, offsetY: 0, startX: 0, startY: 0 },
-  
+  drag: { active: false, objId: null, offsetX: 0, offsetY: 0 },
   friction: {
     rod: { x: 180, y: 150, homeX: 180, homeY: 150 },
     silk: { x: 400, y: 150 },
@@ -606,7 +488,6 @@ const AppState = {
 
 let Particles = { friction: [], conduction: [], induction: [] };
 
-// Helper DOM functions
 const createSVG = (tag, attrs) => {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
@@ -615,75 +496,67 @@ const createSVG = (tag, attrs) => {
 
 const drawProton = (parent, x, y) => {
   const g = createSVG('g', { transform: `translate(${x},${y})`, opacity: '0.18' });
-  g.appendChild(createSVG('circle', { r: '4', fill: 'none', stroke: 'var(--ink)', 'stroke-width': '1.2' }));
-  const txt = createSVG('text', { x: '0', y: '0', 'dominant-baseline': 'central', 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': '8', 'font-family': 'monospace' });
+  g.appendChild(createSVG('circle', { r: '4', fill: 'none', stroke: 'var(--dark-ink)', 'stroke-width': '1.2' }));
+  const txt = createSVG('text', { x: '0', y: '0', 'dominant-baseline': 'central', 'text-anchor': 'middle', fill: 'var(--dark-ink)', 'font-size': '8', 'font-family': 'monospace' });
   txt.textContent = '+';
   g.appendChild(txt);
   parent.appendChild(g);
 };
 
 const createElectron = () => {
-  const g = createSVG('g', { class: 'electron' });
+  const g = createSVG('g', {});
   g.appendChild(createSVG('circle', { r: '4', fill: 'var(--accent)' }));
-  const txt = createSVG('text', { x: '0', y: '0', 'dominant-baseline': 'central', 'text-anchor': 'middle', fill: 'var(--surface)', 'font-size': '8', 'font-family': 'monospace' });
-  txt.textContent = '-';
+  const txt = createSVG('text', { x: '0', y: '0', 'dominant-baseline': 'central', 'text-anchor': 'middle', fill: 'var(--accent-ink)', 'font-size': '8', 'font-family': 'monospace' });
+  txt.textContent = '−';
   g.appendChild(txt);
   return g;
 };
 
-// Layout Definitions (Object Local Coordinates)
 const L_Fric = {
-  rodP: [{x:-60, y:-10}, {x:-35, y:-10}, {x:-10, y:-10}, {x:15, y:-10}, {x:40, y:-10}, {x:65, y:-10}],
-  rodE: [{x:-60, y:10}, {x:-35, y:10}, {x:-10, y:10}, {x:15, y:10}, {x:40, y:10}, {x:65, y:10}],
-  silkP: [{x:-20, y:-20}, {x:0, y:-30}, {x:20, y:-20}, {x:-30, y:5}, {x:10, y:15}, {x:30, y:0}],
-  silkE: [{x:-20, y:-5}, {x:0, y:-15}, {x:20, y:-5}, {x:-30, y:20}, {x:10, y:30}, {x:30, y:15}],
-  silkTargetE: [{x:-5, y:10}, {x:20, y:-35}, {x:-15, y:-35}, {x:35, y:30}, {x:-15, y:35}, {x:5, y:40}]
+  rodP: [{x:-60,y:-10},{x:-35,y:-10},{x:-10,y:-10},{x:15,y:-10},{x:40,y:-10},{x:65,y:-10}],
+  rodE: [{x:-60,y:10},{x:-35,y:10},{x:-10,y:10},{x:15,y:10},{x:40,y:10},{x:65,y:10}],
+  silkP: [{x:-20,y:-20},{x:0,y:-30},{x:20,y:-20},{x:-30,y:5},{x:10,y:15},{x:30,y:0}],
+  silkE: [{x:-20,y:-5},{x:0,y:-15},{x:20,y:-5},{x:-30,y:20},{x:10,y:30},{x:30,y:15}],
+  silkTargetE: [{x:-5,y:10},{x:20,y:-35},{x:-15,y:-35},{x:35,y:30},{x:-15,y:35},{x:5,y:40}]
 };
 
 const L_Cond = {
-  sphereP: [{x:-15, y:-15}, {x:15, y:-15}, {x:-25, y:0}, {x:25, y:0}, {x:-15, y:15}, {x:15, y:15}],
-  sphereE: [{x:-15, y:-5}, {x:15, y:-5}, {x:-25, y:10}, {x:25, y:10}, {x:-15, y:25}, {x:15, y:25}],
+  sphereP: [{x:-15,y:-15},{x:15,y:-15},{x:-25,y:0},{x:25,y:0},{x:-15,y:15},{x:15,y:15}],
+  sphereE: [{x:-15,y:-5},{x:15,y:-5},{x:-25,y:10},{x:25,y:10},{x:-15,y:25},{x:15,y:25}],
   rodE: [
-    {x:-65, y:-5}, {x:-45, y:-5}, {x:-25, y:-5}, {x:-5, y:-5}, {x:15, y:-5}, {x:35, y:-5},
-    {x:-65, y:5}, {x:-45, y:5}, {x:-25, y:5}, {x:-5, y:5}, {x:15, y:5}, {x:35, y:5}
+    {x:-65,y:-5},{x:-45,y:-5},{x:-25,y:-5},{x:-5,y:-5},{x:15,y:-5},{x:35,y:-5},
+    {x:-65,y:5},{x:-45,y:5},{x:-25,y:5},{x:-5,y:5},{x:15,y:5},{x:35,y:5}
   ],
-  sphereTargetE: [{x:-25, y:-20}, {x:-10, y:-30}, {x:10, y:-30}]
+  sphereTargetE: [{x:-25,y:-20},{x:-10,y:-30},{x:10,y:-30}]
 };
 
 const L_Ind = {
   sphereP: L_Cond.sphereP,
   sphereE_norm: L_Cond.sphereE,
-  sphereE_polar: [{x:10, y:-25}, {x:25, y:-15}, {x:30, y:0}, {x:25, y:15}, {x:10, y:25}, {x:20, y:-5}], // Pushed right
-  sphereE_final: [{x:-15, y:-5}, {x:-25, y:10}, {x:-15, y:25}], // Remaining ones spread out
-  earthPoint: {x: 500, y: 290},
+  sphereE_polar: [{x:10,y:-25},{x:25,y:-15},{x:30,y:0},{x:25,y:15},{x:10,y:25},{x:20,y:-5}],
+  sphereE_final: [{x:-15,y:-5},{x:-25,y:10},{x:-15,y:25}],
+  earthPoint: {x:500, y:290},
   rodE: L_Cond.rodE
 };
 
-// --- Initializers ---
 function initSims() {
   initFriction();
   initConduction();
   initInduction();
   setupDragEvents();
-  createThumbnails();
   requestAnimationFrame(loop);
 }
 
 function initFriction() {
   const eGroup = document.getElementById('friction-electrons');
-  const pGroup = document.getElementById('friction-protons');
   const rGroup = document.getElementById('fric-rod-group');
   const sGroup = document.getElementById('fric-silk-group');
-
   L_Fric.rodP.forEach(p => drawProton(rGroup, p.x, p.y));
   L_Fric.silkP.forEach(p => drawProton(sGroup, p.x, p.y));
-
-  // Rod electrons
   L_Fric.rodE.forEach((p, i) => {
     const el = createElectron(); eGroup.appendChild(el);
     Particles.friction.push({ el, owner: 'rod', locX: p.x, locY: p.y, silkTarget: L_Fric.silkTargetE[i], wX: 0, wY: 0 });
   });
-  // Silk native electrons
   L_Fric.silkE.forEach(p => {
     const el = createElectron(); eGroup.appendChild(el);
     Particles.friction.push({ el, owner: 'silk', locX: p.x, locY: p.y, wX: 0, wY: 0 });
@@ -692,57 +565,41 @@ function initFriction() {
 
 function initConduction() {
   const eGroup = document.getElementById('conduction-electrons');
-  const rGroup = document.getElementById('cond-rod-group');
   const sGroup = document.getElementById('cond-sphere-group');
-  
   L_Cond.sphereP.forEach(p => drawProton(sGroup, p.x, p.y));
-
-  // Sphere native electrons
   L_Cond.sphereE.forEach(p => {
     const el = createElectron(); eGroup.appendChild(el);
     Particles.conduction.push({ el, owner: 'sphere', locX: p.x, locY: p.y, wX: 0, wY: 0 });
   });
-  
-  // Rod electrons (last 3 can transfer)
   L_Cond.rodE.forEach((p, i) => {
     const el = createElectron(); eGroup.appendChild(el);
     const trans = i >= 9;
-    Particles.conduction.push({ 
-      el, owner: 'rod', locX: p.x, locY: p.y, wX: 0, wY: 0,
-      canTransfer: trans, sphereTarget: trans ? L_Cond.sphereTargetE[i-9] : null 
-    });
+    Particles.conduction.push({ el, owner: 'rod', locX: p.x, locY: p.y, wX: 0, wY: 0, canTransfer: trans, sphereTarget: trans ? L_Cond.sphereTargetE[i-9] : null });
   });
 }
 
 function initInduction() {
   const eGroup = document.getElementById('induction-electrons');
-  const rGroup = document.getElementById('ind-rod-group');
   const sGroup = document.getElementById('ind-sphere-group');
-
   L_Ind.sphereP.forEach(p => drawProton(sGroup, p.x, p.y));
-
-  // Sphere electrons (last 3 can drain to earth)
   L_Ind.sphereE_norm.forEach((p, i) => {
     const el = createElectron(); eGroup.appendChild(el);
     Particles.induction.push({
-      el, owner: 'sphere', locX: p.x, locY: p.y, 
+      el, owner: 'sphere', locX: p.x, locY: p.y,
       normP: p, polarP: L_Ind.sphereE_polar[i], finalP: i < 3 ? L_Ind.sphereE_final[i] : null,
       canDrain: i >= 3, isDrained: false, wX: 0, wY: 0
     });
   });
-
-  // Rod electrons
   L_Ind.rodE.forEach(p => {
     const el = createElectron(); eGroup.appendChild(el);
     Particles.induction.push({ el, owner: 'rod', locX: p.x, locY: p.y, wX: 0, wY: 0 });
   });
 }
 
-// --- Interaction / Drag Logic ---
 function getSVGPoint(e, svg) {
   const pt = svg.createSVGPoint();
-  pt.x = e.clientX || (e.touches && e.touches[0].clientX);
-  pt.y = e.clientY || (e.touches && e.touches[0].clientY);
+  pt.x = e.clientX ?? (e.touches?.[0].clientX);
+  pt.y = e.clientY ?? (e.touches?.[0].clientY);
   return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 
@@ -753,31 +610,22 @@ function setupDragEvents() {
       const pt = getSVGPoint(e, svg);
       AppState.drag.active = true;
       AppState.drag.objId = group.id;
-      
       const st = AppState[AppState.activeTab];
       AppState.drag.offsetX = pt.x - st.rod.x;
       AppState.drag.offsetY = pt.y - st.rod.y;
       group.classList.add('is-dragging');
       e.target.setPointerCapture(e.pointerId);
     });
-    
     group.addEventListener('pointermove', (e) => {
       if (!AppState.drag.active || AppState.drag.objId !== group.id) return;
       const svg = group.closest('svg');
       const pt = getSVGPoint(e, svg);
       const st = AppState[AppState.activeTab];
-      
-      st.rod.x = pt.x - AppState.drag.offsetX;
-      st.rod.y = pt.y - AppState.drag.offsetY;
-      
-      // Keep rod within reasonable bounds
-      st.rod.x = Math.max(80, Math.min(st.rod.x, 520));
-      st.rod.y = Math.max(50, Math.min(st.rod.y, 250));
-      
+      st.rod.x = Math.max(80, Math.min(pt.x - AppState.drag.offsetX, 520));
+      st.rod.y = Math.max(50, Math.min(pt.y - AppState.drag.offsetY, 250));
       processPhysics(AppState.activeTab);
     });
-
-    const endDrag = (e) => {
+    const endDrag = () => {
       if (AppState.drag.objId === group.id) {
         AppState.drag.active = false;
         AppState.drag.objId = null;
@@ -789,116 +637,70 @@ function setupDragEvents() {
   });
 }
 
-// --- Physics & Rules Logic ---
 function processPhysics(tab) {
   if (tab === 'friction') {
     const st = AppState.friction;
-    const dx = st.rod.x - st.silk.x;
-    const dy = st.rod.y - st.silk.y;
-    const dist = Math.hypot(dx, dy);
-    
-    // Check intersection
+    const dist = Math.hypot(st.rod.x - st.silk.x, st.rod.y - st.silk.y);
     if (dist < 100) {
-      const moveDelta = Math.abs(st.rod.x - st.lastRodX);
-      st.rubAccumulator += moveDelta;
-      
+      st.rubAccumulator += Math.abs(st.rod.x - st.lastRodX);
       if (st.rubAccumulator > 80 && st.electronsTransferred < 6) {
         st.electronsTransferred++;
         st.rubAccumulator = 0;
-        
-        // Re-assign owner
         let count = 0;
         Particles.friction.forEach(p => {
           if (p.owner === 'rod' && count < st.electronsTransferred) {
-            p.owner = 'silk';
-            p.locX = p.silkTarget.x;
-            p.locY = p.silkTarget.y;
-            count++;
+            p.owner = 'silk'; p.locX = p.silkTarget.x; p.locY = p.silkTarget.y; count++;
           }
         });
       }
     }
     st.lastRodX = st.rod.x;
-    
     document.getElementById('fric-val-rod').innerText = formatCharge(st.electronsTransferred);
     document.getElementById('fric-val-silk').innerText = formatCharge(-st.electronsTransferred);
     document.getElementById('fric-val-e').innerText = st.electronsTransferred;
     document.getElementById('fric-read-rod').textContent = formatCharge(st.electronsTransferred);
     document.getElementById('fric-read-silk').textContent = formatCharge(-st.electronsTransferred);
   }
-  
   if (tab === 'conduction') {
     const st = AppState.conduction;
-    const rodTipX = st.rod.x + 80;
-    const sphereEdgeX = st.sphere.x - 40;
-    
-    // Touch detection
-    if (rodTipX >= sphereEdgeX - 5 && Math.abs(st.rod.y - st.sphere.y) < 40) {
-      if (!st.isTouching) {
-        st.isTouching = true;
-        st.electronsTransferred = 3; // Instant transfer on touch for simplicity
-        
-        let count = 0;
-        Particles.conduction.forEach(p => {
-          if (p.canTransfer && p.owner === 'rod') {
-            p.owner = 'sphere';
-            p.locX = p.sphereTarget.x;
-            p.locY = p.sphereTarget.y;
-          }
-        });
-      }
-    } else {
+    const touching = (st.rod.x + 80) >= (st.sphere.x - 45) && Math.abs(st.rod.y - st.sphere.y) < 40;
+    if (touching && !st.isTouching) {
+      st.isTouching = true;
+      st.electronsTransferred = 3;
+      Particles.conduction.forEach(p => {
+        if (p.canTransfer && p.owner === 'rod') { p.owner = 'sphere'; p.locX = p.sphereTarget.x; p.locY = p.sphereTarget.y; }
+      });
+    } else if (!touching) {
       st.isTouching = false;
     }
-    
     const rC = st.electronsTransferred === 3 ? -3 : -6;
     const sC = st.electronsTransferred === 3 ? -3 : 0;
     document.getElementById('cond-val-rod').innerText = formatCharge(rC);
     document.getElementById('cond-val-sphere').innerText = formatCharge(sC);
-    document.getElementById('cond-val-touch').innerText = st.isTouching ? "YES" : "NO";
+    document.getElementById('cond-val-touch').innerText = st.isTouching ? "Yes" : "No";
     document.getElementById('cond-read-rod').textContent = formatCharge(rC);
     document.getElementById('cond-read-sphere').textContent = formatCharge(sC);
   }
-  
   if (tab === 'induction') {
     const st = AppState.induction;
     const dist = (st.sphere.x - 40) - (st.rod.x + 80);
     const isClose = dist < 120 && dist > -100;
-    
     document.getElementById('ind-near-lbl').setAttribute('opacity', isClose ? '1' : '0');
     document.getElementById('ind-far-lbl').setAttribute('opacity', isClose ? '1' : '0');
-    
-    // Drain logic
-    if (isClose && st.isEarthed && st.electronsDrained === 0) {
-      st.electronsDrained = 3;
-    }
-    
+    if (isClose && st.isEarthed && st.electronsDrained === 0) st.electronsDrained = 3;
     Particles.induction.forEach(p => {
       if (p.owner === 'sphere') {
         if (p.canDrain && st.electronsDrained === 3) {
-          p.isDrained = true;
-          p.owner = 'earth';
-          p.locX = L_Ind.earthPoint.x;
-          p.locY = L_Ind.earthPoint.y;
+          p.isDrained = true; p.owner = 'earth'; p.locX = L_Ind.earthPoint.x; p.locY = L_Ind.earthPoint.y;
         } else if (!p.isDrained) {
-          if (isClose) {
-            p.locX = p.polarP.x; p.locY = p.polarP.y;
-          } else {
-            p.locX = (st.electronsDrained > 0 && p.finalP) ? p.finalP.x : p.normP.x;
-            p.locY = (st.electronsDrained > 0 && p.finalP) ? p.finalP.y : p.normP.y;
-          }
+          if (isClose) { p.locX = p.polarP.x; p.locY = p.polarP.y; }
+          else { p.locX = (st.electronsDrained > 0 && p.finalP) ? p.finalP.x : p.normP.x; p.locY = (st.electronsDrained > 0 && p.finalP) ? p.finalP.y : p.normP.y; }
         }
       }
     });
-
     let sC = 0, nC = 0, fC = 0;
-    if (st.electronsDrained === 0) {
-      if (isClose) { nC = 3; fC = -3; }
-    } else {
-      sC = 3; 
-      if (isClose) { nC = 3; fC = 0; }
-    }
-    
+    if (st.electronsDrained === 0) { if (isClose) { nC = 3; fC = -3; } }
+    else { sC = 3; if (isClose) { nC = 3; fC = 0; } }
     document.getElementById('ind-val-sphere').innerText = formatCharge(sC);
     document.getElementById('ind-val-near').innerText = formatCharge(nC);
     document.getElementById('ind-val-far').innerText = formatCharge(fC);
@@ -906,12 +708,11 @@ function processPhysics(tab) {
   }
 }
 
-// --- Render Loop ---
 function drawTrail(x, y) {
   if (prefersReducedMotion) return;
   const group = document.getElementById(`${AppState.activeTab}-trails`);
   if (!group) return;
-  const c = createSVG('circle', { cx: x, cy: y, r: 4, fill: 'var(--accent)', opacity: '0.12' });
+  const c = createSVG('circle', { cx: x, cy: y, r: '3', fill: 'var(--accent)', opacity: '0.12' });
   c.style.transition = 'opacity 200ms linear';
   group.appendChild(c);
   requestAnimationFrame(() => {
@@ -921,58 +722,36 @@ function drawTrail(x, y) {
 }
 
 function loop() {
-  // Only attempt to iterate if the current tab has a particle array defined (prevents crash on 'compare' tab)
   if (!AppState.isPaused && Particles[AppState.activeTab]) {
     const st = AppState[AppState.activeTab];
-    
-    // Update Groups visual transform (Rod dragging)
     if (AppState.activeTab === 'friction') document.getElementById('fric-rod-group').setAttribute('transform', `translate(${st.rod.x},${st.rod.y})`);
     if (AppState.activeTab === 'conduction') document.getElementById('cond-rod-group').setAttribute('transform', `translate(${st.rod.x},${st.rod.y})`);
     if (AppState.activeTab === 'induction') document.getElementById('ind-rod-group').setAttribute('transform', `translate(${st.rod.x},${st.rod.y})`);
 
-    // Interpolate Particles
     Particles[AppState.activeTab].forEach(p => {
-      // Find absolute target
       let tx = 0, ty = 0;
-      if (p.owner === 'rod') { tx = st.rod.x + p.locX; ty = st.rod.y + p.locY; }
-      else if (p.owner === 'silk') { tx = st.silk.x + p.locX; ty = st.silk.y + p.locY; }
+      if (p.owner === 'rod')    { tx = st.rod.x + p.locX;    ty = st.rod.y + p.locY; }
+      else if (p.owner === 'silk')   { tx = st.silk.x + p.locX;   ty = st.silk.y + p.locY; }
       else if (p.owner === 'sphere') { tx = st.sphere.x + p.locX; ty = st.sphere.y + p.locY; }
-      else if (p.owner === 'earth') { tx = p.locX; ty = p.locY; }
-
-      // Init world pos if 0
+      else if (p.owner === 'earth')  { tx = p.locX; ty = p.locY; }
       if (p.wX === 0 && p.wY === 0) { p.wX = tx; p.wY = ty; }
-
-      // Lerp
-      const dx = tx - p.wX;
-      const dy = ty - p.wY;
-      
+      const dx = tx - p.wX, dy = ty - p.wY;
       if (Math.hypot(dx, dy) > 0.5) {
-        p.wX += dx * LERP;
-        p.wY += dy * LERP;
-        if (Math.hypot(dx*LERP, dy*LERP) > 1 && Math.random() > 0.6) drawTrail(p.wX, p.wY);
-      } else {
-        p.wX = tx; p.wY = ty;
-      }
-
+        p.wX += dx * LERP; p.wY += dy * LERP;
+        if (Math.hypot(dx * LERP, dy * LERP) > 1 && Math.random() > 0.6) drawTrail(p.wX, p.wY);
+      } else { p.wX = tx; p.wY = ty; }
       p.el.setAttribute('transform', `translate(${p.wX},${p.wY})`);
-      
-      // Fade out if it hit earth
-      if (p.owner === 'earth' && Math.hypot(dx, dy) < 5) p.el.setAttribute('opacity', '0');
-      else p.el.setAttribute('opacity', '1');
+      p.el.setAttribute('opacity', (p.owner === 'earth' && Math.hypot(dx, dy) < 5) ? '0' : '1');
     });
   }
   requestAnimationFrame(loop);
 }
 
-// --- Application UI ---
 function switchTab(tabId) {
   AppState.activeTab = tabId;
   resetSim(tabId);
-  
   document.querySelectorAll('.tab-pill').forEach(el => el.classList.toggle('active', el.dataset.tab === tabId));
   document.querySelectorAll('.tab-view').forEach(el => el.classList.toggle('active', el.id === `view-${tabId}`));
-  document.getElementById('header-controls').style.display = tabId === 'compare' ? 'none' : 'flex';
-  
   window.location.hash = tabId;
 }
 
@@ -982,19 +761,14 @@ function resetSim(tab) {
     AppState.friction.rod.y = AppState.friction.rod.homeY;
     AppState.friction.electronsTransferred = 0;
     AppState.friction.rubAccumulator = 0;
-    Particles.friction.forEach((p, i) => { 
-      if(i < 6) { p.owner = 'rod'; p.locX = L_Fric.rodE[i].x; p.locY = L_Fric.rodE[i].y; }
+    Particles.friction.forEach((p, i) => {
+      if (i < 6) { p.owner = 'rod'; p.locX = L_Fric.rodE[i].x; p.locY = L_Fric.rodE[i].y; }
     });
   } else if (tab === 'conduction') {
     AppState.conduction.rod.x = AppState.conduction.rod.homeX;
     AppState.conduction.rod.y = AppState.conduction.rod.homeY;
     AppState.conduction.electronsTransferred = 0;
     AppState.conduction.isTouching = false;
-    Particles.conduction.forEach(p => { 
-      if (p.canTransfer) { p.owner = 'rod'; p.locX = L_Cond.rodE[11].x; p.locY = L_Cond.rodE[11].y; } // Approx reset loc
-    });
-    // Hard reset locs properly
-    initConduction(); // Easier to just rebuild array for reset
     document.getElementById('conduction-electrons').innerHTML = '';
     Particles.conduction = [];
     initConduction();
@@ -1015,7 +789,6 @@ function updateEarthBtn() {
   const btn = document.getElementById('btn-earth');
   const wire = document.getElementById('ind-earth-wire');
   const path = document.getElementById('ind-wire-path');
-  
   if (AppState.induction.isEarthed) {
     btn.classList.add('active');
     wire.setAttribute('opacity', '1');
@@ -1028,32 +801,23 @@ function updateEarthBtn() {
   processPhysics('induction');
 }
 
-// Binds
 document.querySelectorAll('.tab-pill').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 document.getElementById('btn-reset').addEventListener('click', () => resetSim(AppState.activeTab));
 document.getElementById('btn-play-pause').addEventListener('click', () => {
   AppState.isPaused = !AppState.isPaused;
-  document.getElementById('icon-pause').innerHTML = AppState.isPaused ? `<path d="M8 5v14l11-7z"/>` : `<path d="M6 4h4v16H6zm8 0h4v16h-4z"/>`;
+  document.getElementById('icon-pause').innerHTML = AppState.isPaused
+    ? '<path d="M8 5v14l11-7z"/>'
+    : '<path d="M6 4h4v16H6zm8 0h4v16h-4z"/>';
 });
 document.getElementById('btn-earth').addEventListener('click', () => {
   AppState.induction.isEarthed = !AppState.induction.isEarthed;
   updateEarthBtn();
 });
 
-// Init
-function createThumbnails() {
-  ['friction', 'conduction', 'induction'].forEach(t => {
-    const svg = document.getElementById(`svg-${t}`).cloneNode(true);
-    svg.getElementById(`${t}-trails`)?.remove();
-    svg.setAttribute('viewBox', '100 80 400 200');
-    document.getElementById(`thumb-${t}`).appendChild(svg);
-  });
-}
-
 window.addEventListener('DOMContentLoaded', () => {
   initSims();
   const hash = window.location.hash.replace('#', '');
-  switchTab(['friction', 'conduction', 'induction', 'compare'].includes(hash) ? hash : 'friction');
+  switchTab(['friction', 'conduction', 'induction'].includes(hash) ? hash : 'friction');
 });
 </script>
 </body>

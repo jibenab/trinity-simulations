@@ -140,3 +140,71 @@ export const seedPeriodicTableGame = internalMutation({
     return { action: "inserted", id };
   },
 });
+
+export const seedChargingMethods = internalMutation({
+  args: {
+    code: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const content = {
+      slug: "charging-methods",
+      type: "simulation" as const,
+      title: "Charging Methods",
+      subject: "Physics" as const,
+      grade: "Class 12",
+      chapter: "Electric Charges and Fields",
+      level: "Core" as const,
+      minutes: 12,
+      concepts: [
+        "charging by friction",
+        "charging by conduction",
+        "charging by induction",
+        "electron transfer",
+        "earthing",
+      ],
+      svgCode: `<svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+  <rect width="80" height="60" fill="#0C1115"/>
+  <circle cx="54" cy="32" r="13" fill="none" stroke="#EFF2F5" stroke-width="1.5"/>
+  <rect x="13" y="25" width="30" height="8" rx="4" fill="none" stroke="#EFF2F5" stroke-width="1.5"/>
+  <g fill="oklch(0.52 0.12 200)">
+    <circle cx="23" cy="18" r="2"/>
+    <circle cx="32" cy="40" r="2"/>
+    <circle cx="49" cy="28" r="2"/>
+    <circle cx="59" cy="36" r="2"/>
+  </g>
+  <g stroke="#EFF2F5" stroke-width="1.2" stroke-linecap="round">
+    <path d="M37 20c6-7 15-7 22 0"/>
+    <path d="M37 20l5 .4"/>
+    <path d="M37 20l2.2 4.5"/>
+  </g>
+</svg>`,
+      code: args.code,
+      prompt:
+        "Compare friction, conduction, and induction. Which methods need contact, and which leave the total charge unchanged?",
+      published: true,
+      featured: false,
+    };
+
+    const existing = await ctx.db
+      .query("content")
+      .withIndex("by_slug", (q) => q.eq("slug", content.slug))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ...content,
+        updatedAt: now,
+      });
+      return { action: "updated", id: existing._id };
+    }
+
+    const id = await ctx.db.insert("content", {
+      ...content,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { action: "inserted", id };
+  },
+});
