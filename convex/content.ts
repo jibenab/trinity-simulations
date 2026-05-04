@@ -56,6 +56,38 @@ export const listAdmin = query({
   },
 });
 
+export const listAdminWithStats = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdminIdentity(ctx);
+    const rows = await ctx.db
+      .query("content")
+      .withIndex("by_updatedAt")
+      .order("desc")
+      .take(500);
+
+    const enriched = [];
+    for (const item of rows) {
+      const stats = await ctx.db
+        .query("contentStats")
+        .withIndex("by_contentId", (q) => q.eq("contentId", item._id))
+        .unique();
+
+      enriched.push({
+        ...item,
+        stats: {
+          simulationUses: stats?.simulationUses ?? 0,
+          gamePlays: stats?.gamePlays ?? 0,
+          scoreSubmissions: stats?.scoreSubmissions ?? 0,
+          lastUsedAt: stats?.lastUsedAt,
+        },
+      });
+    }
+
+    return enriched.sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {

@@ -31,7 +31,8 @@ export default defineSchema({
   })
     .index("by_slug", ["slug"])
     .index("by_type_published", ["type", "published"])
-    .index("by_subject", ["subject"]),
+    .index("by_subject", ["subject"])
+    .index("by_updatedAt", ["updatedAt"]),
   leaderboard: defineTable({
     contentId: v.id("content"),
     userId: v.id("users"),
@@ -42,6 +43,14 @@ export default defineSchema({
   })
     .index("by_content_score", ["contentId", "score"])
     .index("by_content_user", ["contentId", "userId"]),
+  contentStats: defineTable({
+    contentId: v.id("content"),
+    simulationUses: v.number(),
+    gamePlays: v.number(),
+    scoreSubmissions: v.number(),
+    lastUsedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_contentId", ["contentId"]),
   users: defineTable({
     email: v.string(),
     name: v.string(),

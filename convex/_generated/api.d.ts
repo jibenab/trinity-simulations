@@ -14,6 +14,7 @@ import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
 import type * as seed from "../seed.js";
 import type * as seedData from "../seedData.js";
+import type * as usage from "../usage.js";
 import type * as users from "../users.js";
 
 import type {
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   leaderboard: typeof leaderboard;
   seed: typeof seed;
   seedData: typeof seedData;
+  usage: typeof usage;
   users: typeof users;
 }>;
 

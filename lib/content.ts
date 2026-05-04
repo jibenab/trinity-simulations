@@ -45,3 +45,14 @@ export type LeaderboardRow = {
   timeTaken?: number;
   createdAt: number;
 };
+
+export type ContentStats = {
+  simulationUses: number;
+  gamePlays: number;
+  scoreSubmissions: number;
+  lastUsedAt?: number;
+};
+
+export type AdminContent = PublicContent & {
+  stats: ContentStats;
+};

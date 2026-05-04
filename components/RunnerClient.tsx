@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
@@ -25,7 +25,19 @@ export function RunnerClient({
     | undefined;
   const viewer = useQuery(api.users.viewer, {});
   const submitScore = useMutation(api.leaderboard.submitScore);
+  const recordContentUse = useMutation(api.usage.recordContentUse);
   const [lastScore, setLastScore] = useState<number | null>(null);
+  const recordedSlugRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!content || content.type !== expectedType || !viewer) return;
+    if (recordedSlugRef.current === content.slug) return;
+
+    recordedSlugRef.current = content.slug;
+    startTransition(() => {
+      void recordContentUse({ slug: content.slug });
+    });
+  }, [content, expectedType, recordContentUse, viewer]);
 
   if (content === undefined || viewer === undefined) {
     return <div className="shell py-20 text-sm text-ink-mute">Loading…</div>;

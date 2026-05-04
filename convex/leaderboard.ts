@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { incrementContentStats } from "./usage";
 import { ensureViewerRecord, requireIdentity } from "./users";
 
 export const topScores = query({
@@ -72,6 +73,7 @@ export const submitScore = mutation({
       .unique();
 
     if (!existing) {
+      await incrementContentStats(ctx, content._id, { scoreSubmissions: 1 });
       return await ctx.db.insert("leaderboard", {
         contentId: content._id,
         userId,
@@ -96,6 +98,8 @@ export const submitScore = mutation({
         createdAt: Date.now(),
       });
     }
+
+    await incrementContentStats(ctx, content._id, { scoreSubmissions: 1 });
 
     return existing._id;
   },
