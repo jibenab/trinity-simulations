@@ -58,6 +58,7 @@ export function AdminList() {
   const [status, setStatus] = useState<StatusFilter>("All");
   const [sort, setSort] = useState<SortMode>("updated");
   const [selectedGameSlug, setSelectedGameSlug] = useState<string | null>(null);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
   const content = useQuery(api.content.listAdminWithStats, {}) as
     | AdminContent[]
@@ -83,7 +84,7 @@ export function AdminList() {
     games.find((item) => item.slug === selectedGameSlug) ?? games[0] ?? null;
   const scores = useQuery(
     api.leaderboard.topScores,
-    selectedGame ? { slug: selectedGame.slug, limit: 10 } : "skip",
+    leaderboardOpen && selectedGame ? { slug: selectedGame.slug, limit: 10 } : "skip",
   ) as LeaderboardRow[] | undefined;
 
   useEffect(() => {
@@ -206,6 +207,19 @@ export function AdminList() {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  useEffect(() => {
+    if (!leaderboardOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setLeaderboardOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [leaderboardOpen]);
 
   async function handleToggleFeatured(item: AdminContent) {
     const id = item._id as Id<"content">;
@@ -366,7 +380,7 @@ export function AdminList() {
         </div>
       </section>
 
-      <section className="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,0.8fr)]">
+      <section className="mb-6">
         <div className="panel overflow-hidden">
           <div className="overflow-x-auto">
             <div className="min-w-[1040px]">
@@ -415,7 +429,10 @@ export function AdminList() {
                       <ChipButton
                         type="button"
                         active={selectedGame?.slug === item.slug}
-                        onClick={() => setSelectedGameSlug(item.slug)}
+                        onClick={() => {
+                          setSelectedGameSlug(item.slug);
+                          setLeaderboardOpen(true);
+                        }}
                       >
                         Board
                       </ChipButton>
@@ -434,67 +451,94 @@ export function AdminList() {
             </div>
           </div>
         </div>
+      </section>
 
-        <aside className="panel overflow-hidden">
-          <div className="border-b border-ink px-5 py-4">
-            <div className="label-mono text-ink-mute">Game leaderboard</div>
-            <select
-              value={selectedGame?.slug ?? ""}
-              onChange={(event) => setSelectedGameSlug(event.target.value)}
-              className={`${toolbarControlClassName} mt-3 w-full`}
-              disabled={!games.length}
-            >
-              {games.length ? null : <option value="">No games</option>}
-              {games.map((item) => (
-                <option key={item._id} value={item.slug}>
-                  {item.title}
-                </option>
-              ))}
-            </select>
-          </div>
+      {leaderboardOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(12,17,21,0.58)] px-4 py-6"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setLeaderboardOpen(false);
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-leaderboard-title"
+            className="panel max-h-[min(760px,92vh)] w-full max-w-3xl overflow-hidden bg-paper shadow-[10px_10px_0_var(--ink)]"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ink px-5 py-4">
+              <div>
+                <div className="label-mono text-ink-mute">Game leaderboard</div>
+                <h2 id="admin-leaderboard-title" className="mt-2 text-2xl font-semibold leading-tight">
+                  {selectedGame?.title ?? "Leaderboard"}
+                </h2>
+              </div>
+              <ChipButton type="button" onClick={() => setLeaderboardOpen(false)}>
+                Close
+              </ChipButton>
+            </div>
 
-          {selectedGame ? (
-            <div>
-              <div className="border-b border-[var(--rule-soft)] px-5 py-4">
-                <h2 className="text-xl font-semibold leading-tight">{selectedGame.title}</h2>
-                <div className="mt-2 flex flex-wrap gap-4 text-xs text-ink-mute">
+            <div className="border-b border-[var(--rule-soft)] px-5 py-4">
+              <select
+                value={selectedGame?.slug ?? ""}
+                onChange={(event) => setSelectedGameSlug(event.target.value)}
+                className={`${toolbarControlClassName} w-full`}
+                disabled={!games.length}
+              >
+                {games.length ? null : <option value="">No games</option>}
+                {games.map((item) => (
+                  <option key={item._id} value={item.slug}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+              {selectedGame ? (
+                <div className="mt-3 flex flex-wrap gap-4 text-xs text-ink-mute">
                   <span>{selectedGame.stats.gamePlays} plays</span>
                   <span>{selectedGame.stats.scoreSubmissions} score submissions</span>
                 </div>
-              </div>
-              <div className="grid grid-cols-[56px_1fr_80px_70px] gap-3 border-b border-[var(--rule-soft)] px-5 py-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
-                <span>Rank</span>
-                <span>Student</span>
-                <span>Score</span>
-                <span>Time</span>
-              </div>
-              {scores === undefined ? (
-                <div className="px-5 py-10 text-sm text-ink-mute">Loading leaderboard...</div>
-              ) : scores.length ? (
-                scores.map((row, index) => (
-                  <div
-                    key={row._id}
-                    className="grid grid-cols-[56px_1fr_80px_70px] gap-3 border-t border-[var(--rule-soft)] px-5 py-4"
-                  >
-                    <span className="label-mono text-ink-mute">#{index + 1}</span>
-                    <span className="min-w-0 truncate font-medium">{row.userName}</span>
-                    <span className="label-mono text-accent">{row.score}</span>
-                    <span className="label-mono text-ink-mute">{formatTime(row.timeTaken)}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="px-5 py-10 text-sm text-ink-mute">
-                  No scores submitted yet.
+              ) : null}
+            </div>
+
+            {selectedGame ? (
+              <div className="max-h-[52vh] overflow-y-auto">
+                <div className="grid grid-cols-[56px_1fr_90px_80px] gap-3 border-b border-[var(--rule-soft)] px-5 py-3 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
+                  <span>Rank</span>
+                  <span>Student</span>
+                  <span>Score</span>
+                  <span>Time</span>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="px-5 py-10 text-sm text-ink-mute">
-              Create a game to see leaderboard entries here.
-            </div>
-          )}
-        </aside>
-      </section>
+                {scores === undefined ? (
+                  <div className="px-5 py-10 text-sm text-ink-mute">Loading leaderboard...</div>
+                ) : scores.length ? (
+                  scores.map((row, index) => (
+                    <div
+                      key={row._id}
+                      className="grid grid-cols-[56px_1fr_90px_80px] gap-3 border-t border-[var(--rule-soft)] px-5 py-4"
+                    >
+                      <span className="label-mono text-ink-mute">#{index + 1}</span>
+                      <span className="min-w-0 truncate font-medium">{row.userName}</span>
+                      <span className="label-mono text-accent">{row.score}</span>
+                      <span className="label-mono text-ink-mute">{formatTime(row.timeTaken)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-5 py-10 text-sm text-ink-mute">
+                    No scores submitted yet.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="px-5 py-10 text-sm text-ink-mute">
+                Create a game to see leaderboard entries here.
+              </div>
+            )}
+          </section>
+        </div>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-mute">
         <div>
