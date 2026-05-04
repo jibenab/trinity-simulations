@@ -34,9 +34,9 @@ All tokens live in `styles.css` under `:root`. Reference via `var(--token)` — 
 | `--ink-soft` | `#2B333A` | body copy |
 | `--ink-mute` | `#6B7680` | captions, metadata, axis labels |
 | `--rule-soft` | `rgba(12,17,21,0.14)` | hairline dividers |
-| `--dark` | `#0C1115` | full-bleed dark section bg |
-| `--dark-ink` | `#EFF2F5` | text on `--dark` |
-| `--dark-mute` | `#7F8892` | captions on `--dark` |
+| `--dark` | `#FFFFFF` | simulation stage background (white) |
+| `--dark-ink` | `#0C1115` | text on `--dark` |
+| `--dark-mute` | `#4A5560` | captions on `--dark` |
 | `--accent` | `oklch(0.52 0.12 200)` (teal) | **single** interactive/live element |
 | `--accent-ink` | `#F7F8FA` | text on accent |
 
@@ -112,8 +112,8 @@ Every simulation should follow the same 4-zone layout so students build muscle m
 - Right side: 42×42 circular outline buttons for **play/pause**, **reset**. Nothing else.
 
 ### Stage
-- Background `--dark`, 1px `#2A2A2A` border, `border-radius: 4px`.
-- A faint grid: `stroke="#2A2A2A" strokeWidth="0.5"`, every 8–12 divisions.
+- Background `--dark` (white `#FFFFFF`), 1px `var(--stage-rule)` border, `border-radius: 4px`.
+- A faint grid: `stroke="var(--stage-grid)" strokeWidth="0.5"`, every 8–12 divisions.
 - The live moving thing is filled with `--accent`. Everything else is `--dark-ink` or `--dark-mute`.
 - Trails / ghost positions use `--ink` at opacity 0.12.
 - Readouts sit in the top-left, mono, 10px, color `--dark-mute`, format `LABEL  value` with two spaces.
@@ -182,50 +182,6 @@ Never stack two accent buttons side-by-side. Never use gradient or "glass" butto
 
 ---
 
-## 10b. Projector mode (required on every simulation)
-
-Simulations are shown on classroom projectors where thin lines, muted grays, and small labels disappear. **Every simulation must ship with projector mode wired in.** It flips the dark stage to a light surface, darkens muted text, and thickens strokes. Triggered by the `P` key, a floating top-right toggle button, or `?mode=projector` in the URL. The choice persists via `localStorage`.
-
-Two shared files live at `/files/simulations/_shared/`:
-
-- `projector-mode.css` — token overrides under `body.projector { ... }` and the floating toggle button's styling
-- `projector-mode.js` — vanilla, framework-agnostic controller (injects the button, handles keyboard + URL param + persistence)
-
-### Include in every simulation
-
-In the `<head>`, after the fonts link:
-
-```html
-<link rel="stylesheet" href="_shared/projector-mode.css">
-```
-
-At the end of `<body>`, after the React render script:
-
-```html
-<script src="_shared/projector-mode.js"></script>
-```
-
-Do **not** reimplement projector mode per-sim. Do not add a projector button inside the sim's own header — the shared script injects a floating one so it works identically everywhere.
-
-### What projector mode changes
-
-- `--dark` → `#F7F8FA` (stage becomes light)
-- `--dark-ink` → `#0C1115`, `--dark-mute` → `#3A4148` (readouts invert)
-- Grid/axis/dash/ghost stage tokens re-tinted for a light surface
-- Accent chroma slightly raised
-- SVG strokes at `0.5` → `1`, at `1` → `1.6`; SVG text → 13px
-- `.title`, `.eyebrow`, `.label-mono`, `.view-btn`, `.btn`, `.prompt` get readable size bumps
-
-### Requirements for the sim's own CSS so projector mode works
-
-All of these are already part of §3 — this section just names why they matter:
-
-- Never hardcode colors in SVGs or component CSS. Use the token variables (`var(--dark)`, `var(--stage-grid)`, `var(--dark-ink)`, `var(--accent)`, etc.) so the `body.projector` overrides cascade.
-- SVG strokes on grids and decoration **must** use `stroke-width="0.5"` or `stroke-width="1"` so the projector selector can find and thicken them.
-- Keep the stage structure familiar (`.stage`, `.stage-panel`, `.title`, `.eyebrow`, `.label-mono`, `.prompt`, `.view-btn`) so typographic bumps apply.
-
-`nuclear-atomic-size.html` is the current reference implementation.
-
 ---
 
 ## 11. Structural file layout
@@ -238,8 +194,6 @@ All of these are already part of §3 — this section just names why they matter
 /home.html               landing page
 /catalog.html            browse page
 /<sim-id>.html           one file per simulation; mirror pendulum.jsx's structure
-/files/simulations/_shared/projector-mode.css   included by every sim (see §10b)
-/files/simulations/_shared/projector-mode.js    included by every sim (see §10b)
 ```
 
 When adding a new simulation:
@@ -247,7 +201,6 @@ When adding a new simulation:
 2. Add a case to `SimGlyph` in `components.jsx` if the subject glyph needs variation.
 3. Create `<sim-id>.html` using `pendulum.jsx` as the skeleton.
 4. Reuse `TopNav`, `Footer`, `Icon` — don't duplicate.
-5. **Link `_shared/projector-mode.css` and `_shared/projector-mode.js`** (see §10b). Non-negotiable.
 
 ---
 
@@ -262,8 +215,7 @@ When adding a new simulation:
 - [ ] Simulation has play/pause/reset and at most 4 parameters
 - [ ] Stage has a faint grid and mono readouts
 - [ ] Works at 1194×834 and at 375×667
-- [ ] `_shared/projector-mode.css` and `_shared/projector-mode.js` are linked (§10b) — verify `P` toggles a light stage with thicker strokes
-- [ ] No hardcoded colors in SVGs or component CSS — all use `var(--token)` so projector mode can cascade
+- [ ] No hardcoded colors in SVGs or component CSS — all use `var(--token)`
 
 <!-- convex-ai-start -->
 This project uses [Convex](https://convex.dev) as its backend.

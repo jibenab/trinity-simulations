@@ -1,0 +1,525 @@
+const { useEffect, useRef, useState } = React;
+
+// --- DATA CONSTANTS ---
+
+const ELEMENTS = [
+  { num: 1, sym: 'H', let: 'A', g: 1, p: 1, cat: 'nonmetal', name: 'Hydrogen' },
+  { num: 2, sym: 'He', let: 'B', g: 8, p: 1, cat: 'noble', name: 'Helium' },
+  { num: 3, sym: 'Li', let: 'C', g: 1, p: 2, cat: 'alkali', name: 'Lithium' },
+  { num: 4, sym: 'Be', let: 'D', g: 2, p: 2, cat: 'alkaline', name: 'Beryllium' },
+  { num: 5, sym: 'B', let: 'E', g: 3, p: 2, cat: 'metalloid', name: 'Boron' },
+  { num: 6, sym: 'C', let: 'F', g: 4, p: 2, cat: 'nonmetal', name: 'Carbon' },
+  { num: 7, sym: 'N', let: 'G', g: 5, p: 2, cat: 'nonmetal', name: 'Nitrogen' },
+  { num: 8, sym: 'O', let: 'H', g: 6, p: 2, cat: 'nonmetal', name: 'Oxygen' },
+  { num: 9, sym: 'F', let: 'I', g: 7, p: 2, cat: 'halogen', name: 'Fluorine' },
+  { num: 10, sym: 'Ne', let: 'J', g: 8, p: 2, cat: 'noble', name: 'Neon' },
+  { num: 11, sym: 'Na', let: 'K', g: 1, p: 3, cat: 'alkali', name: 'Sodium' },
+  { num: 12, sym: 'Mg', let: 'L', g: 2, p: 3, cat: 'alkaline', name: 'Magnesium' },
+  { num: 13, sym: 'Al', let: 'M', g: 3, p: 3, cat: 'post-transition', name: 'Aluminum' },
+  { num: 14, sym: 'Si', let: 'N', g: 4, p: 3, cat: 'metalloid', name: 'Silicon' },
+  { num: 15, sym: 'P', let: 'O', g: 5, p: 3, cat: 'nonmetal', name: 'Phosphorus' },
+  { num: 16, sym: 'S', let: 'P', g: 6, p: 3, cat: 'nonmetal', name: 'Sulfur' },
+  { num: 17, sym: 'Cl', let: 'Q', g: 7, p: 3, cat: 'halogen', name: 'Chlorine' },
+  { num: 18, sym: 'Ar', let: 'R', g: 8, p: 3, cat: 'noble', name: 'Argon' }
+];
+
+const QUESTION_BANK = [
+  // PYQ Mode (Single Select)
+  { text: "Select the most electronegative element.", ans: [9], type: 'single', expl: "Fluorine (I) is the most electronegative element across these periods.", mode: 'pyq' },
+  { text: "Select the element with the least atomic size in Period 3 (excluding noble gases).", ans: [17], type: 'single', expl: "Atomic size decreases across a period. Chlorine (Q) is the smallest non-noble gas in Period 3.", mode: 'pyq' },
+  { text: "Select the element with the highest metallic character in Period 3.", ans: [11], type: 'single', expl: "Metallic character decreases across a period. Sodium (K) is the highest.", mode: 'pyq' },
+  { text: "Select the element with the highest non-metallic character in Period 2.", ans: [9], type: 'single', expl: "Non-metallic character increases across a period. Fluorine (I) is the highest.", mode: 'pyq' },
+  { text: "Select the metal with valency 2 in Period 3.", ans: [12], type: 'single', expl: "Magnesium (L) is an alkaline earth metal in Period 3 with valency 2.", mode: 'pyq' },
+  { text: "Select an element which forms an ion by losing one electron.", ans: [3, 11], type: 'single_any', expl: "Alkali metals like Lithium (C) or Sodium (K) lose 1 electron to form a +1 cation.", mode: 'pyq' },
+  { text: "Select the element which forms MgCl2-type chloride formula.", ans: [12], type: 'single', expl: "Magnesium (L) forms MgCl2.", mode: 'pyq' },
+  { text: "Select the element with the highest ionisation energy in Period 3.", ans: [18], type: 'single', expl: "Ionisation energy increases across a period. Argon (R) is a stable noble gas.", mode: 'pyq' },
+  { text: "Select the element whose oxide is likely strongly basic in Period 3.", ans: [11], type: 'single', expl: "Metals form basic oxides. Sodium (K) forms a strongly basic oxide (Na2O).", mode: 'pyq' },
+  { text: "Select the most electropositive element shown.", ans: [11], type: 'single', expl: "Sodium (K) (2,8,1) is the most electropositive element shown, as metallic character increases down the group.", mode: 'pyq' },
+  { text: "Select the best reducing agent in Group 1 shown.", ans: [11], type: 'single', expl: "Reducing property increases down a group. Sodium (K) is the best reducing agent here.", mode: 'pyq' },
+  { text: "Select the element with the highest ionisation potential among Mg, Al, and Cl.", ans: [17], type: 'single', expl: "Ionisation potential increases across a period. Chlorine (Q) has the highest.", mode: 'pyq' },
+  { text: "Select the element in Period 3 whose electron affinity is zero.", ans: [18], type: 'single', expl: "Argon (R) is a stable noble gas with zero electron affinity.", mode: 'pyq' },
+  { text: "Select the element in Period 1 that can be placed in both Group 1 and Group 17.", ans: [1], type: 'single', expl: "Hydrogen (A) shows properties of both alkali metals and halogens.", mode: 'pyq' },
+  { text: "Select the element with electronic configuration 2, 8, 6.", ans: [16], type: 'single', expl: "Atomic number 16 is Sulphur (P).", mode: 'pyq' },
+  { text: "Select the element that forms an oxide with the formula X2O3.", ans: [13], type: 'single', expl: "Aluminium (M) has a valency of 3 and forms Al2O3.", mode: 'pyq' },
+  { text: "Select the element whose isotope (e.g., mass number 3) would occupy the same position.", ans: [1], type: 'single', expl: "Isotopes occupy the same position. Hydrogen (A) has isotopes Protium, Deuterium, and Tritium.", mode: 'pyq' },
+
+  // Arrange / Sequence Mode (PYQ & Practice)
+  { text: "Arrange tiles I, D, and F in DECREASING order of atomic size.", ans: [4, 6, 9], type: 'arrange', expl: "Atomic size decreases across a period, so Be (D) > C (F) > F (I).", mode: 'pyq' },
+  { text: "Arrange tiles K, M, and L in DECREASING order of metallic character.", ans: [11, 12, 13], type: 'arrange', expl: "Metallic character decreases across a period, so Na (K) > Mg (L) > Al (M).", mode: 'pyq' },
+  { text: "Arrange tiles H, I, and G in INCREASING order of electronegativity.", ans: [7, 8, 9], type: 'arrange', expl: "Electronegativity increases across a period, so N (G) < O (H) < F (I).", mode: 'practice' },
+  { text: "Arrange tiles P, N, and Q in INCREASING order of ionisation energy.", ans: [14, 16, 17], type: 'arrange', expl: "Ionisation energy generally increases across a period, so Si (N) < S (P) < Cl (Q).", mode: 'pyq' },
+  { text: "Arrange tiles C and K in INCREASING order of atomic size.", ans: [3, 11], type: 'arrange', expl: "Atomic size increases down a group, so Li (C) < Na (K).", mode: 'practice' },
+
+  // Practice Mode (Single & Multi)
+  { text: "Select the halogen in Period 3.", ans: [17], type: 'single', expl: "Chlorine (Q) is in Group 17, Period 3.", mode: 'practice' },
+  { text: "Select the alkali metal in Period 3.", ans: [11], type: 'single', expl: "Sodium (K) is in Group 1, Period 3.", mode: 'practice' },
+  { text: "Select the noble gas in Period 2.", ans: [10], type: 'single', expl: "Neon (J) is a stable noble gas in Period 2.", mode: 'practice' },
+  { text: "Select the element with electronic configuration 2,8,7.", ans: [17], type: 'single', expl: "Atomic number 17 corresponds to Chlorine (Q).", mode: 'practice' },
+  { text: "Select the element in Group 16 and Period 3.", ans: [16], type: 'single', expl: "Sulphur (P) is in Group 16, Period 3.", mode: 'practice' },
+  { text: "Select the element with 6 valence electrons in Period 3.", ans: [16], type: 'single', expl: "Sulphur (P) is in Group 16, so it has 6 valence electrons.", mode: 'practice' },
+  { text: "Select the largest atom in Period 2.", ans: [3], type: 'single', expl: "Atomic size decreases across a period. Lithium (C) is the largest.", mode: 'practice' },
+  { text: "Select the metalloid in Period 3.", ans: [14], type: 'single', expl: "Silicon (N) is a common metalloid in Period 3.", mode: 'practice' },
+  { text: "Select ALL the Halogens shown.", ans: [9, 17], type: 'multi', expl: "Fluorine (I) and Chlorine (Q) are the halogens (Group 17).", mode: 'practice' },
+  { text: "Select ALL the Noble Gases shown.", ans: [2, 10, 18], type: 'multi', expl: "Helium (B), Neon (J), and Argon (R) are noble gases (Group 18).", mode: 'practice' },
+  { text: "Select ALL elements that have an electron affinity of zero.", ans: [2, 10, 18], type: 'multi', expl: "Noble gases have stable configurations and zero electron affinity.", mode: 'practice' },
+  { text: "Select ALL Alkali Metals shown.", ans: [3, 11], type: 'multi', expl: "Lithium (C) and Sodium (K) are alkali metals. Hydrogen (A) is a non-metal.", mode: 'practice' },
+  { text: "Select ALL elements in Period 2 that form acidic oxides.", ans: [6, 7, 8, 9], type: 'multi', expl: "Non-metals generally form acidic oxides (C, N, O, F).", mode: 'pyq' }
+];
+
+// --- HELPER FUNCTIONS ---
+
+const shuffle = (array) => {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex > 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+};
+
+const getCategoryColor = (cat) => {
+  // Extremely subtle Trinity-compliant tints
+  switch (cat) {
+    case 'alkali': return 'bg-[#F2F4F8]'; // Subtle blueish-gray
+    case 'alkaline': return 'bg-[#EAEFF5]';
+    case 'halogen': return 'bg-[#F2F7F4]'; // Subtle greenish
+    case 'noble': return 'bg-[#F5F2F7]'; // Subtle purplish
+    case 'metalloid': return 'bg-[#F5F4EE]'; // Subtle yellowish
+    case 'nonmetal': return 'bg-[#FDFCFB]'; // Almost white
+    case 'post-transition': return 'bg-[#EEF1F5]';
+    default: return 'bg-[#F7F8FA]';
+  }
+};
+
+const GROUP_LABELS = [
+  { g: 1, label: '1' }, { g: 2, label: '2' }, { g: 3, label: '13' }, { g: 4, label: '14' },
+  { g: 5, label: '15' }, { g: 6, label: '16' }, { g: 7, label: '17' }, { g: 8, label: '18' }
+];
+
+export default function App() {
+  const [appState, setAppState] = useState('menu'); // menu, playing, gameover
+  const [gameMode, setGameMode] = useState(''); // practice, pyq, challenge
+  const submittedScoreRef = useRef(false);
+  
+  const [questions, setQuestions] = useState([]);
+  const [currentQIdx, setCurrentQIdx] = useState(0);
+  const [selection, setSelection] = useState([]);
+  const [isAnswered, setIsAnswered] = useState(false);
+  
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(90);
+
+  // --- GAME LOGIC ---
+
+  const initGame = (mode) => {
+    let selectedQs = [];
+    if (mode === 'practice') {
+      selectedQs = QUESTION_BANK.filter(q => q.mode === 'practice');
+    } else if (mode === 'pyq') {
+      selectedQs = QUESTION_BANK.filter(q => q.mode === 'pyq');
+    } else if (mode === 'challenge') {
+      selectedQs = [...QUESTION_BANK];
+    }
+
+    setQuestions(shuffle([...selectedQs]));
+    setGameMode(mode);
+    setCurrentQIdx(0);
+    setScore(0);
+    setStreak(0);
+    setSelection([]);
+    setIsAnswered(false);
+    setTimeLeft(90);
+    submittedScoreRef.current = false;
+    setAppState('playing');
+  };
+
+  useEffect(() => {
+    let timer;
+    if (appState === 'playing' && gameMode === 'challenge' && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            setAppState('gameover');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [appState, gameMode, timeLeft]);
+
+  useEffect(() => {
+    if (appState !== 'gameover' || submittedScoreRef.current) return;
+
+    submittedScoreRef.current = true;
+    const timeTaken = gameMode === 'challenge' ? 90 - timeLeft : undefined;
+    window.parent?.postMessage(
+      {
+        type: 'score',
+        value: score,
+        timeTaken,
+      },
+      '*'
+    );
+  }, [appState, gameMode, score, timeLeft]);
+
+  const currentQ = questions[currentQIdx];
+
+  const handleTileClick = (num) => {
+    if (isAnswered) return;
+
+    if (currentQ.type === 'multi' || currentQ.type === 'arrange') {
+      setSelection(prev => 
+        prev.includes(num) ? prev.filter(n => n !== num) : [...prev, num]
+      );
+    } else {
+      // Single select auto-submits
+      setSelection([num]);
+      checkAnswer([num]);
+    }
+  };
+
+  const handleMultiSubmit = () => {
+    if (selection.length === 0) return;
+    checkAnswer(selection);
+  };
+
+  const checkAnswer = (currentSelection) => {
+    let correct = false;
+    
+    if (currentQ.type === 'single') {
+      correct = currentSelection[0] === currentQ.ans[0];
+    } else if (currentQ.type === 'single_any') {
+      correct = currentQ.ans.includes(currentSelection[0]);
+    } else if (currentQ.type === 'multi') {
+      const isSameLength = currentSelection.length === currentQ.ans.length;
+      const allCorrect = currentSelection.every(val => currentQ.ans.includes(val));
+      correct = isSameLength && allCorrect;
+    } else if (currentQ.type === 'arrange') {
+      const isSameLength = currentSelection.length === currentQ.ans.length;
+      const exactOrder = currentSelection.every((val, index) => val === currentQ.ans[index]);
+      correct = isSameLength && exactOrder;
+    }
+
+    setIsAnswered(true);
+    if (correct) {
+      setScore(s => s + 10);
+      setStreak(s => s + 1);
+    } else {
+      setStreak(0);
+    }
+
+    // In Challenge mode, auto-advance after short delay if correct, longer if wrong
+    if (gameMode === 'challenge') {
+      setTimeout(() => {
+        handleNext();
+      }, correct ? 1000 : 2500);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentQIdx < questions.length - 1) {
+      setCurrentQIdx(idx => idx + 1);
+      setSelection([]);
+      setIsAnswered(false);
+    } else {
+      setAppState('gameover');
+    }
+  };
+
+  const quitGame = () => {
+    setAppState('menu');
+  };
+
+  // --- RENDERERS ---
+
+  const renderTile = (el) => {
+    const isSelected = selection.includes(el.num);
+    const orderIndex = selection.indexOf(el.num);
+    const isCorrectTile = currentQ?.ans.includes(el.num);
+    
+    let baseClass = "relative flex flex-col items-center justify-center border border-[#0C1115] transition-all duration-200 cursor-pointer min-h-[64px] sm:min-h-[80px] p-1";
+    let bgClass = getCategoryColor(el.cat);
+    let borderClass = "";
+    let opacityClass = "opacity-100";
+    let textClass = "text-[#0C1115]";
+
+    if (!isAnswered) {
+      if (isSelected) {
+        borderClass = "ring-2 ring-inset ring-[#0D9488] border-[#0D9488]";
+        bgClass = "bg-teal-50"; 
+      } else {
+        borderClass = "hover:border-[#0D9488] hover:shadow-sm";
+      }
+    } else {
+      // Answered State Feedback
+      if (currentQ.type === 'arrange') {
+         if (isSelected && orderIndex === currentQ.ans.indexOf(el.num)) {
+            // Picked correct tile in correct order
+            bgClass = "bg-green-100";
+            borderClass = "border-green-700 ring-2 ring-inset ring-green-700";
+            textClass = "text-green-900";
+         } else if (isSelected) {
+            // Picked tile but wrong order or not part of the answer
+            bgClass = "bg-red-100";
+            borderClass = "border-red-700 ring-2 ring-inset ring-red-700";
+            textClass = "text-red-900";
+         } else if (!isSelected && isCorrectTile) {
+            // Missed correct tile entirely
+            bgClass = "bg-green-50";
+            borderClass = "border-green-700 border-dashed border-2";
+         } else {
+            opacityClass = "opacity-40 grayscale";
+         }
+      } else {
+        if (isSelected && isCorrectTile) {
+          bgClass = "bg-green-100";
+          borderClass = "border-green-700 ring-2 ring-inset ring-green-700";
+          textClass = "text-green-900";
+        } else if (isSelected && !isCorrectTile) {
+          bgClass = "bg-red-100";
+          borderClass = "border-red-700 ring-2 ring-inset ring-red-700";
+          textClass = "text-red-900";
+        } else if (!isSelected && isCorrectTile) {
+          // Missed correct tile
+          bgClass = "bg-green-50";
+          borderClass = "border-green-700 border-dashed border-2";
+        } else {
+          opacityClass = "opacity-40 grayscale";
+        }
+      }
+    }
+
+    return (
+      <div 
+        key={el.num}
+        onClick={() => handleTileClick(el.num)}
+        className={`${baseClass} ${bgClass} ${borderClass} ${opacityClass} ${textClass}`}
+        style={{ gridColumnStart: el.g, gridRowStart: el.p + 1 }} // +1 to account for group labels row
+      >
+        <span className="absolute top-1 left-1 text-[10px] sm:text-xs font-mono font-semibold text-[#6B7680]">
+          {el.num}
+        </span>
+        
+        {/* Render selection order badge for 'arrange' type */}
+        {orderIndex !== -1 && currentQ?.type === 'arrange' && !isAnswered && (
+          <span className="absolute -top-2 -right-2 bg-[#0C1115] text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold z-10 shadow-sm border-2 border-[#F7F8FA]">
+            {orderIndex + 1}
+          </span>
+        )}
+
+        {/* Post-answer feedback badge showing correct sequence order */}
+        {isAnswered && currentQ?.type === 'arrange' && isCorrectTile && (
+          <span className="absolute -bottom-2 -right-2 bg-green-700 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold z-10 shadow-sm border-2 border-[#F7F8FA]">
+            {currentQ.ans.indexOf(el.num) + 1}
+          </span>
+        )}
+
+        {isAnswered && (isSelected || isCorrectTile) ? (
+          <>
+            <span className="text-xl sm:text-2xl font-bold font-mono tracking-tight">{el.sym}</span>
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-widest mt-1 opacity-80">{el.name}</span>
+          </>
+        ) : (
+          <span className="text-2xl sm:text-3xl font-bold font-mono text-[#0C1115]">{el.let}</span>
+        )}
+      </div>
+    );
+  };
+
+  const renderGrid = () => {
+    return (
+      <div className="w-full overflow-x-auto pb-4 custom-scrollbar">
+        <div className="min-w-[600px] grid grid-cols-8 gap-1 bg-[#EFF2F5]">
+          {/* Group Header Row */}
+          {GROUP_LABELS.map(g => (
+            <div key={`g-${g.g}`} className="text-center text-xs font-mono text-[#6B7680] pb-2 font-semibold" style={{ gridColumnStart: g.g, gridRowStart: 1 }}>
+              GRP {g.label}
+            </div>
+          ))}
+          {/* Element Tiles */}
+          {ELEMENTS.map(renderTile)}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-[#EFF2F5] text-[#0C1115] font-sans selection:bg-[#0D9488] selection:text-white flex flex-col items-center py-6 px-4">
+      
+      {/* HEADER ZONE */}
+      <header className="w-full max-w-5xl bg-[#F7F8FA] border border-[#0C1115] p-3 sm:p-5 flex flex-col sm:flex-row justify-between items-center mb-6 shadow-sm">
+        <div className="flex flex-col items-center sm:items-start mb-4 sm:mb-0">
+          <h1 className="text-xs uppercase tracking-[0.2em] text-[#6B7680] font-bold mb-1">Trinity Simulation Lab</h1>
+          <h2 className="text-lg sm:text-xl font-bold uppercase tracking-wide">Periodic Table Drill</h2>
+        </div>
+        
+        {appState === 'playing' && (
+          <div className="flex gap-4 sm:gap-8 items-center text-sm font-mono border-t sm:border-t-0 sm:border-l border-[#0C1115] pt-4 sm:pt-0 sm:pl-8">
+            <div className="flex flex-col">
+              <span className="text-[#6B7680] text-[10px] uppercase">Score</span>
+              <span className="font-bold text-lg leading-none">{score}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[#6B7680] text-[10px] uppercase">Streak</span>
+              <span className="font-bold text-lg leading-none">{streak}</span>
+            </div>
+            {gameMode === 'challenge' && (
+              <div className="flex flex-col text-right">
+                <span className="text-[#6B7680] text-[10px] uppercase">Time</span>
+                <span className={`font-bold text-lg leading-none ${timeLeft < 10 ? 'text-red-600' : ''}`}>
+                  {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+            )}
+            <button onClick={quitGame} className="ml-4 text-xs underline text-[#6B7680] hover:text-[#0C1115]">QUIT</button>
+          </div>
+        )}
+      </header>
+
+      {/* STAGE ZONE */}
+      <main className="w-full max-w-5xl flex-grow flex flex-col">
+        
+        {appState === 'menu' && (
+          <div className="bg-[#F7F8FA] border border-[#0C1115] p-8 flex flex-col items-center text-center max-w-2xl mx-auto w-full">
+            <h3 className="text-xl font-bold uppercase mb-2">Select Instrument Mode</h3>
+            <p className="text-[#6B7680] text-sm mb-8 max-w-md">
+              Identify elements based on Class X chemistry principles. Actual symbols are concealed until evaluated.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+              <button onClick={() => initGame('practice')} className="group flex flex-col items-start p-4 border border-[#0C1115] bg-white hover:border-[#0D9488] transition-colors text-left">
+                <span className="font-bold uppercase text-sm mb-1 group-hover:text-[#0D9488]">Practice Mode</span>
+                <span className="text-xs text-[#6B7680]">Core concepts. Untimed. Immediate feedback.</span>
+              </button>
+              <button onClick={() => initGame('pyq')} className="group flex flex-col items-start p-4 border border-[#0C1115] bg-white hover:border-[#0D9488] transition-colors text-left">
+                <span className="font-bold uppercase text-sm mb-1 group-hover:text-[#0D9488]">PYQ Reasoning</span>
+                <span className="text-xs text-[#6B7680]">Board-style indirect questions.</span>
+              </button>
+              <button onClick={() => initGame('challenge')} className="group flex flex-col items-start p-4 border border-[#0C1115] bg-[#0C1115] text-white hover:bg-[#0D9488] hover:border-[#0D9488] transition-colors text-left">
+                <span className="font-bold uppercase text-sm mb-1">Challenge Mode</span>
+                <span className="text-xs text-gray-300">90-second timer. Maximize your score.</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {appState === 'playing' && currentQ && (
+          <>
+            {/* QUESTION STRIP */}
+            <div className="bg-[#F7F8FA] border border-[#0C1115] p-5 mb-4 text-center shadow-sm">
+              <div className="text-[10px] text-[#6B7680] font-mono font-bold uppercase mb-2">
+                Question {currentQIdx + 1} of {questions.length} • {currentQ.type === 'multi' ? 'SELECT MULTIPLE' : currentQ.type === 'arrange' ? 'SELECT IN ORDER' : 'SELECT ONE TILE'}
+              </div>
+              <h3 className="text-lg sm:text-xl font-medium">{currentQ.text}</h3>
+            </div>
+
+            {/* PERIODIC TABLE GRID */}
+            <div className="bg-[#F7F8FA] border border-[#0C1115] p-4 sm:p-6 mb-4 shadow-sm">
+              {renderGrid()}
+            </div>
+
+            {/* FEEDBACK / CONTROL STRIP */}
+            <div className="bg-[#F7F8FA] border border-[#0C1115] p-4 min-h-[100px] flex flex-col sm:flex-row items-center justify-between shadow-sm">
+              {!isAnswered ? (
+                <div className="flex-1 flex flex-col sm:flex-row items-center justify-between w-full">
+                  <div className="text-sm font-mono text-[#6B7680] mb-4 sm:mb-0">
+                    {currentQ.type === 'multi' || currentQ.type === 'arrange'
+                      ? `${selection.length} tile(s) selected.` 
+                      : "Awaiting selection..."}
+                  </div>
+                  {(currentQ.type === 'multi' || currentQ.type === 'arrange') && (
+                    <button 
+                      onClick={handleMultiSubmit}
+                      disabled={selection.length === 0 || (currentQ.type === 'arrange' && selection.length !== currentQ.ans.length)}
+                      className="px-6 py-2 bg-[#0C1115] text-white text-sm font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0D9488] transition-colors w-full sm:w-auto"
+                    >
+                      {currentQ.type === 'arrange' ? 'Confirm Sequence' : 'Confirm Selection'}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col sm:flex-row items-center justify-between w-full">
+                  <div className="flex-1 mb-4 sm:mb-0 sm:pr-8 text-center sm:text-left">
+                    <span className="font-bold uppercase text-sm block mb-1">
+                      {/* Determine correctness for rendering text */}
+                      {(() => {
+                        let isCorrect = false;
+                        if (currentQ.type === 'single') isCorrect = selection[0] === currentQ.ans[0];
+                        else if (currentQ.type === 'single_any') isCorrect = currentQ.ans.includes(selection[0]);
+                        else if (currentQ.type === 'multi') isCorrect = selection.length === currentQ.ans.length && selection.every(val => currentQ.ans.includes(val));
+                        else if (currentQ.type === 'arrange') isCorrect = selection.length === currentQ.ans.length && selection.every((val, index) => val === currentQ.ans[index]);
+                        
+                        return isCorrect ? <span className="text-green-700">✓ Correct Assessment</span> : <span className="text-red-700">✗ Incorrect Analysis</span>;
+                      })()}
+                    </span>
+                    <span className="text-sm text-[#0C1115]">{currentQ.expl}</span>
+                  </div>
+                  
+                  {gameMode !== 'challenge' && (
+                    <button 
+                      onClick={handleNext}
+                      className="px-6 py-3 border border-[#0C1115] bg-white text-[#0C1115] text-sm font-bold uppercase tracking-wider hover:bg-[#0C1115] hover:text-white transition-colors w-full sm:w-auto whitespace-nowrap"
+                    >
+                      {currentQIdx < questions.length - 1 ? 'Next Sequence' : 'Conclude'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {appState === 'gameover' && (
+           <div className="bg-[#F7F8FA] border border-[#0C1115] p-8 flex flex-col items-center text-center max-w-xl mx-auto w-full shadow-sm mt-8">
+            <h3 className="text-2xl font-bold uppercase mb-2">Diagnostic Complete</h3>
+            <div className="w-16 h-1 bg-[#0C1115] mb-6"></div>
+            
+            <div className="flex gap-12 mb-8">
+              <div className="flex flex-col items-center">
+                <span className="text-[#6B7680] text-xs uppercase tracking-widest mb-1">Final Score</span>
+                <span className="text-5xl font-mono font-bold">{score}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[#6B7680] text-xs uppercase tracking-widest mb-1">Mode</span>
+                <span className="text-2xl font-mono font-bold mt-2 uppercase">{gameMode}</span>
+              </div>
+            </div>
+
+            <p className="text-sm text-[#6B7680] mb-8">
+              Excellent work reviewing periodic trends and properties. Consistency is key to mastering chemistry.
+            </p>
+
+            <button 
+              onClick={() => setAppState('menu')}
+              className="px-8 py-3 bg-[#0C1115] text-white text-sm font-bold uppercase tracking-wider hover:bg-[#0D9488] transition-colors"
+            >
+              Return to Console
+            </button>
+          </div>
+        )}
+
+      </main>
+      
+      {/* GLOBAL STYLES FOR SCROLLBAR */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #EFF2F5; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #6B7680; 
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #0C1115; 
+        }
+      `}} />
+    </div>
+  );
+}

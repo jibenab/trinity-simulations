@@ -2,33 +2,26 @@
    Shared across every Trinity simulation. Toggled by the `P` key,
    the injected header button, or `?mode=projector` in the URL.
 
-   Flips the dark stage to light and thickens strokes so lines and
-   labels survive projection in a classroom. Design tokens only —
-   no per-sim markup required. */
+   Stage is white by default. Projector mode pushes contrast further:
+   darker muted text, thicker strokes, larger labels. */
 
 body.projector {
-  /* Ink + chrome */
+  /* Chrome */
   --ink-mute: #3A4148;
   --rule-soft: rgba(12, 17, 21, 0.32);
   --accent: oklch(0.52 0.14 200);
 
-  /* Stage flips to light */
-  --dark: #F7F8FA;
-  --dark-ink: #0C1115;
-  --dark-mute: #3A4148;
-
-  /* Stage decorations on the now-light background */
-  --stage-rule: rgba(12, 17, 21, 0.1);
-  --stage-grid: rgba(12, 17, 21, 0.06);
-  --stage-axis: rgba(12, 17, 21, 0.45);
-  --stage-dash: rgba(12, 17, 21, 0.55);
+  /* Stage — darker decoration on white */
+  --stage-rule: rgba(12, 17, 21, 0.18);
+  --stage-grid: rgba(12, 17, 21, 0.13);
+  --stage-axis: rgba(12, 17, 21, 0.55);
+  --stage-dash: rgba(12, 17, 21, 0.70);
   --stage-fill-muted: rgba(12, 17, 21, 0.12);
-  --stage-fill-soft: rgba(12, 17, 21, 0.06);
-  --stage-ghost: rgba(12, 17, 21, 0.7);
-  --stage-chip: rgba(12, 17, 21, 0.92);
+  --stage-ghost: rgba(12, 17, 21, 0.60);
+  --dark-mute: #1A2028;
 }
 
-/* Readability bumps — labels and text grow a touch */
+/* Readability bumps */
 body.projector .title { font-size: 32px; }
 body.projector .eyebrow { font-size: 13px; letter-spacing: 0.12em; }
 body.projector .label-mono { font-size: 12px; letter-spacing: 0.06em; }

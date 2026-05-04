@@ -44,7 +44,13 @@ export const submitScore = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
-    const normalizedScore = Math.max(0, Math.floor(args.score));
+    const normalizedScore = Number.isFinite(args.score)
+      ? Math.max(0, Math.floor(args.score))
+      : 0;
+    const normalizedTimeTaken =
+      args.timeTaken !== undefined && Number.isFinite(args.timeTaken)
+        ? Math.max(0, Math.floor(args.timeTaken))
+        : undefined;
 
     const content = await ctx.db
       .query("content")
@@ -58,12 +64,12 @@ export const submitScore = mutation({
     const userId = await ensureViewerRecord(ctx, identity);
     const userName = identity.name ?? "Student";
 
-    const existing = (
-      await ctx.db
-        .query("leaderboard")
-        .withIndex("by_content_score", (q) => q.eq("contentId", content._id))
-        .collect()
-    ).find((row) => row.userId === userId);
+    const existing = await ctx.db
+      .query("leaderboard")
+      .withIndex("by_content_user", (q) =>
+        q.eq("contentId", content._id).eq("userId", userId),
+      )
+      .unique();
 
     if (!existing) {
       return await ctx.db.insert("leaderboard", {
@@ -71,7 +77,7 @@ export const submitScore = mutation({
         userId,
         userName,
         score: normalizedScore,
-        timeTaken: args.timeTaken,
+        timeTaken: normalizedTimeTaken,
         createdAt: Date.now(),
       });
     }
@@ -79,13 +85,13 @@ export const submitScore = mutation({
     const betterScore = normalizedScore > existing.score;
     const sameScoreFasterTime =
       normalizedScore === existing.score &&
-      args.timeTaken !== undefined &&
-      args.timeTaken < (existing.timeTaken ?? Infinity);
+      normalizedTimeTaken !== undefined &&
+      normalizedTimeTaken < (existing.timeTaken ?? Infinity);
 
     if (betterScore || sameScoreFasterTime) {
       await ctx.db.patch(existing._id, {
         score: normalizedScore,
-        timeTaken: args.timeTaken,
+        timeTaken: normalizedTimeTaken,
         userName,
         createdAt: Date.now(),
       });
