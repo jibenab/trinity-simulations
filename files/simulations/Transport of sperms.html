@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transport of Sperm - Trinity Simulation Lab</title>
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --bg: #EFF2F5;
+      --bg-alt: #E2E7EC;
+      --paper: #F7F8FA;
+      --ink: #0C1115;
+      --ink-soft: #2B333A;
+      --ink-mute: #6B7680;
+      --rule-soft: rgba(12, 17, 21, 0.14);
+      --accent: oklch(0.52 0.12 200);
+      --accent-ink: #F7F8FA;
+      --sans: "Manrope", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    #root {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "ss01", "cv11";
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+const { useEffect, useState } = React;
+
+const STAGES = [
+  {
+    id: 0,
+    name: 'Seminiferous Tubules',
+    title: 'Production: Seminiferous Tubules',
+    description: 'Located within the lobules of the testis, separated by septa. This highly coiled tubular network is the site of spermatogenesis, where diploid cells undergo meiosis to become haploid sperm.',
+    color: '#dc2626',
+    path: 'M 180,310 C 150,340 220,380 200,320 C 180,280 240,300 230,350 C 220,400 280,410 270,360 C 260,320 310,330 300,380 C 290,420 340,430 350,390'
+  },
+  {
+    id: 1,
+    name: 'Rete Testis',
+    title: 'Collection: Rete Testis',
+    description: 'Located in the mediastinum testis. The seminiferous tubules straighten into tubuli recti and empty into this delicate network of channels that collects newly formed sperm.',
+    color: '#ea580c',
+    path: 'M 350,390 L 365,380 L 360,360 L 375,370 L 370,340'
+  },
+  {
+    id: 2,
+    name: 'Vasa Efferentia',
+    title: 'Transport: Vasa Efferentia',
+    description: 'Also called efferent ductules. These small ciliated tubes pierce the tunica albuginea to carry immature sperm from the rete testis into the head of the epididymis.',
+    color: '#ca8a04',
+    path: 'M 370,340 Q 420,290 370,250'
+  },
+  {
+    id: 3,
+    name: 'Epididymis',
+    title: 'Maturation: Epididymis',
+    description: 'A tightly coiled tube capping the testis, divided into head, body, and tail. Sperm mature here over 10-14 days and develop the motility needed to swim.',
+    color: '#16a34a',
+    path: 'M 370,250 C 450,220 460,400 410,480 C 380,520 400,580 340,560'
+  },
+  {
+    id: 4,
+    name: 'Vas Deferens',
+    title: 'Propulsion: Vas Deferens',
+    description: 'A thick muscular tube rising from the tail of the epididymis. It travels up the spermatic cord, loops over the urinary bladder, and widens at the ampulla.',
+    color: '#2563eb',
+    path: 'M 340,560 C 280,540 280,450 300,350 C 330,200 450,80 600,120 C 700,150 720,250 690,340'
+  },
+  {
+    id: 5,
+    name: 'Ejaculatory Duct',
+    title: 'Mixing: Ejaculatory Duct',
+    description: 'Formed where the vas deferens meets the duct of the seminal vesicle. It passes through the prostate gland, mixing sperm with seminal fluid.',
+    color: '#9333ea',
+    path: 'M 690,340 L 660,400'
+  },
+  {
+    id: 6,
+    name: 'Urethra',
+    title: 'Ejection: Urethra',
+    description: 'The final shared pathway for urine and semen. It runs from the prostate, receives fluid from the bulbourethral gland, and travels through the corpus spongiosum.',
+    color: '#0891b2',
+    path: 'M 660,400 L 660,450 C 660,500 720,530 800,530 L 920,530'
+  }
+];
+
+function Icon({ name, size = 18 }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true
+  };
+
+  if (name === 'pause') {
+    return (
+      <svg {...common}>
+        <path d="M9 5v14" />
+        <path d="M15 5v14" />
+      </svg>
+    );
+  }
+
+  if (name === 'reset') {
+    return (
+      <svg {...common}>
+        <path d="M4 7v6h6" />
+        <path d="M20 12a8 8 0 0 0-14.6-4.5L4 13" />
+        <path d="M6 17.5A8 8 0 0 0 20 12" />
+      </svg>
+    );
+  }
+
+  if (name === 'previous') {
+    return (
+      <svg {...common}>
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    );
+  }
+
+  if (name === 'next') {
+    return (
+      <svg {...common}>
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    );
+  }
+
+  if (name === 'activity') {
+    return (
+      <svg {...common}>
+        <path d="M3 12h4l3-8 4 16 3-8h4" />
+      </svg>
+    );
+  }
+
+  if (name === 'info') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 10v6" />
+        <path d="M12 7h.01" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M8 5l9 7-9 7V5z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function App() {
+  const [activeStage, setActiveStage] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    let interval;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setActiveStage((prev) => (prev < STAGES.length - 1 ? prev + 1 : 0));
+      }, 4500);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const handleNext = () => setActiveStage((p) => Math.min(p + 1, STAGES.length - 1));
+  const handlePrev = () => setActiveStage((p) => Math.max(p - 1, 0));
+  const handleReset = () => {
+    setActiveStage(0);
+    setIsPlaying(false);
+  };
+
+  const stage = STAGES[activeStage];
+  const spermStroke = activeStage === 2 ? 'var(--dark-ink)' : 'var(--dark)';
+
+  return (
+    <main className="transport-app">
+      <style>{`
+        .transport-app {
+          --dark: #FFFFFF;
+          --dark-ink: #0C1115;
+          --dark-mute: #4A5560;
+          --stage-rule: rgba(12, 17, 21, 0.10);
+          --stage-grid: rgba(12, 17, 21, 0.07);
+          min-height: 100vh;
+          max-width: 1194px;
+          margin: 0 auto;
+          background: var(--bg);
+          color: var(--ink);
+          font-family: var(--sans);
+          border-left: 1px solid var(--rule-soft);
+          border-right: 1px solid var(--rule-soft);
+        }
+
+        .transport-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          padding: 14px 22px;
+          border-bottom: 1px solid var(--rule-soft);
+          background: var(--paper);
+        }
+
+        .eyebrow {
+          font-family: var(--mono);
+          font-size: 11px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--ink-mute);
+        }
+
+        .title {
+          margin: 6px 0 0;
+          font-size: 32px;
+          line-height: 1;
+          letter-spacing: -0.02em;
+          font-weight: 600;
+          color: var(--ink);
+        }
+
+        .header-copy {
+          margin: 7px 0 0;
+          max-width: 560px;
+          color: var(--ink-mute);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
+        .header-actions,
+        .panel-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .icon-button {
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          border: 1px solid var(--rule-soft);
+          background: transparent;
+          color: var(--ink);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .icon-button:hover,
+        .icon-button:focus-visible {
+          border-color: var(--ink);
+          background: var(--bg-alt);
+          outline: none;
+        }
+
+        .layout {
+          display: grid;
+          grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+          gap: 14px;
+          padding: 14px;
+        }
+
+        .timeline-panel,
+        .info-panel {
+          background: var(--paper);
+          border: 1px solid var(--rule-soft);
+          border-radius: 4px;
+        }
+
+        .timeline-panel {
+          min-height: 0;
+          padding: 14px;
+        }
+
+        .timeline-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .panel-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0;
+          font-size: 15px;
+          font-weight: 600;
+          letter-spacing: -0.01em;
+          color: var(--ink);
+        }
+
+        .timeline {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .timeline::before {
+          content: "";
+          position: absolute;
+          left: 17px;
+          top: 15px;
+          bottom: 15px;
+          width: 1px;
+          background: var(--rule-soft);
+        }
+
+        .stage-button {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: 22px minmax(0, 1fr);
+          align-items: center;
+          gap: 11px;
+          width: 100%;
+          min-height: 44px;
+          padding: 8px 10px;
+          border: 1px solid transparent;
+          border-radius: 4px;
+          background: transparent;
+          color: var(--ink-soft);
+          text-align: left;
+          transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .stage-button:hover,
+        .stage-button:focus-visible {
+          background: var(--bg-alt);
+          outline: none;
+        }
+
+        .stage-button.active {
+          background: var(--bg-alt);
+          border-color: var(--rule-soft);
+          color: var(--ink);
+        }
+
+        .stage-dot {
+          width: 11px;
+          height: 11px;
+          border-radius: 999px;
+          border: 2px solid var(--paper);
+        }
+
+        .stage-button.active .stage-dot {
+          width: 15px;
+          height: 15px;
+          margin-left: -2px;
+          border-color: var(--ink);
+        }
+
+        .stage-name {
+          display: block;
+          overflow-wrap: anywhere;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1.2;
+        }
+
+        .stage-count {
+          display: block;
+          margin-top: 3px;
+          font-family: var(--mono);
+          font-size: 10px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--ink-mute);
+        }
+
+        .simulation-area {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          min-width: 0;
+        }
+
+        .stage-panel {
+          position: relative;
+          min-height: 500px;
+          background: var(--dark);
+          border: 1px solid var(--stage-rule);
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .stage-svg {
+          width: 100%;
+          height: 100%;
+          min-height: 500px;
+        }
+
+        .sperm-flow {
+          stroke-dasharray: 5 30;
+          animation: flow 1s linear infinite;
+        }
+
+        .pulse-track {
+          animation: pulse-track 1.8s ease-in-out infinite;
+        }
+
+        @keyframes flow {
+          0% { stroke-dashoffset: 35; }
+          100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes pulse-track {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.58; }
+        }
+
+        .stage-readout {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          max-width: calc(100% - 24px);
+          padding: 7px 9px;
+          border: 1px solid var(--stage-rule);
+          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.92);
+          color: var(--dark-mute);
+          font-family: var(--mono);
+          font-size: 10px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .readout-dot {
+          width: 9px;
+          height: 9px;
+          border-radius: 999px;
+          flex: 0 0 auto;
+        }
+
+        .info-panel {
+          position: relative;
+          padding: 18px;
+        }
+
+        .info-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 18px;
+          align-items: start;
+        }
+
+        .info-heading {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+
+        .info-icon {
+          width: 40px;
+          height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid var(--rule-soft);
+          border-radius: 4px;
+          background: var(--bg);
+          flex: 0 0 auto;
+        }
+
+        .info-title {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 600;
+          letter-spacing: -0.02em;
+          line-height: 1.1;
+          color: var(--ink);
+        }
+
+        .info-copy {
+          margin: 0;
+          max-width: 760px;
+          color: var(--ink-soft);
+          font-size: 16px;
+          line-height: 1.55;
+        }
+
+        .nav-controls {
+          display: flex;
+          gap: 8px;
+          min-width: 210px;
+          padding-left: 18px;
+          border-left: 1px solid var(--rule-soft);
+        }
+
+        .text-button {
+          min-height: 44px;
+          border-radius: 999px;
+          border: 1px solid var(--ink);
+          padding: 0 15px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          background: var(--ink);
+          color: var(--bg);
+          font-size: 13px;
+          font-weight: 600;
+          transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+          white-space: nowrap;
+        }
+
+        .text-button.ghost {
+          background: transparent;
+          color: var(--ink);
+        }
+
+        .text-button:hover,
+        .text-button:focus-visible {
+          opacity: 0.82;
+          outline: none;
+        }
+
+        .text-button:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .sperm-flow,
+          .pulse-track {
+            animation: none;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .layout {
+            grid-template-columns: 1fr;
+          }
+
+          .timeline {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .timeline::before {
+            display: none;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .transport-header,
+          .info-grid {
+            grid-template-columns: 1fr;
+            display: grid;
+          }
+
+          .transport-header {
+            padding: 14px;
+          }
+
+          .title {
+            font-size: 28px;
+          }
+
+          .header-actions,
+          .panel-actions {
+            justify-content: flex-start;
+          }
+
+          .timeline {
+            grid-template-columns: 1fr;
+          }
+
+          .stage-panel,
+          .stage-svg {
+            min-height: 420px;
+          }
+
+          .info-panel {
+            padding: 14px;
+          }
+
+          .info-title {
+            font-size: 20px;
+          }
+
+          .info-copy {
+            font-size: 15px;
+          }
+
+          .nav-controls {
+            min-width: 0;
+            padding-left: 0;
+            border-left: 0;
+            border-top: 1px solid var(--rule-soft);
+            padding-top: 14px;
+          }
+
+          .text-button {
+            flex: 1;
+            min-width: 0;
+            padding: 0 12px;
+          }
+        }
+      `}</style>
+
+      <header className="transport-header">
+        <div>
+          <div className="eyebrow">Simulation · Biology</div>
+          <h1 className="title">Transport of Sperm</h1>
+          <p className="header-copy">Follow the path from production in the testis to ejection through the urethra.</p>
+        </div>
+        <div className="header-actions">
+          <button className="icon-button" onClick={() => setIsPlaying(!isPlaying)} aria-label={isPlaying ? 'Pause simulation' : 'Play simulation'}>
+            <Icon name={isPlaying ? 'pause' : 'play'} />
+          </button>
+          <button className="icon-button" onClick={handleReset} aria-label="Reset simulation">
+            <Icon name="reset" />
+          </button>
+        </div>
+      </header>
+
+      <section className="layout">
+        <aside className="timeline-panel" aria-label="Sperm transport pathway">
+          <div className="timeline-head">
+            <h2 className="panel-title">
+              <Icon name="activity" size={17} />
+              Pathway
+            </h2>
+            <div className="eyebrow">{String(activeStage + 1).padStart(2, '0')} / 07</div>
+          </div>
+
+          <div className="timeline">
+            {STAGES.map((item, index) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveStage(index);
+                  setIsPlaying(false);
+                }}
+                className={`stage-button ${activeStage === index ? 'active' : ''}`}
+                aria-current={activeStage === index ? 'step' : undefined}
+              >
+                <span className="stage-dot" style={{ backgroundColor: item.color }} />
+                <span>
+                  <span className="stage-name">{item.name}</span>
+                  <span className="stage-count">Stage {index + 1}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <div className="simulation-area">
+          <div className="stage-panel">
+            <svg viewBox="0 0 1000 650" className="stage-svg" preserveAspectRatio="xMidYMid meet">
+              <g stroke="var(--stage-grid)" strokeWidth="0.5">
+                {Array.from({ length: 11 }).map((_, i) => (
+                  <line key={`gx-${i}`} x1={i * 100} y1="0" x2={i * 100} y2="650" />
+                ))}
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <line key={`gy-${i}`} x1="0" y1={i * 92.85} x2="1000" y2={i * 92.85} />
+                ))}
+              </g>
+
+              <g id="anatomy-layer">
+                <path d="M 120,200 C 50,350 50,600 250,630 C 450,600 480,400 450,200" fill="#cbd5e1" opacity="0.32" stroke="var(--dark-mute)" strokeWidth="2" strokeDasharray="8 6" />
+
+                <path d="M 160,380 C 160,250 250,230 360,280 C 390,320 390,450 360,520 C 250,560 160,500 160,380 Z" fill="#fca5a5" stroke="var(--dark)" strokeWidth="12" />
+
+                <g stroke="var(--dark)" strokeWidth="4" opacity="0.82">
+                  <path d="M 360,400 L 175,290" />
+                  <path d="M 360,400 L 160,380" />
+                  <path d="M 360,400 L 175,480" />
+                  <path d="M 360,400 L 250,535" />
+                </g>
+
+                <g fill="none" stroke="#dc2626" strokeWidth="3" opacity="0.38">
+                  <path d="M 190,410 C 170,430 220,460 210,430 C 190,400 240,430 230,450 C 220,480 270,490 260,450 C 250,420 310,430 300,470 C 290,500 340,480 350,410" />
+                  <path d="M 210,260 C 190,280 240,300 230,280 C 210,250 260,270 250,290 C 240,320 290,310 280,280 C 270,250 320,280 310,310 C 300,340 350,330 350,380" />
+                </g>
+
+                <path d="M 345,340 C 380,340 390,420 350,440" fill="#e2e8f0" opacity="0.8" />
+
+                <g fill="none" stroke="#ca8a04" strokeWidth="2" opacity="0.54">
+                  <path d="M 365,350 Q 400,300 360,260" />
+                  <path d="M 375,360 Q 430,310 380,270" />
+                  <path d="M 380,380 Q 450,330 390,280" />
+                </g>
+
+                <path d="M 350,280 C 320,200 450,180 440,300 C 430,400 450,550 400,580 C 350,600 310,550 350,520 C 380,500 400,400 400,300 C 400,240 380,240 350,280 Z" fill="#a3e635" opacity="0.78" stroke="#4d7c0f" strokeWidth="2" />
+                <path d="M 370,250 C 410,230 420,300 390,330 C 420,350 430,420 390,450 C 420,480 430,550 360,560" fill="none" stroke="#4d7c0f" strokeWidth="2" opacity="0.5" strokeDasharray="4 2" />
+
+                <circle cx="700" cy="180" r="70" fill="#fde68a" opacity="0.82" stroke="#b45309" strokeWidth="2" />
+                <path d="M 660,50 Q 680,120 680,150" fill="none" stroke="#fde68a" strokeWidth="6" opacity="0.62" />
+
+                <path d="M 720,250 C 760,240 780,280 750,310 C 780,320 760,360 720,340 Z" fill="#fed7aa" stroke="#c2410c" strokeWidth="2" />
+
+                <path d="M 640,350 C 640,300 760,300 760,350 C 760,430 640,430 640,350 Z" fill="#cbd5e1" opacity="0.9" stroke="#64748b" strokeWidth="2" />
+
+                <circle cx="680" cy="430" r="10" fill="#e2e8f0" stroke="#64748b" strokeWidth="2" />
+
+                <path d="M 620,450 C 640,430 680,430 700,450 C 700,500 750,560 850,560 L 930,560 C 950,560 970,540 960,520 C 950,500 930,500 930,500 L 850,500 C 770,500 720,460 720,400 L 620,400 Z" fill="#cbd5e1" opacity="0.48" stroke="#64748b" strokeWidth="2" />
+              </g>
+
+              <g fill="var(--dark-mute)" stroke="var(--dark-mute)" fontFamily="var(--mono)" fontSize="12" fontWeight="500" opacity="0.76">
+                <line x1="165" y1="280" x2="100" y2="250" strokeWidth="1" />
+                <text x="30" y="245">Tunica Albuginea</text>
+
+                <line x1="280" y1="460" x2="200" y2="580" strokeWidth="1" />
+                <text x="160" y="595">Testicular Lobule</text>
+
+                <line x1="265" y1="350" x2="150" y2="150" strokeWidth="1" />
+                <text x="80" y="145">Fibrous Septum</text>
+
+                <line x1="365" y1="430" x2="480" y2="480" strokeWidth="1" />
+                <text x="490" y="485">Mediastinum Testis</text>
+
+                <line x1="700" y1="180" x2="800" y2="120" strokeWidth="1" />
+                <text x="810" y="115">Urinary Bladder</text>
+
+                <line x1="740" y1="280" x2="850" y2="280" strokeWidth="1" />
+                <text x="860" y="285">Seminal Vesicle</text>
+
+                <line x1="740" y1="380" x2="850" y2="380" strokeWidth="1" />
+                <text x="860" y="385">Prostate Gland</text>
+              </g>
+
+              <g fill="none" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" opacity="0.08">
+                {STAGES.map((item) => (
+                  <path key={`bg-path-${item.id}`} d={item.path} stroke="var(--dark-ink)" />
+                ))}
+              </g>
+
+              <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path
+                  d={stage.path}
+                  stroke={stage.color}
+                  strokeWidth="8"
+                  className="pulse-track"
+                />
+
+                <path
+                  d={stage.path}
+                  stroke={spermStroke}
+                  strokeWidth="3"
+                  className="sperm-flow"
+                />
+
+                {activeStage > 0 && (
+                  <path d={STAGES[activeStage - 1].path} stroke={STAGES[activeStage - 1].color} strokeWidth="3" opacity="0.28" />
+                )}
+                {activeStage < STAGES.length - 1 && (
+                  <path d={STAGES[activeStage + 1].path} stroke="var(--dark-ink)" strokeWidth="2" opacity="0.14" strokeDasharray="4 4" />
+                )}
+              </g>
+            </svg>
+
+            <div className="stage-readout">
+              <span className="readout-dot" style={{ backgroundColor: stage.color }} />
+              <span>Stage&nbsp;&nbsp;{activeStage + 1} / 7</span>
+              <span>{stage.name}</span>
+            </div>
+          </div>
+
+          <section className="info-panel" aria-live="polite">
+            <div className="info-grid">
+              <div>
+                <div className="info-heading">
+                  <span className="info-icon" style={{ color: stage.color }}>
+                    <Icon name="info" size={20} />
+                  </span>
+                  <h3 className="info-title">{stage.title}</h3>
+                </div>
+                <p className="info-copy">{stage.description}</p>
+              </div>
+
+              <div className="nav-controls">
+                <button
+                  onClick={handlePrev}
+                  disabled={activeStage === 0}
+                  className="text-button ghost"
+                >
+                  <Icon name="previous" size={16} />
+                  Previous
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={activeStage === STAGES.length - 1}
+                  className="text-button"
+                >
+                  Next
+                  <Icon name="next" size={16} />
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Field: Solid vs Hollow Sphere — Trinity Simulation Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #EFF2F5;
+            --bg-alt: #E2E7EC;
+            --paper: #F7F8FA;
+            --ink: #0C1115;
+            --ink-soft: #2B333A;
+            --ink-mute: #6B7680;
+            --rule-soft: rgba(12, 17, 21, 0.14);
+            --stage-grid: rgba(12, 17, 21, 0.07);
+            --stage-rule: rgba(12, 17, 21, 0.12);
+            --accent: #16839F;
+            --accent-soft: rgba(22, 131, 159, 0.12);
+            --positive: #EE5F4B;
+            --sans: "Manrope", system-ui, -apple-system, sans-serif;
+            --mono: "JetBrains Mono", ui-monospace, monospace;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--sans);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 1280px;
+            min-height: 100vh;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--rule-soft);
+            border-right: 1px solid var(--rule-soft);
+            background: var(--bg);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--rule-soft);
+            background: var(--paper);
+        }
+
+        .eyebrow,
+        .label-mono {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink-mute);
+        }
+
+        .sim-title {
+            margin-top: 6px;
+            color: var(--ink);
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 600;
+            line-height: 0.98;
+            letter-spacing: -0.02em;
+        }
+
+        .workspace {
+            width: 100%;
+            flex: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(360px, 0.92fr);
+            gap: 0;
+        }
+
+        .sim-panel {
+            display: flex;
+            min-width: 0;
+            min-height: 0;
+            flex-direction: column;
+            background: var(--paper);
+            border-right: 1px solid var(--rule-soft);
+        }
+
+        .sim-panel:last-child {
+            border-right: 0;
+        }
+
+        .panel-toolbar,
+        .panel-heading {
+            background: var(--paper);
+            border-bottom: 1px solid var(--rule-soft);
+        }
+
+        .panel-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .panel-heading {
+            padding: 16px;
+        }
+
+        .mode-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            background-color: #FFFFFF;
+            background-image:
+                linear-gradient(var(--stage-grid) 0.5px, transparent 0.5px),
+                linear-gradient(90deg, var(--stage-grid) 0.5px, transparent 0.5px);
+            background-size: 40px 40px;
+            border-bottom: 1px solid var(--stage-rule);
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .sim-btn {
+            background: var(--paper);
+            border: 1px solid var(--rule-soft);
+            color: var(--ink);
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 10px 16px;
+            transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .sim-btn:hover {
+            border-color: var(--ink);
+            background: var(--bg-alt);
+        }
+
+        .sim-btn.active {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: var(--paper);
+            font-weight: 600;
+        }
+
+        .sim-btn-gold {
+            border: 1px solid var(--ink);
+            color: var(--ink);
+            background: var(--paper);
+            border-radius: 999px;
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 10px 16px;
+            transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+        }
+
+        .reset-btn {
+            padding: 6px 12px;
+        }
+
+        .control-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding: 24px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .slider-label {
+            min-width: 88px;
+        }
+
+        .range {
+            flex: 1;
+        }
+
+        .readout-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .sim-btn-gold:hover,
+        .sim-btn-gold.active {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .readout-box {
+            background: var(--bg);
+            border: 1px solid var(--rule-soft);
+            border-left: 4px solid var(--accent);
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .readout-value {
+            margin-top: 4px;
+            color: var(--ink);
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.15;
+        }
+
+        .readout-value.accent {
+            color: var(--accent);
+        }
+
+        .callout {
+            background: var(--accent-soft);
+            border: 1px dashed rgba(12, 17, 21, 0.28);
+            color: var(--ink);
+            margin-top: auto;
+            padding: 16px;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.55;
+            text-align: center;
+        }
+
+        .graph-title {
+            margin: 5px 0 0;
+            color: var(--ink);
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -0.01em;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--ink);
+            cursor: pointer;
+            margin-top: -8px;
+            border: 3px solid var(--paper);
+            box-shadow: 0 0 0 1px var(--ink);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--accent), var(--rule-soft));
+            border-radius: 2px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--ink);
+            border: 3px solid var(--paper);
+            box-shadow: 0 0 0 1px var(--ink);
+            cursor: pointer;
+        }
+        input[type=range]::-moz-range-track {
+            height: 4px;
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--accent), var(--rule-soft));
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 8px;
+        }
+
+        .drag-note {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            border: 1px solid var(--rule-soft);
+            background: rgba(247, 248, 250, 0.88);
+            color: var(--ink-mute);
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 6px 8px;
+            pointer-events: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @media (max-width: 960px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .sim-panel {
+                border-right: 0;
+                border-bottom: 1px solid var(--rule-soft);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header {
+                align-items: flex-start;
+                flex-direction: column;
+                padding: 16px;
+            }
+
+            .sim-title {
+                font-size: 30px;
+            }
+
+            .readout-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .slider-row {
+                align-items: stretch;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header class="header">
+        <div>
+            <div class="eyebrow">Trinity Sim Lab · Electrostatics</div>
+            <h1 class="sim-title">Electric Field: Solid vs Hollow Sphere</h1>
+        </div>
+        <div class="label-mono">Fig. 04 / Physics</div>
+    </header>
+
+    <main class="workspace">
+        
+        <!-- Left Panel: Visualization -->
+        <section class="sim-panel">
+            <div class="panel-toolbar">
+                <div class="mode-controls">
+                    <button id="btn-solid" class="sim-btn active">Solid (Non-Conducting)</button>
+                    <button id="btn-hollow" class="sim-btn">Hollow (Conducting)</button>
+                </div>
+                <button id="btn-lines" class="sim-btn-gold">Field Lines</button>
+            </div>
+
+            <div class="canvas-container" id="viz-container">
+                <canvas id="viz-canvas" width="600" height="600"></canvas>
+                <div class="drag-note">
+                    Drag the + test charge
+                </div>
+            </div>
+
+            <div class="control-area">
+                <div class="slider-row">
+                    <label class="label-mono slider-label">Distance r</label>
+                    <input type="range" id="r-slider" min="0" max="3" step="0.01" value="0" class="range">
+                    <button id="btn-reset" class="sim-btn-gold reset-btn">Reset</button>
+                </div>
+
+                <div class="readout-grid">
+                    <div class="readout-box">
+                        <span class="label-mono">Position (r/R)</span>
+                        <div class="readout-value" id="val-r">0.00</div>
+                    </div>
+                    <div class="readout-box">
+                        <span class="label-mono">E-Field (kQ/R²)</span>
+                        <div class="readout-value accent" id="val-e">0.00</div>
+                    </div>
+                </div>
+
+                <div class="callout" id="pedagogical-text">
+                    Behaves like a point charge at centre
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Graph -->
+        <section class="sim-panel">
+            <div class="panel-heading">
+                <div class="eyebrow">Live graph</div>
+                <h2 class="graph-title">Electric Field vs Distance</h2>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="graph-canvas" width="600" height="600"></canvas>
+            </div>
+        </section>
+    </main>
+</div>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            type: 'solid', // 'solid' | 'hollow'
+            r: 0,          // ratio r/R (0 to 3)
+            theta: 0,      // angle of test charge for visual 2D dragging
+            showLines: true,
+            isDragging: false
+        };
+
+        const THEME = {
+            bg: '#F7F8FA',
+            paper: '#FFFFFF',
+            ink: '#0C1115',
+            inkSoft: '#2B333A',
+            mute: '#6B7680',
+            accent: '#16839F',
+            accentSoft: 'rgba(22, 131, 159, 0.16)',
+            faint: 'rgba(12, 17, 21, 0.14)',
+            grid: 'rgba(12, 17, 21, 0.08)',
+            positive: '#EE5F4B'
+        };
+
+        // --- Physics Logic ---
+        function getElectricField(r, type) {
+            // Returns E in units of kQ/R^2
+            if (r < 0) r = 0;
+            if (r === 0) return 0;
+            
+            if (type === 'solid') {
+                if (r <= 1) return r; // Inside: E = kQr/R^3 -> normalized: r/R
+                else return 1 / (r * r); // Outside: E = kQ/r^2 -> normalized: (R/r)^2 = 1/(r/R)^2
+            } else { // hollow
+                if (r < 1) return 0; // Inside: E = 0
+                else return 1 / (r * r); // Outside: Same as solid
+            }
+        }
+
+        // --- Elements ---
+        const vizCanvas = document.getElementById('viz-canvas');
+        const graphCanvas = document.getElementById('graph-canvas');
+        const ctxViz = vizCanvas.getContext('2d');
+        const ctxGraph = graphCanvas.getContext('2d');
+        
+        const btnSolid = document.getElementById('btn-solid');
+        const btnHollow = document.getElementById('btn-hollow');
+        const btnLines = document.getElementById('btn-lines');
+        const btnReset = document.getElementById('btn-reset');
+        const rSlider = document.getElementById('r-slider');
+        const valR = document.getElementById('val-r');
+        const valE = document.getElementById('val-e');
+        const pedText = document.getElementById('pedagogical-text');
+
+        // --- Canvas Setup ---
+        // Logical coordinates
+        const R_PIXELS = 80;
+        const CX = 300;
+        const CY = 300;
+
+        // --- Interactivity ---
+        btnSolid.addEventListener('click', () => setType('solid'));
+        btnHollow.addEventListener('click', () => setType('hollow'));
+        
+        btnLines.addEventListener('click', () => {
+            state.showLines = !state.showLines;
+            btnLines.classList.toggle('active', state.showLines);
+            draw();
+        });
+
+        btnReset.addEventListener('click', () => {
+            state.r = 0;
+            state.theta = 0;
+            updateControls();
+            draw();
+        });
+
+        rSlider.addEventListener('input', (e) => {
+            state.r = parseFloat(e.target.value);
+            // Default angle to 0 (rightward) if using slider, but keep current if previously dragged
+            updateReadouts();
+            draw();
+        });
+
+        // Visualization Canvas Mouse/Touch Events
+        function handleDragEvent(evt) {
+            if (!state.isDragging) return;
+            const rect = vizCanvas.getBoundingClientRect();
+            // Calculate scale based on actual vs logical size
+            const scaleX = vizCanvas.width / rect.width;
+            const scaleY = vizCanvas.height / rect.height;
+
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+
+            const dx = x - CX;
+            const dy = y - CY;
+            const distPx = Math.sqrt(dx*dx + dy*dy);
+            
+            state.r = Math.min(3, distPx / R_PIXELS); // Cap at r/R = 3
+            state.theta = Math.atan2(dy, dx);
+            
+            updateControls();
+            draw();
+        }
+
+        vizCanvas.addEventListener('mousedown', (e) => { state.isDragging = true; handleDragEvent(e); });
+        vizCanvas.addEventListener('mousemove', handleDragEvent);
+        window.addEventListener('mouseup', () => { state.isDragging = false; });
+        
+        vizCanvas.addEventListener('touchstart', (e) => { state.isDragging = true; handleDragEvent(e); e.preventDefault(); }, {passive: false});
+        vizCanvas.addEventListener('touchmove', (e) => { handleDragEvent(e); e.preventDefault(); }, {passive: false});
+        window.addEventListener('touchend', () => { state.isDragging = false; });
+
+        function setType(newType) {
+            state.type = newType;
+            if(newType === 'solid') {
+                btnSolid.classList.add('active');
+                btnHollow.classList.remove('active');
+            } else {
+                btnHollow.classList.add('active');
+                btnSolid.classList.remove('active');
+            }
+            updateReadouts();
+            draw();
+        }
+
+        function updateControls() {
+            rSlider.value = state.r;
+            updateReadouts();
+        }
+
+        function updateReadouts() {
+            const eField = getElectricField(state.r, state.type);
+            valR.innerText = state.r.toFixed(2);
+            valE.innerText = eField.toFixed(2);
+
+            // Update pedagogical text
+            let region = '';
+            let msg = '';
+            
+            if (state.r < 0.98) region = 'inside';
+            else if (state.r >= 0.98 && state.r <= 1.02) region = 'surface';
+            else region = 'outside';
+
+            if (region === 'inside') {
+                if (state.type === 'solid') {
+                    msg = "Inside solid (non-conducting): Field grows linearly — only enclosed charge matters.";
+                } else {
+                    msg = "Inside hollow/conducting: Zero field — charge resides only on the surface.";
+                }
+            } else if (region === 'surface') {
+                msg = "At surface: Maximum field — full charge Q acts as enclosed.";
+            } else {
+                msg = "Outside: Behaves like a point charge at the centre.";
+            }
+            
+            pedText.innerText = msg;
+        }
+
+        // --- Drawing Routines ---
+
+        function drawViz() {
+            ctxViz.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+            // 1. Draw Field Lines
+            if (state.showLines) {
+                ctxViz.lineWidth = 1.5;
+                const numLines = 16;
+                for (let i = 0; i < numLines; i++) {
+                    const angle = (i * 2 * Math.PI) / numLines;
+                    const cosA = Math.cos(angle);
+                    const sinA = Math.sin(angle);
+                    
+                    if (state.type === 'solid') {
+                        // Faint lines inside
+                        ctxViz.beginPath();
+                        ctxViz.strokeStyle = 'rgba(12, 17, 21, 0.12)';
+                        ctxViz.moveTo(CX, CY);
+                        ctxViz.lineTo(CX + R_PIXELS * cosA, CY + R_PIXELS * sinA);
+                        ctxViz.stroke();
+                    }
+                    
+                    // Strong lines outside (fading out)
+                    const grad = ctxViz.createLinearGradient(
+                        CX + R_PIXELS * cosA, CY + R_PIXELS * sinA, 
+                        CX + 4*R_PIXELS * cosA, CY + 4*R_PIXELS * sinA
+                    );
+                    grad.addColorStop(0, 'rgba(22, 131, 159, 0.52)');
+                    grad.addColorStop(1, 'rgba(22, 131, 159, 0)');
+                    
+                    ctxViz.beginPath();
+                    ctxViz.strokeStyle = grad;
+                    // Start from R for both (for hollow, there are no lines inside)
+                    ctxViz.moveTo(CX + R_PIXELS * cosA, CY + R_PIXELS * sinA);
+                    ctxViz.lineTo(CX + 4*R_PIXELS * cosA, CY + 4*R_PIXELS * sinA);
+                    ctxViz.stroke();
+
+                    // Arrow heads on field lines
+                    const arrowDist = R_PIXELS * 1.5;
+                    ctxViz.fillStyle = 'rgba(22, 131, 159, 0.62)';
+                    drawArrowHead(ctxViz, CX + arrowDist*cosA, CY + arrowDist*sinA, angle, 6);
+                }
+            }
+
+            // 2. Draw Sphere
+            ctxViz.beginPath();
+            ctxViz.arc(CX, CY, R_PIXELS, 0, 2 * Math.PI);
+            if (state.type === 'solid') {
+                const grad = ctxViz.createRadialGradient(CX, CY, 0, CX, CY, R_PIXELS);
+                grad.addColorStop(0, 'rgba(22, 131, 159, 0.28)');
+                grad.addColorStop(1, 'rgba(22, 131, 159, 0.06)');
+                ctxViz.fillStyle = grad;
+                ctxViz.fill();
+            } else {
+                ctxViz.fillStyle = '#FFFFFF';
+                ctxViz.fill();
+            }
+            ctxViz.lineWidth = 3;
+            ctxViz.strokeStyle = THEME.ink;
+            ctxViz.stroke();
+
+            // Labels for Sphere
+            ctxViz.fillStyle = THEME.ink;
+            ctxViz.font = "500 14px 'JetBrains Mono'";
+            ctxViz.fillText("R", CX + 10, CY - R_PIXELS + 20);
+            
+            // Draw Radius indicator
+            ctxViz.beginPath();
+            ctxViz.strokeStyle = THEME.faint;
+            ctxViz.setLineDash([4, 4]);
+            ctxViz.moveTo(CX, CY);
+            ctxViz.lineTo(CX, CY - R_PIXELS);
+            ctxViz.stroke();
+            ctxViz.setLineDash([]);
+
+            // 3. Draw Test Charge System
+            const tx = CX + state.r * R_PIXELS * Math.cos(state.theta);
+            const ty = CY + state.r * R_PIXELS * Math.sin(state.theta);
+
+            // Line 'r' from center
+            ctxViz.beginPath();
+            ctxViz.strokeStyle = THEME.accent;
+            ctxViz.lineWidth = 1;
+            ctxViz.moveTo(CX, CY);
+            ctxViz.lineTo(tx, ty);
+            ctxViz.stroke();
+
+            // Label 'r'
+            const midX = CX + (state.r * R_PIXELS / 2) * Math.cos(state.theta);
+            const midY = CY + (state.r * R_PIXELS / 2) * Math.sin(state.theta);
+            ctxViz.fillStyle = THEME.accent;
+            ctxViz.fillText("r", midX + 5, midY - 5);
+
+            // Test Charge Dot
+            ctxViz.beginPath();
+            ctxViz.arc(tx, ty, 6, 0, 2 * Math.PI);
+            ctxViz.fillStyle = THEME.accent;
+            ctxViz.fill();
+            ctxViz.strokeStyle = THEME.bg;
+            ctxViz.lineWidth = 2;
+            ctxViz.stroke();
+
+            // E Vector Arrow
+            const E = getElectricField(state.r, state.type);
+            if (E > 0.01) {
+                const vectorLen = E * 100; // scale factor for visual arrow
+                const vx = tx + vectorLen * Math.cos(state.theta);
+                const vy = ty + vectorLen * Math.sin(state.theta);
+
+                ctxViz.beginPath();
+                ctxViz.strokeStyle = THEME.positive;
+                ctxViz.lineWidth = 3;
+                ctxViz.moveTo(tx, ty);
+                ctxViz.lineTo(vx, vy);
+                ctxViz.stroke();
+
+                ctxViz.fillStyle = THEME.positive;
+                drawArrowHead(ctxViz, vx, vy, state.theta, 8);
+
+                ctxViz.fillStyle = THEME.positive;
+                ctxViz.fillText("E", vx + 8*Math.cos(state.theta), vy + 8*Math.sin(state.theta));
+            }
+        }
+
+        function drawGraph() {
+            ctxGraph.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+            
+            const m = 50; // margin
+            const w = graphCanvas.width - 2 * m;
+            const h = graphCanvas.height - 2 * m;
+
+            // Coordinate Mappers
+            const mapX = (r) => m + (r / 3) * w;
+            const mapY = (e) => m + h - (e / 1.2) * h; // max E on graph is 1.2
+
+            // Grid & Axes
+            ctxGraph.strokeStyle = THEME.grid;
+            ctxGraph.lineWidth = 1;
+            
+            // X-grid
+            for(let i=0; i<=3; i+=0.5) {
+                ctxGraph.beginPath(); ctxGraph.moveTo(mapX(i), m); ctxGraph.lineTo(mapX(i), m+h); ctxGraph.stroke();
+            }
+            // Y-grid
+            for(let i=0; i<=1.2; i+=0.2) {
+                ctxGraph.beginPath(); ctxGraph.moveTo(m, mapY(i)); ctxGraph.lineTo(m+w, mapY(i)); ctxGraph.stroke();
+            }
+
+            // Surface Line (r=R)
+            ctxGraph.beginPath();
+            ctxGraph.strokeStyle = THEME.ink;
+            ctxGraph.setLineDash([6, 6]);
+            ctxGraph.moveTo(mapX(1), m);
+            ctxGraph.lineTo(mapX(1), m+h);
+            ctxGraph.stroke();
+            ctxGraph.setLineDash([]);
+            
+            ctxGraph.fillStyle = THEME.ink;
+            ctxGraph.font = "500 12px 'JetBrains Mono'";
+            ctxGraph.textAlign = "center";
+            ctxGraph.fillText("Surface (r=R)", mapX(1), m - 10);
+
+            // Peak E line
+            ctxGraph.beginPath();
+            ctxGraph.strokeStyle = THEME.faint;
+            ctxGraph.setLineDash([2, 4]);
+            ctxGraph.moveTo(m, mapY(1));
+            ctxGraph.lineTo(mapX(1), mapY(1));
+            ctxGraph.stroke();
+            ctxGraph.setLineDash([]);
+
+            // Axes lines
+            ctxGraph.beginPath();
+            ctxGraph.strokeStyle = THEME.ink;
+            ctxGraph.lineWidth = 2;
+            ctxGraph.moveTo(m, m); ctxGraph.lineTo(m, m+h); // Y
+            ctxGraph.moveTo(m, m+h); ctxGraph.lineTo(m+w, m+h); // X
+            ctxGraph.stroke();
+
+            // Labels
+            ctxGraph.textAlign = "right";
+            ctxGraph.fillText("0", m-5, m+h+15);
+            ctxGraph.fillText("kQ/R²", m-5, mapY(1)+4);
+            ctxGraph.textAlign = "center";
+            ctxGraph.fillText("1", mapX(1), m+h+20);
+            ctxGraph.fillText("2", mapX(2), m+h+20);
+            ctxGraph.fillText("3", mapX(3), m+h+20);
+            ctxGraph.fillText("Distance (r/R)", m+w/2, m+h+40);
+            
+            ctxGraph.save();
+            ctxGraph.translate(m-35, m+h/2);
+            ctxGraph.rotate(-Math.PI/2);
+            ctxGraph.textAlign = "center";
+            ctxGraph.fillText("Electric Field (E)", 0, 0);
+            ctxGraph.restore();
+
+            // Plot curves
+            const drawCurve = (type, isFaint) => {
+                ctxGraph.beginPath();
+                ctxGraph.strokeStyle = isFaint ? THEME.faint : THEME.accent;
+                ctxGraph.lineWidth = isFaint ? 2 : 4;
+                
+                const maxPx = (state.r / 3) * w;
+
+                for(let px = 0; px <= maxPx; px++) {
+                    let logicR = (px / w) * 3;
+                    let logicE = getElectricField(logicR, type);
+                    
+                    if (px === 0) ctxGraph.moveTo(mapX(logicR), mapY(logicE));
+                    else ctxGraph.lineTo(mapX(logicR), mapY(logicE));
+                }
+                ctxGraph.stroke();
+            };
+
+            // Draw both, active one on top
+            if(state.type === 'solid') {
+                drawCurve('hollow', true);
+                drawCurve('solid', false);
+            } else {
+                drawCurve('solid', true);
+                drawCurve('hollow', false);
+            }
+
+            // Draw Tracker Dot
+            const currentE = getElectricField(state.r, state.type);
+            const dotX = mapX(state.r);
+            const dotY = mapY(currentE);
+
+            // Glow
+            ctxGraph.beginPath();
+            ctxGraph.arc(dotX, dotY, 12, 0, 2*Math.PI);
+            ctxGraph.fillStyle = THEME.accentSoft;
+            ctxGraph.fill();
+
+            // Core
+            ctxGraph.beginPath();
+            ctxGraph.arc(dotX, dotY, 6, 0, 2*Math.PI);
+            ctxGraph.fillStyle = THEME.accent;
+            ctxGraph.fill();
+            ctxGraph.strokeStyle = THEME.bg;
+            ctxGraph.lineWidth = 1;
+            ctxGraph.stroke();
+        }
+
+        // Helper
+        function drawArrowHead(ctx, x, y, angle, size) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - size * Math.cos(angle - Math.PI/6), y - size * Math.sin(angle - Math.PI/6));
+            ctx.lineTo(x - size * Math.cos(angle + Math.PI/6), y - size * Math.sin(angle + Math.PI/6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Main Loop / Render Call
+        function draw() {
+            drawViz();
+            drawGraph();
+        }
+
+        // Initialization
+        btnLines.classList.add('active');
+        updateControls();
+        draw();
+        
+        // Handle window resize lightly (canvas intrinsic size vs css size)
+        window.addEventListener('resize', draw);
+
+    </script>
+</body>
+</html>

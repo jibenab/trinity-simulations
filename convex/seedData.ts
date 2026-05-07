@@ -251,6 +251,21 @@ export const seedContent = [
     code: STUB_HTML,
   },
   {
+    slug: "transport-of-sperm",
+    type: "simulation",
+    title: "Transport of Sperm",
+    subject: "Biology",
+    grade: "Class 12",
+    chapter: "Human Reproduction",
+    level: "Core",
+    minutes: 12,
+    concepts: ["Seminiferous tubules", "Epididymis", "Vas deferens"],
+    prompt:
+      "Trace each stage. Where does sperm mature before it enters the vas deferens?",
+    featured: false,
+    code: STUB_HTML,
+  },
+  {
     slug: "enzyme",
     type: "simulation",
     title: "Enzyme Kinetics",
