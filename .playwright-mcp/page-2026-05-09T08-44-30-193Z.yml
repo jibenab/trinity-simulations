@@ -1,0 +1,104 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: Simulation · Physics · Class 12
+      - heading "Electric Field Visualizer" [level=1] [ref=e6]
+      - paragraph [ref=e7]: Build charge arrangements, trace the field, and probe how superposition changes both vector field and potential.
+    - generic [ref=e8]:
+      - button "Play or pause simulation" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+      - button "Reset preset" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: Stage
+          - paragraph [ref=e21]: Drag charges to reposition them. Right-click or long-press any charge to remove it.
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: Sources
+            - generic [ref=e25]: "02"
+          - generic [ref=e26]:
+            - generic [ref=e27]: Tests
+            - generic [ref=e28]: "00"
+          - generic [ref=e29]:
+            - generic [ref=e30]: Preset
+            - generic [ref=e31]: Dipole
+      - generic [ref=e32]:
+        - generic:
+          - generic:
+            - generic: Flow
+            - strong: Playing
+          - generic:
+            - generic: Field Lines
+            - strong: "On"
+          - generic:
+            - generic: Probe
+            - strong: "Off"
+        - generic [ref=e34]: Add charges from the right panel, then switch on the probe to inspect the field.
+      - generic [ref=e35]:
+        - strong [ref=e36]: "Try this:"
+        - text: build a dipole, then move the probe. Where is the field strong while potential nearly cancels?
+    - complementary [ref=e37]:
+      - generic [ref=e38]:
+        - heading "Add Elements" [level=2] [ref=e39]
+        - generic [ref=e40]:
+          - button "+ Charge" [ref=e41] [cursor=pointer]
+          - button "- Charge" [ref=e42] [cursor=pointer]
+          - button "Test q" [ref=e43] [cursor=pointer]
+      - generic [ref=e44]:
+        - heading "Selected Charge" [level=2] [ref=e45]
+        - generic [ref=e46]: Tap any source charge on the stage to edit its magnitude.
+      - generic [ref=e47]:
+        - heading "View Modes" [level=2] [ref=e48]
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - strong [ref=e52]: Field lines
+              - generic [ref=e53]: Trace electric field using RK4 curves.
+            - checkbox "Field lines Trace electric field using RK4 curves." [checked] [ref=e55] [cursor=pointer]
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - strong [ref=e59]: Vector grid
+              - generic [ref=e60]: Sample the field direction across the stage.
+            - checkbox "Vector grid Sample the field direction across the stage." [ref=e62] [cursor=pointer]
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - strong [ref=e66]: Equipotentials
+              - generic [ref=e67]: Show lines of equal electric potential.
+            - checkbox "Equipotentials Show lines of equal electric potential." [ref=e69] [cursor=pointer]
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - strong [ref=e73]: Heatmap
+              - generic [ref=e74]: Shade regions where the field magnitude rises.
+            - checkbox "Heatmap Shade regions where the field magnitude rises." [ref=e76] [cursor=pointer]
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - strong [ref=e80]: Probe tool
+              - generic [ref=e81]: Read vector, angle, and potential at the cursor.
+            - checkbox "Probe tool Read vector, angle, and potential at the cursor." [ref=e83] [cursor=pointer]
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - strong [ref=e87]: Component vectors
+              - generic [ref=e88]: Break the net field into charge-by-charge arrows.
+            - checkbox "Component vectors Break the net field into charge-by-charge arrows." [ref=e90] [cursor=pointer]
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - strong [ref=e94]: Freeze frame
+              - generic [ref=e95]: Hold the current canvas output in place.
+            - checkbox "Freeze frame Hold the current canvas output in place." [ref=e97] [cursor=pointer]
+      - generic [ref=e99]:
+        - heading "Presets" [level=2] [ref=e100]
+        - combobox [ref=e101]:
+          - option "Dipole (+ -)" [selected]
+          - option "Single Positive (+)"
+          - option "Single Negative (-)"
+          - option "Two Like Charges (+ +)"
+          - option "Quadrupole (+ - - +)"
+          - option "Square Alternating"
+          - option "Uniform Line (+++++)"
+        - generic [ref=e102]:
+          - code [ref=e104]: E = kQ / r^2
+          - code [ref=e106]: V = kQ / r
+          - generic [ref=e107]: Use the probe to compare where field strength peaks and where potential can still cancel by superposition.

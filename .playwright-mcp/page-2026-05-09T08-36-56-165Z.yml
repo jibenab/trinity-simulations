@@ -1,0 +1,31 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: Trinity Sim Lab · Electrostatics
+      - 'heading "Electric Field: Solid vs Hollow Sphere" [level=1] [ref=e6]'
+    - generic [ref=e7]: Fig. 04 / Physics
+  - main [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - button "Solid (Non-Conducting)" [ref=e12] [cursor=pointer]
+          - button "Hollow (Conducting)" [ref=e13] [cursor=pointer]
+        - button "Field Lines" [ref=e14] [cursor=pointer]
+      - generic [ref=e15]:
+        - generic: Drag the + test charge
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: Live graph
+        - heading "Electric Field vs Distance" [level=2] [ref=e20]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Distance r
+          - slider [ref=e24]: "0"
+          - button "Reset" [ref=e25] [cursor=pointer]
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - text: Position (r/R)
+            - generic [ref=e28]: "0.00"
+          - generic [ref=e29]:
+            - text: E-Field (kQ/R²)
+            - generic [ref=e30]: "0.00"

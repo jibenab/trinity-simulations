@@ -35,6 +35,7 @@ export const seedCatalog = mutation({
 export const seedLeverLab = internalMutation({
   args: {
     code: v.string(),
+    svgCode: v.string(),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -44,7 +45,23 @@ export const seedLeverLab = internalMutation({
 
     if (existing) {
       await ctx.db.patch(existing._id, {
+        type: "simulation",
+        title: "Moments & Equilibrium",
+        subject: "Physics",
+        grade: "Class 10",
+        chapter: "Equilibrium",
+        level: "Core",
+        minutes: 12,
+        concepts: [
+          "moments",
+          "equilibrium",
+          "fulcrum",
+          "clockwise moment",
+          "anticlockwise moment",
+        ],
+        svgCode: args.svgCode,
         code: args.code,
+        published: true,
         updatedAt: Date.now(),
       });
       return { action: "updated", id: existing._id };
@@ -52,22 +69,21 @@ export const seedLeverLab = internalMutation({
 
     const id = await ctx.db.insert("content", {
       slug: "lever-lab",
-      type: "game",
-      title: "Lever Lab",
+      type: "simulation",
+      title: "Moments & Equilibrium",
       subject: "Physics",
-      grade: "Class 8",
-      chapter: "Force and Pressure",
+      grade: "Class 10",
+      chapter: "Equilibrium",
       level: "Core",
-      minutes: 10,
-      concepts: ["lever", "fulcrum", "load", "effort", "mechanical advantage"],
-      svgCode: `<svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
-  <rect width="80" height="60" fill="#0C1115"/>
-  <line x1="8" y1="38" x2="72" y2="38" stroke="#EFF2F5" stroke-width="2.5" stroke-linecap="round"/>
-  <polygon points="40,38 32,52 48,52" fill="none" stroke="#EFF2F5" stroke-width="1.5" stroke-linejoin="round"/>
-  <rect x="10" y="26" width="14" height="12" fill="none" stroke="#EFF2F5" stroke-width="1.2"/>
-  <line x1="63" y1="24" x2="63" y2="38" stroke="#EFF2F5" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="59" y1="26" x2="67" y2="26" stroke="#EFF2F5" stroke-width="1.5" stroke-linecap="round"/>
-</svg>`,
+      minutes: 12,
+      concepts: [
+        "moments",
+        "equilibrium",
+        "fulcrum",
+        "clockwise moment",
+        "anticlockwise moment",
+      ],
+      svgCode: args.svgCode,
       code: args.code,
       published: true,
       featured: false,
@@ -262,70 +278,86 @@ export const seedChargingMethods = internalMutation({
 export const seedElectricCharges = internalMutation({
   args: {
     code: v.string(),
+    svgCode: v.string(),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
     const content = {
       slug: "electric-charges",
       type: "simulation" as const,
-      title: "Electric Charges",
+      title: "Electric Field: Solid vs Hollow Sphere",
       subject: "Physics" as const,
       grade: "Class 12",
       chapter: "Electric Charges and Fields",
       level: "Core" as const,
       minutes: 12,
       concepts: [
-        "electric charge",
-        "conductors",
-        "charge redistribution",
-        "electrostatic equilibrium",
-        "charging by contact",
+        "electric field",
+        "gauss law",
+        "solid sphere",
+        "conducting shell",
+        "inside outside field",
+        "field graph",
       ],
-      svgCode: `<svg viewBox="0 0 200 140" width="100%" style="max-height:120px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-  <line x1="20" y1="12" x2="20" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="60" y1="12" x2="60" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="100" y1="12" x2="100" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="140" y1="12" x2="140" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="180" y1="12" x2="180" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="12" x2="188" y2="12" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="41" x2="188" y2="41" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="70" x2="188" y2="70" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="99" x2="188" y2="99" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="128" x2="188" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-
-  <g opacity="0.18">
-    <circle cx="70" cy="70" r="36" fill="none" stroke="var(--ink)" stroke-width="1"/>
-    <circle cx="132" cy="70" r="24" fill="none" stroke="var(--ink)" stroke-width="1"/>
-  </g>
-
-  <line x1="98" y1="70" x2="108" y2="70" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3 4"/>
-  <circle cx="70" cy="70" r="34" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
-  <circle cx="132" cy="70" r="24" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
-  <path d="M49 43 C64 30 84 32 96 46" fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.25"/>
-  <path d="M112 50 C124 40 142 40 153 52" fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.25"/>
-
-  <g fill="var(--ink)">
-    <circle cx="70" cy="37" r="3.2"/>
-    <circle cx="40" cy="73" r="3.2"/>
-    <circle cx="72" cy="103" r="3.2"/>
-    <circle cx="101" cy="66" r="3.2"/>
-    <circle cx="132" cy="47" r="2.8"/>
-    <circle cx="153" cy="75" r="2.8"/>
-  </g>
-
-  <g>
-    <circle cx="70" cy="70" r="4.8" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.5">
-      <animate attributeName="cx" values="70;132;70" dur="4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"/>
-      <animate attributeName="cy" values="70;70;70" dur="4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"/>
-    </circle>
-  </g>
-
-  <text x="64" y="76" font-family="var(--mono)" font-size="10" fill="var(--ink-mute)" letter-spacing="0.06em">+</text>
-  <text x="126" y="76" font-family="var(--mono)" font-size="10" fill="var(--ink-mute)" letter-spacing="0.06em">q</text>
-</svg>`,
+      svgCode: args.svgCode,
       code: args.code,
       prompt:
-        "Bring conductors into contact. How does the final charge depend on conductor size?",
+        "Compare how the electric field changes inside a solid sphere, at the surface, and inside a hollow conducting shell.",
+      published: true,
+      featured: false,
+    };
+
+    const existing = await ctx.db
+      .query("content")
+      .withIndex("by_slug", (q) => q.eq("slug", content.slug))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ...content,
+        updatedAt: now,
+      });
+      return { action: "updated", id: existing._id };
+    }
+
+    const id = await ctx.db.insert("content", {
+      ...content,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { action: "inserted", id };
+  },
+});
+
+export const seedElectricFieldExplorer = internalMutation({
+  args: {
+    code: v.string(),
+    svgCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const content = {
+      slug: "electric-field-explorer",
+      type: "simulation" as const,
+      title: "Electric Field Explorer",
+      subject: "Physics" as const,
+      grade: "Class 12",
+      chapter: "Electric Charges and Fields",
+      level: "Core" as const,
+      minutes: 14,
+      concepts: [
+        "electric charge",
+        "electric field",
+        "field lines",
+        "equipotential",
+        "superposition",
+        "electric potential",
+      ],
+      svgCode: args.svgCode,
+      code: args.code,
+      prompt:
+        "Build a dipole, then scan with the probe. Where does the field stay strong while potential nearly cancels?",
       published: true,
       featured: false,
     };
@@ -356,6 +388,7 @@ export const seedElectricCharges = internalMutation({
 export const seedTransportOfSperm = internalMutation({
   args: {
     code: v.string(),
+    svgCode: v.string(),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -372,50 +405,14 @@ export const seedTransportOfSperm = internalMutation({
         "seminiferous tubules",
         "epididymis",
         "vas deferens",
-        "ejaculatory duct",
+        "seminal vesicle",
+        "prostate gland",
         "urethra",
       ],
-      svgCode: `<svg viewBox="0 0 200 140" width="100%" style="max-height:120px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-  <line x1="20" y1="12" x2="20" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="60" y1="12" x2="60" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="100" y1="12" x2="100" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="140" y1="12" x2="140" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="180" y1="12" x2="180" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="12" x2="188" y2="12" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="41" x2="188" y2="41" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="70" x2="188" y2="70" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="99" x2="188" y2="99" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-  <line x1="12" y1="128" x2="188" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
-
-  <circle cx="54" cy="78" r="35" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
-  <circle cx="54" cy="78" r="22" fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.12"/>
-  <circle cx="86" cy="52" r="16" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
-  <circle cx="150" cy="73" r="24" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
-
-  <path d="M40 78 C35 66 54 61 56 75 C59 93 80 88 74 70 C69 53 95 52 95 70 C95 92 121 91 118 72 C115 53 137 51 150 66" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round"/>
-  <path d="M150 66 C165 76 165 94 149 103" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round"/>
-  <path d="M73 49 C88 36 112 36 128 48" fill="none" stroke="var(--ink)" stroke-width="1" stroke-dasharray="4 5" opacity="0.28"/>
-  <path d="M118 96 C102 111 77 113 60 99" fill="none" stroke="var(--ink)" stroke-width="1" stroke-dasharray="4 5" opacity="0.28"/>
-
-  <g fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.12">
-    <circle cx="42" cy="72" r="4"/>
-    <circle cx="58" cy="88" r="4"/>
-    <circle cx="77" cy="68" r="4"/>
-    <circle cx="99" cy="80" r="4"/>
-    <circle cx="126" cy="70" r="4"/>
-  </g>
-
-  <circle cx="40" cy="78" r="4.5" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.5">
-    <animate attributeName="cx" values="40;56;74;95;118;150;149;40" dur="5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.15;0.3;0.45;0.6;0.8;0.9;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1"/>
-    <animate attributeName="cy" values="78;75;70;70;72;66;103;78" dur="5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.15;0.3;0.45;0.6;0.8;0.9;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1"/>
-  </circle>
-
-  <text x="36" y="119" font-family="var(--mono)" font-size="10" fill="var(--ink-mute)" letter-spacing="0.06em">TUBULE</text>
-  <text x="131" y="119" font-family="var(--mono)" font-size="10" fill="var(--ink-mute)" letter-spacing="0.06em">DUCT</text>
-</svg>`,
+      svgCode: args.svgCode,
       code: args.code,
       prompt:
-        "Trace each stage. Where does sperm mature before it enters the vas deferens?",
+        "Trace the route. When does the sperm become strongly motile, and which gland protects the urethra first?",
       published: true,
       featured: false,
     };

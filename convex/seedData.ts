@@ -259,9 +259,15 @@ export const seedContent = [
     chapter: "Human Reproduction",
     level: "Core",
     minutes: 12,
-    concepts: ["Seminiferous tubules", "Epididymis", "Vas deferens"],
+    concepts: [
+      "Seminiferous tubules",
+      "Epididymis",
+      "Vas deferens",
+      "Seminal vesicle",
+      "Prostate gland",
+    ],
     prompt:
-      "Trace each stage. Where does sperm mature before it enters the vas deferens?",
+      "Trace the route. When does the sperm become strongly motile, and which gland protects the urethra first?",
     featured: false,
     code: STUB_HTML,
   },

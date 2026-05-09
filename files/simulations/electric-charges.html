@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Electric Field Explorer - Trinity Simulation Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #EFF2F5;
+      --bg-alt: #E2E7EC;
+      --paper: #F7F8FA;
+      --ink: #0C1115;
+      --ink-soft: #2B333A;
+      --ink-mute: #6B7680;
+      --rule-soft: rgba(12, 17, 21, 0.14);
+      --stage-rule: rgba(12, 17, 21, 0.12);
+      --stage-grid: rgba(12, 17, 21, 0.08);
+      --dark: #FFFFFF;
+      --dark-ink: #0C1115;
+      --dark-mute: #4A5560;
+      --accent: oklch(0.52 0.12 200);
+      --accent-soft: rgba(22, 131, 159, 0.12);
+      --positive: #D35A4A;
+      --negative: #3D70A4;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+      --sans: "Manrope", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "ss01", "cv11";
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      border: 0;
+      background: transparent;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1280px;
+      min-height: 100vh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--rule-soft);
+      border-right: 1px solid var(--rule-soft);
+      background: var(--bg);
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--rule-soft);
+      background: var(--paper);
+    }
+
+    .eyebrow,
+    .label-mono,
+    .readout-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .title {
+      margin: 6px 0 0;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 0.98;
+      letter-spacing: -0.02em;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      max-width: 660px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ink-soft);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid var(--rule-soft);
+      color: var(--ink);
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--ink);
+      background: var(--bg-alt);
+    }
+
+    .icon-btn:active {
+      opacity: 0.7;
+    }
+
+    .icon-btn.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--paper);
+    }
+
+    .icon-btn svg {
+      width: 17px;
+      height: 17px;
+      fill: currentColor;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) 360px;
+    }
+
+    .stage-pane {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--rule-soft);
+      background: var(--paper);
+    }
+
+    .stage-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--rule-soft);
+      background: var(--paper);
+    }
+
+    .stage-meta p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--ink-soft);
+    }
+
+    .stage-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(58px, auto));
+      gap: 12px;
+      align-items: start;
+      text-align: right;
+    }
+
+    .stage-stat-value {
+      margin-top: 4px;
+      font-size: 22px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .stage-frame {
+      position: relative;
+      flex: 1;
+      min-height: 560px;
+      background: var(--dark);
+      overflow: hidden;
+    }
+
+    #simCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .stage-readout {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      z-index: 2;
+      padding: 10px 12px;
+      border: 1px solid var(--stage-rule);
+      border-radius: 12px;
+      background: rgba(247, 248, 250, 0.92);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .stage-readout-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      min-width: 180px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+    }
+
+    .stage-readout-row + .stage-readout-row {
+      margin-top: 6px;
+    }
+
+    .probe-readout {
+      position: absolute;
+      z-index: 3;
+      min-width: 190px;
+      padding: 12px 14px;
+      border: 1px solid var(--stage-rule);
+      border-radius: 12px;
+      background: rgba(247, 248, 250, 0.96);
+      box-shadow: 0 12px 24px rgba(12, 17, 21, 0.08);
+      pointer-events: none;
+    }
+
+    .probe-readout.hidden,
+    .stage-hint.hidden {
+      display: none;
+    }
+
+    .probe-title {
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--rule-soft);
+      color: var(--ink);
+    }
+
+    .probe-grid {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 6px 16px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+    }
+
+    .probe-grid strong {
+      color: var(--ink);
+      justify-self: end;
+      font-weight: 500;
+    }
+
+    .stage-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 2;
+      max-width: calc(100% - 32px);
+      padding: 10px 14px;
+      border: 1px solid var(--stage-rule);
+      border-radius: 999px;
+      background: rgba(247, 248, 250, 0.94);
+      color: var(--ink-soft);
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+      transition: opacity 0.4s ease;
+    }
+
+    .prompt {
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--rule-soft);
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .prompt strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .inspector {
+      min-height: 0;
+      overflow-y: auto;
+      background: var(--paper);
+    }
+
+    .panel {
+      padding: 18px;
+      border-bottom: 1px solid var(--rule-soft);
+    }
+
+    .panel:last-child {
+      border-bottom: 0;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .mini-btn {
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 600;
+      transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .mini-btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--ink);
+    }
+
+    .mini-btn.positive {
+      border-color: rgba(211, 90, 74, 0.28);
+      color: var(--positive);
+      background: rgba(211, 90, 74, 0.08);
+    }
+
+    .mini-btn.negative {
+      border-color: rgba(61, 112, 164, 0.3);
+      color: var(--negative);
+      background: rgba(61, 112, 164, 0.08);
+    }
+
+    .mini-btn.accent {
+      border-color: rgba(22, 131, 159, 0.24);
+      color: var(--ink);
+      background: var(--accent-soft);
+    }
+
+    .status-card {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--ink-soft);
+    }
+
+    .status-card.muted {
+      color: var(--ink-mute);
+    }
+
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 9px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .slider-wrap + .slider-wrap {
+      margin-top: 18px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .edit-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .pill-btn {
+      min-height: 40px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--rule-soft);
+      background: transparent;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 600;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .pill-btn:hover {
+      border-color: var(--ink);
+      background: var(--bg-alt);
+    }
+
+    .pill-btn.danger {
+      color: var(--positive);
+      border-color: rgba(211, 90, 74, 0.28);
+    }
+
+    .toggle-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 12px;
+      background: var(--bg);
+    }
+
+    .toggle-copy {
+      min-width: 0;
+    }
+
+    .toggle-copy strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.3;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .toggle-copy span {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--ink-mute);
+    }
+
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 26px;
+      flex: 0 0 auto;
+    }
+
+    .switch input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .switch-ui {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      border: 1px solid var(--rule-soft);
+      background: var(--paper);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .switch-ui::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--ink-mute);
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .switch input:checked + .switch-ui {
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .switch input:checked + .switch-ui::after {
+      transform: translateX(18px);
+      background: var(--paper);
+    }
+
+    .preset-select {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .preset-select:focus,
+    .mini-btn:focus,
+    .pill-btn:focus,
+    .icon-btn:focus {
+      outline: 2px solid rgba(22, 131, 159, 0.24);
+      outline-offset: 2px;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--rule-soft);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--ink-mute);
+    }
+
+    .footer-note code {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink);
+    }
+
+    @media (max-width: 1080px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--rule-soft);
+      }
+
+      .inspector {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .header-actions {
+        justify-content: flex-end;
+      }
+
+      .stage-meta {
+        flex-direction: column;
+      }
+
+      .stage-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        text-align: left;
+      }
+
+      .stage-frame {
+        min-height: 430px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app {
+        border-left: 0;
+        border-right: 0;
+      }
+
+      .header,
+      .stage-meta,
+      .panel,
+      .prompt {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .button-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .edit-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-hint {
+        border-radius: 16px;
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div>
+        <div class="eyebrow">Simulation · Physics · Class 12</div>
+        <h1 class="title">Electric Field Explorer</h1>
+        <p class="subtitle">Build charge arrangements, trace the field, and probe how superposition changes both vector field and potential.</p>
+      </div>
+      <div class="header-actions">
+        <button id="playBtn" class="icon-btn" type="button" aria-label="Play or pause simulation" title="Play or pause">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path id="playIcon" d="M8 6 L18 12 L8 18 Z" fill="currentColor" stroke="none"></path>
+          </svg>
+        </button>
+        <button id="resetBtn" class="icon-btn" type="button" aria-label="Reset preset" title="Reset preset">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 12a8 8 0 1 0 2.35-5.65"></path>
+            <path d="M4 5v5h5"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="stage-pane">
+        <div class="stage-meta">
+          <div>
+            <div class="label-mono">Stage</div>
+            <p>Drag charges to reposition them. Right-click or long-press any charge to remove it.</p>
+          </div>
+          <div class="stage-stats">
+            <div>
+              <div class="readout-label">Sources</div>
+              <div id="statSources" class="stage-stat-value">02</div>
+            </div>
+            <div>
+              <div class="readout-label">Tests</div>
+              <div id="statTests" class="stage-stat-value">00</div>
+            </div>
+            <div>
+              <div class="readout-label">Preset</div>
+              <div id="statPreset" class="stage-stat-value" style="font-size:18px;">Dipole</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="canvasContainer" class="stage-frame">
+          <canvas id="simCanvas"></canvas>
+
+          <div class="stage-readout" aria-hidden="true">
+            <div class="stage-readout-row"><span>Flow</span><strong id="statusMotion">Paused</strong></div>
+            <div class="stage-readout-row"><span>Field Lines</span><strong id="statusFieldLines">On</strong></div>
+            <div class="stage-readout-row"><span>Probe</span><strong id="statusProbe">Off</strong></div>
+          </div>
+
+          <div id="probeReadout" class="probe-readout hidden">
+            <div class="probe-title label-mono">Probe Data</div>
+            <div class="probe-grid">
+              <span>Pos (x, y)</span><strong id="valPos">0.00, 0.00</strong>
+              <span>E Vector</span><strong id="valEvec">0.00, 0.00</strong>
+              <span>|E|</span><strong id="valEmag">0.00</strong>
+              <span>Angle</span><strong id="valAngle">0 deg</strong>
+              <span>Potential</span><strong id="valV">0.00</strong>
+            </div>
+          </div>
+
+          <div id="instructionOverlay" class="stage-hint">Add charges from the right panel, then switch on the probe to inspect the field.</div>
+        </div>
+
+        <div class="prompt"><strong>Try this:</strong> build a dipole, then move the probe. Where is the field strong while potential nearly cancels?</div>
+      </section>
+
+      <aside class="inspector">
+        <section class="panel">
+          <h2 class="section-title">Add Elements</h2>
+          <div class="button-grid">
+            <button id="addPosBtn" class="mini-btn positive" type="button">+ Charge</button>
+            <button id="addNegBtn" class="mini-btn negative" type="button">- Charge</button>
+            <button id="addTestBtn" class="mini-btn accent" type="button">Test q</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">Selected Charge</h2>
+          <div id="chargeControls">
+            <div class="slider-wrap">
+              <div class="slider-label-row">
+                <span>Magnitude</span>
+                <span id="qValueDisplay">+1Q</span>
+              </div>
+              <input id="qSlider" type="range" min="-5" max="5" step="0.5" value="1" />
+            </div>
+            <div class="edit-actions">
+              <button id="flipSignBtn" class="pill-btn" type="button">Flip Sign</button>
+              <button id="deleteChargeBtn" class="pill-btn danger" type="button">Delete</button>
+            </div>
+          </div>
+          <div id="noSelectionMsg" class="status-card muted">Tap any source charge on the stage to edit its magnitude.</div>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">View Modes</h2>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <span class="toggle-copy">
+                <strong>Field lines</strong>
+                <span>Trace electric field using RK4 curves.</span>
+              </span>
+              <span class="switch">
+                <input id="toggleFieldLines" type="checkbox" checked />
+                <span class="switch-ui"></span>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <span class="toggle-copy">
+                <strong>Vector grid</strong>
+                <span>Sample the field direction across the stage.</span>
+              </span>
+              <span class="switch">
+                <input id="toggleVectorField" type="checkbox" />
+                <span class="switch-ui"></span>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <span class="toggle-copy">
+                <strong>Equipotentials</strong>
+                <span>Show lines of equal electric potential.</span>
+              </span>
+              <span class="switch">
+                <input id="toggleEquipotentials" type="checkbox" />
+                <span class="switch-ui"></span>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <span class="toggle-copy">
+                <strong>Heatmap</strong>
+                <span>Shade regions where the field magnitude rises.</span>
+              </span>
+              <span class="switch">
+                <input id="toggleHeatmap" type="checkbox" />
+                <span class="switch-ui"></span>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <span class="toggle-copy">
+                <strong>Probe tool</strong>
+                <span>Read vector, angle, and potential at the cursor.</span>
+              </span>
+              <span class="switch">
+                <input id="toggleProbe" type="checkbox" />
+                <span class="switch-ui"></span>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <span class="toggle-copy">
+                <strong>Component vectors</strong>
+                <span>Break the net field into charge-by-charge arrows.</span>
+              </span>
+              <span class="switch">
+                <input id="toggleSuperposition" type="checkbox" />
+                <span class="switch-ui"></span>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <span class="toggle-copy">
+                <strong>Freeze frame</strong>
+                <span>Hold the current canvas output in place.</span>
+              </span>
+              <span class="switch">
+                <input id="toggleFreeze" type="checkbox" />
+                <span class="switch-ui"></span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">Presets</h2>
+          <select id="presetSelect" class="preset-select">
+            <option value="dipole">Dipole (+ -)</option>
+            <option value="singlePos">Single Positive (+)</option>
+            <option value="singleNeg">Single Negative (-)</option>
+            <option value="twoLike">Two Like Charges (+ +)</option>
+            <option value="quadrupole">Quadrupole (+ - - +)</option>
+            <option value="square">Square Alternating</option>
+            <option value="line">Uniform Line (+++++)</option>
+          </select>
+          <div class="footer-note">
+            <div><code>E = kQ / r^2</code></div>
+            <div><code>V = kQ / r</code></div>
+            <div style="margin-top:8px;">Use the probe to compare where field strength peaks and where potential can still cancel by superposition.</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const prefersReducedMotion = typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const CONFIG = {
+      k: 100,
+      softening: 0.1,
+      baseRadius: 15,
+      gridSpacing: 40,
+      linesPerQ: 16,
+      rk4Step: 0.1,
+      colors: {
+        bg: "#FFFFFF",
+        grid: "rgba(12, 17, 21, 0.08)",
+        axis: "rgba(12, 17, 21, 0.22)",
+        ink: "#0C1115",
+        pos: "#D35A4A",
+        neg: "#3D70A4",
+        accent: "#16839F",
+        equi: "rgba(12, 17, 21, 0.24)",
+      },
+    };
+
+    const PRESET_LABELS = {
+      dipole: "Dipole",
+      singlePos: "Single +",
+      singleNeg: "Single -",
+      twoLike: "Like + +",
+      quadrupole: "Quad",
+      square: "Square",
+      line: "Line",
+    };
+
+    const state = {
+      charges: [],
+      testCharges: [],
+      nextId: 0,
+      nextTestId: 0,
+      selectedChargeId: null,
+      selectedChargeType: null,
+      frozen: false,
+      playing: !prefersReducedMotion,
+      animationOffset: 0,
+      currentPreset: "dipole",
+      modes: {
+        fieldLines: true,
+        vectorField: false,
+        equipotentials: false,
+        heatmap: false,
+        probe: false,
+        superposition: false,
+      },
+      view: {
+        width: 0,
+        height: 0,
+        offsetX: 0,
+        offsetY: 0,
+        scale: 60,
+      },
+      interaction: {
+        isDragging: false,
+        draggedChargeId: null,
+        draggedChargeType: null,
+        mouseX: 0,
+        mouseY: 0,
+        worldX: 0,
+        worldY: 0,
+        longPressTimer: null,
+      },
+      needsRedraw: true,
+      lastFrameTime: 0,
+    };
+
+    const canvas = document.getElementById("simCanvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    const ui = {
+      playBtn: document.getElementById("playBtn"),
+      playIcon: document.getElementById("playIcon"),
+      resetBtn: document.getElementById("resetBtn"),
+      probeReadout: document.getElementById("probeReadout"),
+      valPos: document.getElementById("valPos"),
+      valEvec: document.getElementById("valEvec"),
+      valEmag: document.getElementById("valEmag"),
+      valAngle: document.getElementById("valAngle"),
+      valV: document.getElementById("valV"),
+      chargeControls: document.getElementById("chargeControls"),
+      noSelectionMsg: document.getElementById("noSelectionMsg"),
+      qValueDisplay: document.getElementById("qValueDisplay"),
+      qSlider: document.getElementById("qSlider"),
+      addPosBtn: document.getElementById("addPosBtn"),
+      addNegBtn: document.getElementById("addNegBtn"),
+      addTestBtn: document.getElementById("addTestBtn"),
+      toggleFreeze: document.getElementById("toggleFreeze"),
+      presetSelect: document.getElementById("presetSelect"),
+      instructionOverlay: document.getElementById("instructionOverlay"),
+      statusMotion: document.getElementById("statusMotion"),
+      statusFieldLines: document.getElementById("statusFieldLines"),
+      statusProbe: document.getElementById("statusProbe"),
+      statSources: document.getElementById("statSources"),
+      statTests: document.getElementById("statTests"),
+      statPreset: document.getElementById("statPreset"),
+    };
+
+    const screenToWorld = (sx, sy) => ({
+      x: (sx - state.view.width / 2 - state.view.offsetX) / state.view.scale,
+      y: -(sy - state.view.height / 2 - state.view.offsetY) / state.view.scale,
+    });
+
+    const worldToScreen = (wx, wy) => ({
+      x: wx * state.view.scale + state.view.width / 2 + state.view.offsetX,
+      y: -wy * state.view.scale + state.view.height / 2 + state.view.offsetY,
+    });
+
+    const mag = (v) => Math.sqrt(v.x * v.x + v.y * v.y);
+
+    const norm = (v) => {
+      const m = mag(v);
+      if (!m) return { x: 0, y: 0 };
+      return { x: v.x / m, y: v.y / m };
+    };
+
+    const calculateE = (x, y, chargesToUse = state.charges) => {
+      let Ex = 0;
+      let Ey = 0;
+
+      for (let i = 0; i < chargesToUse.length; i += 1) {
+        const c = chargesToUse[i];
+        const dx = x - c.x;
+        const dy = y - c.y;
+        const rSq = dx * dx + dy * dy;
+        const denom = Math.pow(rSq + CONFIG.softening * CONFIG.softening, 1.5);
+        const factor = (CONFIG.k * c.q) / denom;
+        Ex += factor * dx;
+        Ey += factor * dy;
+      }
+
+      return { x: Ex, y: Ey };
+    };
+
+    const calculateV = (x, y) => {
+      let V = 0;
+
+      for (let i = 0; i < state.charges.length; i += 1) {
+        const c = state.charges[i];
+        const dx = x - c.x;
+        const dy = y - c.y;
+        const r = Math.sqrt(dx * dx + dy * dy + CONFIG.softening * CONFIG.softening);
+        V += (CONFIG.k * c.q) / r;
+      }
+
+      return V;
+    };
+
+    const updateChargeUIReadout = () => {
+      const value = parseFloat(ui.qSlider.value);
+      const label = value > 0 ? "+" + value + "Q" : value + "Q";
+      ui.qValueDisplay.textContent = label;
+      ui.qValueDisplay.style.color = value > 0
+        ? "var(--positive)"
+        : value < 0
+          ? "var(--negative)"
+          : "var(--ink-mute)";
+    };
+
+    const updateStageReadouts = () => {
+      ui.statSources.textContent = String(state.charges.length).padStart(2, "0");
+      ui.statTests.textContent = String(state.testCharges.length).padStart(2, "0");
+      ui.statPreset.textContent = PRESET_LABELS[state.currentPreset] || "Custom";
+      ui.statusMotion.textContent = state.frozen ? "Frozen" : state.playing ? "Playing" : "Paused";
+      ui.statusFieldLines.textContent = state.modes.fieldLines ? "On" : "Off";
+      ui.statusProbe.textContent = state.modes.probe ? "On" : "Off";
+      ui.playBtn.classList.toggle("active", state.playing);
+      ui.playIcon.setAttribute("d", state.playing ? "M8 6 H11 V18 H8 Z M13 6 H16 V18 H13 Z" : "M8 6 L18 12 L8 18 Z");
+      ui.playIcon.setAttribute("stroke", state.playing ? "currentColor" : "none");
+      ui.playIcon.setAttribute("fill", state.playing ? "currentColor" : "currentColor");
+    };
+
+    const addCharge = (x, y, q) => {
+      state.charges.push({ id: state.nextId, x, y, q });
+      state.nextId += 1;
+      state.needsRedraw = true;
+      updateStageReadouts();
+    };
+
+    const addTestCharge = (x, y) => {
+      state.testCharges.push({ id: state.nextTestId, x, y, vx: 0, vy: 0 });
+      state.nextTestId += 1;
+      state.needsRedraw = true;
+      updateStageReadouts();
+    };
+
+    const deselectCharge = () => {
+      state.selectedChargeId = null;
+      state.selectedChargeType = null;
+      ui.chargeControls.style.display = "none";
+      ui.noSelectionMsg.style.display = "block";
+      ui.noSelectionMsg.textContent = "Tap any source charge on the stage to edit its magnitude.";
+      state.needsRedraw = true;
+    };
+
+    const selectCharge = (id, type) => {
+      state.selectedChargeId = id;
+      state.selectedChargeType = type;
+
+      if (type === "source") {
+        const charge = state.charges.find((item) => item.id === id);
+        if (charge) {
+          ui.qSlider.value = String(charge.q);
+          updateChargeUIReadout();
+        }
+        ui.chargeControls.style.display = "block";
+        ui.noSelectionMsg.style.display = "none";
+      } else {
+        ui.chargeControls.style.display = "none";
+        ui.noSelectionMsg.style.display = "block";
+        ui.noSelectionMsg.textContent = "Test charge selected. It follows the field and shows the local direction.";
+      }
+
+      state.needsRedraw = true;
+    };
+
+    const removeCharge = (id, type = "source") => {
+      if (type === "source") {
+        state.charges = state.charges.filter((item) => item.id !== id);
+      } else {
+        state.testCharges = state.testCharges.filter((item) => item.id !== id);
+      }
+
+      if (state.selectedChargeId === id && state.selectedChargeType === type) {
+        deselectCharge();
+      }
+
+      state.needsRedraw = true;
+      updateStageReadouts();
+    };
+
+    const loadPreset = (presetName) => {
+      state.charges = [];
+      state.testCharges = [];
+      state.nextId = 0;
+      state.nextTestId = 0;
+      state.currentPreset = presetName;
+      deselectCharge();
+
+      switch (presetName) {
+        case "singlePos":
+          addCharge(0, 0, 1);
+          break;
+        case "singleNeg":
+          addCharge(0, 0, -1);
+          break;
+        case "dipole":
+          addCharge(-2, 0, 1);
+          addCharge(2, 0, -1);
+          break;
+        case "twoLike":
+          addCharge(-2, 0, 1);
+          addCharge(2, 0, 1);
+          break;
+        case "quadrupole":
+          addCharge(-2, -2, 1);
+          addCharge(2, 2, 1);
+          addCharge(-2, 2, -1);
+          addCharge(2, -2, -1);
+          break;
+        case "square":
+          addCharge(-3, -3, 1);
+          addCharge(3, -3, -1);
+          addCharge(3, 3, 1);
+          addCharge(-3, 3, -1);
+          break;
+        case "line":
+          for (let i = -4; i <= 4; i += 2) addCharge(i, 0, 1);
+          break;
+      }
+
+      state.needsRedraw = true;
+      updateStageReadouts();
+    };
+
+    const drawGrid = () => {
+      ctx.strokeStyle = CONFIG.colors.grid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+
+      const topLeft = screenToWorld(0, 0);
+      const bottomRight = screenToWorld(state.view.width, state.view.height);
+      const spacing = 1;
+      const startX = Math.floor(topLeft.x / spacing) * spacing;
+      const startY = Math.floor(bottomRight.y / spacing) * spacing;
+
+      for (let x = startX; x <= bottomRight.x; x += spacing) {
+        const sx = worldToScreen(x, 0).x;
+        ctx.moveTo(Math.round(sx) + 0.5, 0);
+        ctx.lineTo(Math.round(sx) + 0.5, state.view.height);
+      }
+
+      for (let y = startY; y <= topLeft.y; y += spacing) {
+        const sy = worldToScreen(0, y).y;
+        ctx.moveTo(0, Math.round(sy) + 0.5);
+        ctx.lineTo(state.view.width, Math.round(sy) + 0.5);
+      }
+
+      ctx.stroke();
+
+      ctx.strokeStyle = CONFIG.colors.axis;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      const origin = worldToScreen(0, 0);
+
+      if (origin.x >= 0 && origin.x <= state.view.width) {
+        ctx.moveTo(Math.round(origin.x) + 0.5, 0);
+        ctx.lineTo(Math.round(origin.x) + 0.5, state.view.height);
+      }
+
+      if (origin.y >= 0 && origin.y <= state.view.height) {
+        ctx.moveTo(0, Math.round(origin.y) + 0.5);
+        ctx.lineTo(state.view.width, Math.round(origin.y) + 0.5);
+      }
+
+      ctx.stroke();
+    };
+
+    const drawArrow = (fromX, fromY, toX, toY, color, width, arrowSize) => {
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(
+        toX - arrowSize * Math.cos(angle - Math.PI / 6),
+        toY - arrowSize * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        toX - arrowSize * Math.cos(angle + Math.PI / 6),
+        toY - arrowSize * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.fill();
+    };
+
+    const drawVectorField = () => {
+      const spacing = CONFIG.gridSpacing;
+      const cols = Math.ceil(state.view.width / spacing);
+      const rows = Math.ceil(state.view.height / spacing);
+      const offsetX = (state.view.width % spacing) / 2;
+      const offsetY = (state.view.height % spacing) / 2;
+
+      for (let i = 0; i <= cols; i += 1) {
+        for (let j = 0; j <= rows; j += 1) {
+          const sx = i * spacing + offsetX;
+          const sy = j * spacing + offsetY;
+          const wPos = screenToWorld(sx, sy);
+          const E = calculateE(wPos.x, wPos.y);
+          const magnitude = mag(E);
+
+          if (magnitude > 0.1) {
+            const logMag = Math.log10(magnitude + 1);
+            const arrowLen = Math.min(spacing * 0.78, logMag * 10);
+            const dir = { x: E.x / magnitude, y: E.y / magnitude };
+            const endSx = sx + dir.x * arrowLen;
+            const endSy = sy - dir.y * arrowLen;
+            const alpha = Math.min(1, 0.2 + logMag * 0.16);
+            drawArrow(sx, sy, endSx, endSy, "rgba(12, 17, 21, " + alpha + ")", 1, 4);
+          }
+        }
+      }
+    };
+
+    const drawHeatmap = () => {
+      if (state.interaction.isDragging) return;
+
+      const resolution = 8;
+      const cols = Math.ceil(state.view.width / resolution);
+      const rows = Math.ceil(state.view.height / resolution);
+
+      for (let i = 0; i < cols; i += 1) {
+        for (let j = 0; j < rows; j += 1) {
+          const sx = i * resolution + resolution / 2;
+          const sy = j * resolution + resolution / 2;
+          const wPos = screenToWorld(sx, sy);
+          const E = calculateE(wPos.x, wPos.y);
+          const magnitude = mag(E);
+
+          if (magnitude > 0.5) {
+            const alpha = Math.min(0.22, Math.max(0.03, Math.log10(magnitude + 1) * 0.06));
+            ctx.fillStyle = "rgba(22, 131, 159, " + alpha + ")";
+            ctx.fillRect(i * resolution, j * resolution, resolution, resolution);
+          }
+        }
+      }
+    };
+
+    const drawEquipotentials = () => {
+      if (state.interaction.isDragging) return;
+
+      const res = 10;
+      const cols = Math.ceil(state.view.width / res);
+      const rows = Math.ceil(state.view.height / res);
+      const grid = new Float32Array((cols + 1) * (rows + 1));
+
+      for (let i = 0; i <= cols; i += 1) {
+        for (let j = 0; j <= rows; j += 1) {
+          const w = screenToWorld(i * res, j * res);
+          grid[j * (cols + 1) + i] = calculateV(w.x, w.y);
+        }
+      }
+
+      ctx.strokeStyle = CONFIG.colors.equi;
+      ctx.lineWidth = 1;
+      const levels = [-100, -50, -20, -10, -5, -2, 2, 5, 10, 20, 50, 100];
+
+      for (let levelIndex = 0; levelIndex < levels.length; levelIndex += 1) {
+        const level = levels[levelIndex];
+        ctx.beginPath();
+
+        for (let i = 0; i < cols; i += 1) {
+          for (let j = 0; j < rows; j += 1) {
+            const idx = j * (cols + 1) + i;
+            const v1 = grid[idx] - level;
+            const v2 = grid[idx + 1] - level;
+            const v3 = grid[(j + 1) * (cols + 1) + i + 1] - level;
+            const v4 = grid[(j + 1) * (cols + 1) + i] - level;
+            const x = i * res;
+            const y = j * res;
+            const points = [];
+
+            const interp = (a, b) => Math.abs(a) / (Math.abs(a) + Math.abs(b));
+
+            if ((v1 > 0 && v2 <= 0) || (v1 <= 0 && v2 > 0)) {
+              points.push({ x: x + res * interp(v1, v2), y: y });
+            }
+            if ((v2 > 0 && v3 <= 0) || (v2 <= 0 && v3 > 0)) {
+              points.push({ x: x + res, y: y + res * interp(v2, v3) });
+            }
+            if ((v3 > 0 && v4 <= 0) || (v3 <= 0 && v4 > 0)) {
+              points.push({ x: x + res * (1 - interp(v3, v4)), y: y + res });
+            }
+            if ((v4 > 0 && v1 <= 0) || (v4 <= 0 && v1 > 0)) {
+              points.push({ x: x, y: y + res * (1 - interp(v4, v1)) });
+            }
+
+            if (points.length >= 2) {
+              ctx.moveTo(points[0].x, points[0].y);
+              ctx.lineTo(points[1].x, points[1].y);
+            }
+          }
+        }
+
+        ctx.stroke();
+      }
+    };
+
+    const drawFieldLines = () => {
+      if (!state.charges.length) return;
+
+      const step = CONFIG.rk4Step;
+      const maxSteps = 1000;
+      const arrowInterval = 82;
+      const positives = state.charges.filter((c) => c.q > 0);
+      const negatives = state.charges.filter((c) => c.q < 0);
+
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      const traceLine = (startPoint, isForward) => {
+        let pos = { x: startPoint.x, y: startPoint.y };
+        const points = [worldToScreen(pos.x, pos.y)];
+        let steps = 0;
+
+        while (steps < maxSteps) {
+          const getDir = (p) => {
+            const e = calculateE(p.x, p.y);
+            return isForward ? norm(e) : norm({ x: -e.x, y: -e.y });
+          };
+
+          const k1 = getDir(pos);
+          if (!mag(k1)) break;
+
+          const k2 = getDir({ x: pos.x + 0.5 * step * k1.x, y: pos.y + 0.5 * step * k1.y });
+          const k3 = getDir({ x: pos.x + 0.5 * step * k2.x, y: pos.y + 0.5 * step * k2.y });
+          const k4 = getDir({ x: pos.x + step * k3.x, y: pos.y + step * k3.y });
+          const dx = (step / 6) * (k1.x + 2 * k2.x + 2 * k3.x + k4.x);
+          const dy = (step / 6) * (k1.y + 2 * k2.y + 2 * k3.y + k4.y);
+
+          pos.x += dx;
+          pos.y += dy;
+
+          const sPos = worldToScreen(pos.x, pos.y);
+          points.push(sPos);
+
+          if (
+            sPos.x < -100 || sPos.x > state.view.width + 100 ||
+            sPos.y < -100 || sPos.y > state.view.height + 100
+          ) {
+            break;
+          }
+
+          const targets = isForward ? negatives : positives;
+          for (let index = 0; index < targets.length; index += 1) {
+            const target = targets[index];
+            const distSq = (pos.x - target.x) ** 2 + (pos.y - target.y) ** 2;
+            const radius = (CONFIG.baseRadius * Math.sqrt(Math.abs(target.q)) / state.view.scale) * 0.8;
+            if (distSq < radius * radius) return points;
+          }
+
+          if (!isForward) {
+            for (let index = 0; index < positives.length; index += 1) {
+              const target = positives[index];
+              const distSq = (pos.x - target.x) ** 2 + (pos.y - target.y) ** 2;
+              const radius = (CONFIG.baseRadius * Math.sqrt(Math.abs(target.q)) / state.view.scale);
+              if (distSq < radius * radius) return null;
+            }
+          }
+
+          steps += 1;
+        }
+
+        return points;
+      };
+
+      const drawPathWithArrows = (points, isForward) => {
+        if (!points || points.length < 2) return;
+
+        ctx.strokeStyle = "rgba(12, 17, 21, 0.42)";
+        ctx.fillStyle = "rgba(12, 17, 21, 0.62)";
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+
+        for (let i = 1; i < points.length; i += 1) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+
+        if (state.playing) {
+          ctx.setLineDash([8, 12]);
+          ctx.lineDashOffset = isForward ? -state.animationOffset : state.animationOffset;
+        } else {
+          ctx.setLineDash([]);
+        }
+
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        let distance = 0;
+        for (let i = 1; i < points.length; i += 1) {
+          const p1 = points[i - 1];
+          const p2 = points[i];
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          distance += Math.sqrt(dx * dx + dy * dy);
+
+          if (distance > arrowInterval && i < points.length - 5) {
+            let angle = Math.atan2(dy, dx);
+            if (!isForward) angle += Math.PI;
+
+            const size = 4.5;
+            ctx.beginPath();
+            ctx.moveTo(p2.x, p2.y);
+            ctx.lineTo(
+              p2.x - size * Math.cos(angle - Math.PI / 5),
+              p2.y - size * Math.sin(angle - Math.PI / 5)
+            );
+            ctx.lineTo(
+              p2.x - size * Math.cos(angle + Math.PI / 5),
+              p2.y - size * Math.sin(angle + Math.PI / 5)
+            );
+            ctx.fill();
+            distance = 0;
+          }
+        }
+      };
+
+      for (let index = 0; index < positives.length; index += 1) {
+        const c = positives[index];
+        const numLines = Math.max(0, Math.floor(c.q * CONFIG.linesPerQ));
+        const startRadius = (CONFIG.baseRadius * Math.sqrt(Math.abs(c.q)) / state.view.scale) * 1.05;
+
+        for (let i = 0; i < numLines; i += 1) {
+          const angle = (i / numLines) * Math.PI * 2;
+          const startX = c.x + startRadius * Math.cos(angle);
+          const startY = c.y + startRadius * Math.sin(angle);
+          drawPathWithArrows(traceLine({ x: startX, y: startY }, true), true);
+        }
+      }
+
+      for (let index = 0; index < negatives.length; index += 1) {
+        const c = negatives[index];
+        const numLines = Math.max(0, Math.floor(Math.abs(c.q) * CONFIG.linesPerQ));
+        const startRadius = (CONFIG.baseRadius * Math.sqrt(Math.abs(c.q)) / state.view.scale) * 1.05;
+
+        for (let i = 0; i < numLines; i += 1) {
+          const angle = (i / numLines) * Math.PI * 2;
+          const startX = c.x + startRadius * Math.cos(angle);
+          const startY = c.y + startRadius * Math.sin(angle);
+          drawPathWithArrows(traceLine({ x: startX, y: startY }, false), false);
+        }
+      }
+    };
+
+    const drawCharges = () => {
+      for (let i = 0; i < state.charges.length; i += 1) {
+        const c = state.charges[i];
+        const sPos = worldToScreen(c.x, c.y);
+        const radius = CONFIG.baseRadius * Math.sqrt(Math.abs(c.q) || 0.1);
+        const glow = ctx.createRadialGradient(sPos.x, sPos.y, radius * 0.3, sPos.x, sPos.y, radius * 2.4);
+        const glowBase = c.q > 0 ? "211, 90, 74" : c.q < 0 ? "61, 112, 164" : "108, 118, 128";
+
+        glow.addColorStop(0, "rgba(" + glowBase + ", 0.3)");
+        glow.addColorStop(1, "rgba(" + glowBase + ", 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(sPos.x, sPos.y, radius * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (c.id === state.selectedChargeId && state.selectedChargeType === "source") {
+          ctx.strokeStyle = CONFIG.colors.accent;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(sPos.x, sPos.y, radius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = c.q > 0 ? CONFIG.colors.pos : c.q < 0 ? CONFIG.colors.neg : CONFIG.colors.ink;
+        ctx.beginPath();
+        ctx.arc(sPos.x, sPos.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = 'bold 16px "JetBrains Mono", monospace';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(c.q > 0 ? "+" : c.q < 0 ? "-" : "0", sPos.x, sPos.y);
+
+        ctx.fillStyle = CONFIG.colors.ink;
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.fillText((c.q > 0 ? "+" : "") + c.q + "Q", sPos.x, sPos.y + radius + 12);
+      }
+    };
+
+    const drawTestCharges = () => {
+      for (let i = 0; i < state.testCharges.length; i += 1) {
+        const tc = state.testCharges[i];
+        const sPos = worldToScreen(tc.x, tc.y);
+        const radius = 8;
+        const E = calculateE(tc.x, tc.y);
+        const Emag = mag(E);
+
+        if (Emag > 0.01) {
+          const direction = norm(E);
+          const vectorScale = Math.min(76, Math.log10(Emag + 1) * 34 + 18);
+          drawArrow(
+            sPos.x,
+            sPos.y,
+            sPos.x + direction.x * vectorScale,
+            sPos.y - direction.y * vectorScale,
+            CONFIG.colors.accent,
+            2,
+            6
+          );
+        }
+
+        ctx.fillStyle = "rgba(22, 131, 159, 0.16)";
+        ctx.beginPath();
+        ctx.arc(sPos.x, sPos.y, radius * 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (tc.id === state.selectedChargeId && state.selectedChargeType === "test") {
+          ctx.strokeStyle = CONFIG.colors.ink;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(sPos.x, sPos.y, radius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = CONFIG.colors.accent;
+        ctx.beginPath();
+        ctx.arc(sPos.x, sPos.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = CONFIG.colors.ink;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = 'bold 9px "JetBrains Mono", monospace';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("q0", sPos.x, sPos.y);
+      }
+    };
+
+    const drawProbeAndSuperposition = () => {
+      if (!state.modes.probe) {
+        ui.probeReadout.classList.add("hidden");
+        return;
+      }
+
+      ui.probeReadout.classList.remove("hidden");
+
+      const px = state.interaction.mouseX;
+      const py = state.interaction.mouseY;
+      const wx = state.interaction.worldX;
+      const wy = state.interaction.worldY;
+
+      ctx.fillStyle = CONFIG.colors.ink;
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = CONFIG.colors.accent;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(px, py, 10, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const E = calculateE(wx, wy);
+      const V = calculateV(wx, wy);
+      const Emag = mag(E);
+      let angle = Math.atan2(E.y, E.x) * (180 / Math.PI);
+      if (angle < 0) angle += 360;
+
+      ui.valPos.textContent = wx.toFixed(2) + ", " + wy.toFixed(2);
+      ui.valEvec.textContent = E.x.toFixed(1) + ", " + E.y.toFixed(1);
+      ui.valEmag.textContent = Emag.toFixed(2);
+      ui.valAngle.textContent = Math.round(angle) + " deg";
+      ui.valV.textContent = V.toFixed(2);
+
+      let rx = px + 15;
+      let ry = py + 15;
+      if (rx + 200 > state.view.width) rx = px - 215;
+      if (ry + 150 > state.view.height) ry = py - 165;
+      ui.probeReadout.style.left = rx + "px";
+      ui.probeReadout.style.top = ry + "px";
+
+      if (state.modes.superposition && Emag > 0.01) {
+        for (let i = 0; i < state.charges.length; i += 1) {
+          const charge = state.charges[i];
+          const Ei = calculateE(wx, wy, [charge]);
+          if (mag(Ei) > 0.01) {
+            const color = charge.q > 0
+              ? "rgba(211, 90, 74, 0.56)"
+              : "rgba(61, 112, 164, 0.56)";
+            drawArrow(px, py, px + Ei.x * 40, py - Ei.y * 40, color, 1.5, 4);
+          }
+        }
+
+        const totalLen = Math.min(110, Emag * 40);
+        const direction = norm(E);
+        drawArrow(
+          px,
+          py,
+          px + direction.x * totalLen,
+          py - direction.y * totalLen,
+          CONFIG.colors.accent,
+          2.2,
+          6
+        );
+      }
+    };
+
+    const render = (time) => {
+      let dt = (time - state.lastFrameTime) / 1000 || 0;
+      if (dt > 0.1) dt = 0.1;
+      state.lastFrameTime = time;
+
+      if (state.playing && !state.frozen) {
+        state.animationOffset += 10 * dt;
+
+        for (let i = 0; i < state.testCharges.length; i += 1) {
+          const tc = state.testCharges[i];
+          if (
+            state.interaction.isDragging &&
+            state.interaction.draggedChargeId === tc.id &&
+            state.interaction.draggedChargeType === "test"
+          ) {
+            tc.vx = 0;
+            tc.vy = 0;
+            continue;
+          }
+
+          const E = calculateE(tc.x, tc.y);
+          tc.vx += E.x * 5 * dt;
+          tc.vy += E.y * 5 * dt;
+          tc.vx *= 0.96;
+          tc.vy *= 0.96;
+          tc.x += tc.vx * dt;
+          tc.y += tc.vy * dt;
+        }
+
+        state.needsRedraw = true;
+      }
+
+      if (!state.frozen && (state.needsRedraw || state.modes.probe)) {
+        ctx.fillStyle = CONFIG.colors.bg;
+        ctx.fillRect(0, 0, state.view.width, state.view.height);
+        drawGrid();
+        if (state.modes.heatmap) drawHeatmap();
+        if (state.modes.equipotentials) drawEquipotentials();
+        if (state.modes.vectorField) drawVectorField();
+        if (state.modes.fieldLines) drawFieldLines();
+        drawCharges();
+        drawTestCharges();
+        drawProbeAndSuperposition();
+        state.needsRedraw = false;
+      }
+
+      requestAnimationFrame(render);
+    };
+
+    const getEventPos = (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const point = event.touches ? event.touches[0] : event;
+      return {
+        x: point.clientX - rect.left,
+        y: point.clientY - rect.top,
+      };
+    };
+
+    const updateMouseState = (event) => {
+      const pos = getEventPos(event);
+      state.interaction.mouseX = pos.x;
+      state.interaction.mouseY = pos.y;
+      const world = screenToWorld(pos.x, pos.y);
+      state.interaction.worldX = world.x;
+      state.interaction.worldY = world.y;
+    };
+
+    const dismissHint = () => {
+      if (!ui.instructionOverlay) return;
+      ui.instructionOverlay.style.opacity = "0";
+      const overlay = ui.instructionOverlay;
+      setTimeout(() => {
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      }, 400);
+      ui.instructionOverlay = null;
+    };
+
+    const handleDown = (event) => {
+      updateMouseState(event);
+      dismissHint();
+
+      const x = state.interaction.mouseX;
+      const y = state.interaction.mouseY;
+      let clickedCharge = null;
+      let clickedType = null;
+
+      for (let i = state.testCharges.length - 1; i >= 0; i -= 1) {
+        const tc = state.testCharges[i];
+        const sPos = worldToScreen(tc.x, tc.y);
+        if (Math.hypot(x - sPos.x, y - sPos.y) < 20) {
+          clickedCharge = tc;
+          clickedType = "test";
+          break;
+        }
+      }
+
+      if (!clickedCharge) {
+        for (let i = state.charges.length - 1; i >= 0; i -= 1) {
+          const charge = state.charges[i];
+          const sPos = worldToScreen(charge.x, charge.y);
+          const radius = CONFIG.baseRadius * Math.sqrt(Math.abs(charge.q) || 0.1);
+          if (Math.hypot(x - sPos.x, y - sPos.y) < radius + 15) {
+            clickedCharge = charge;
+            clickedType = "source";
+            break;
+          }
+        }
+      }
+
+      if (event.button === 2 || (event.touches && clickedCharge)) {
+        if (event.button === 2 && clickedCharge) {
+          event.preventDefault();
+          removeCharge(clickedCharge.id, clickedType);
+          return;
+        }
+
+        if (event.touches && clickedCharge) {
+          state.interaction.longPressTimer = setTimeout(() => {
+            removeCharge(clickedCharge.id, clickedType);
+            if (navigator.vibrate) navigator.vibrate(50);
+            state.interaction.isDragging = false;
+            state.interaction.draggedChargeId = null;
+          }, 600);
+        }
+      }
+
+      if (event.button === 2) return;
+
+      if (clickedCharge) {
+        state.interaction.isDragging = true;
+        state.interaction.draggedChargeId = clickedCharge.id;
+        state.interaction.draggedChargeType = clickedType;
+        selectCharge(clickedCharge.id, clickedType);
+      } else {
+        deselectCharge();
+      }
+    };
+
+    const handleMove = (event) => {
+      updateMouseState(event);
+
+      if (state.interaction.longPressTimer) {
+        clearTimeout(state.interaction.longPressTimer);
+        state.interaction.longPressTimer = null;
+      }
+
+      if (state.interaction.isDragging && state.interaction.draggedChargeId !== null) {
+        const collection = state.interaction.draggedChargeType === "source" ? state.charges : state.testCharges;
+        const charge = collection.find((item) => item.id === state.interaction.draggedChargeId);
+        if (charge) {
+          charge.x = state.interaction.worldX;
+          charge.y = state.interaction.worldY;
+          state.needsRedraw = true;
+        }
+      } else if (state.modes.probe) {
+        state.needsRedraw = true;
+      }
+    };
+
+    const handleUp = () => {
+      state.interaction.isDragging = false;
+      state.interaction.draggedChargeId = null;
+      state.interaction.draggedChargeType = null;
+      if (state.interaction.longPressTimer) {
+        clearTimeout(state.interaction.longPressTimer);
+        state.interaction.longPressTimer = null;
+      }
+      state.needsRedraw = true;
+    };
+
+    const resize = () => {
+      const container = document.getElementById("canvasContainer");
+      const rect = container.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      state.view.width = rect.width;
+      state.view.height = rect.height;
+      state.view.scale = Math.max(46, rect.width / 12.5);
+      state.needsRedraw = true;
+    };
+
+    window.addEventListener("resize", resize);
+    canvas.addEventListener("mousedown", handleDown);
+    canvas.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+    canvas.addEventListener("touchstart", (event) => {
+      event.preventDefault();
+      handleDown(event);
+    }, { passive: false });
+    canvas.addEventListener("touchmove", (event) => {
+      event.preventDefault();
+      handleMove(event);
+    }, { passive: false });
+    window.addEventListener("touchend", handleUp);
+
+    const bindToggle = (id, stateKey) => {
+      const el = document.getElementById(id);
+      el.checked = state.modes[stateKey];
+      el.addEventListener("change", (event) => {
+        state.modes[stateKey] = event.target.checked;
+        state.needsRedraw = true;
+        updateStageReadouts();
+      });
+    };
+
+    bindToggle("toggleFieldLines", "fieldLines");
+    bindToggle("toggleVectorField", "vectorField");
+    bindToggle("toggleEquipotentials", "equipotentials");
+    bindToggle("toggleHeatmap", "heatmap");
+    bindToggle("toggleProbe", "probe");
+    bindToggle("toggleSuperposition", "superposition");
+
+    ui.toggleFreeze.addEventListener("change", (event) => {
+      state.frozen = event.target.checked;
+      if (!state.frozen) state.needsRedraw = true;
+      updateStageReadouts();
+    });
+
+    const spawnOffset = () => (Math.random() - 0.5) * 1.5;
+
+    ui.addPosBtn.addEventListener("click", () => {
+      const center = screenToWorld(state.view.width / 2, state.view.height / 2);
+      addCharge(center.x + spawnOffset(), center.y + spawnOffset(), 1);
+      state.currentPreset = "custom";
+      selectCharge(state.nextId - 1, "source");
+      updateStageReadouts();
+    });
+
+    ui.addNegBtn.addEventListener("click", () => {
+      const center = screenToWorld(state.view.width / 2, state.view.height / 2);
+      addCharge(center.x + spawnOffset(), center.y + spawnOffset(), -1);
+      state.currentPreset = "custom";
+      selectCharge(state.nextId - 1, "source");
+      updateStageReadouts();
+    });
+
+    ui.addTestBtn.addEventListener("click", () => {
+      const center = screenToWorld(state.view.width / 2, state.view.height / 2);
+      addTestCharge(center.x + spawnOffset(), center.y + spawnOffset());
+      state.currentPreset = "custom";
+      selectCharge(state.nextTestId - 1, "test");
+      updateStageReadouts();
+    });
+
+    ui.qSlider.addEventListener("input", (event) => {
+      if (state.selectedChargeId === null || state.selectedChargeType !== "source") return;
+      const charge = state.charges.find((item) => item.id === state.selectedChargeId);
+      if (!charge) return;
+      charge.q = parseFloat(event.target.value);
+      updateChargeUIReadout();
+      state.currentPreset = "custom";
+      state.needsRedraw = true;
+      updateStageReadouts();
+    });
+
+    document.getElementById("flipSignBtn").addEventListener("click", () => {
+      if (state.selectedChargeId === null || state.selectedChargeType !== "source") return;
+      const charge = state.charges.find((item) => item.id === state.selectedChargeId);
+      if (!charge) return;
+      charge.q = -charge.q;
+      ui.qSlider.value = String(charge.q);
+      updateChargeUIReadout();
+      state.currentPreset = "custom";
+      state.needsRedraw = true;
+      updateStageReadouts();
+    });
+
+    document.getElementById("deleteChargeBtn").addEventListener("click", () => {
+      if (state.selectedChargeId === null) return;
+      removeCharge(state.selectedChargeId, state.selectedChargeType || "source");
+      state.currentPreset = "custom";
+      updateStageReadouts();
+    });
+
+    ui.playBtn.addEventListener("click", () => {
+      state.playing = !state.playing;
+      if (state.playing) state.lastFrameTime = performance.now();
+      state.needsRedraw = true;
+      updateStageReadouts();
+    });
+
+    ui.resetBtn.addEventListener("click", () => {
+      ui.presetSelect.value = "dipole";
+      loadPreset("dipole");
+    });
+
+    ui.presetSelect.addEventListener("change", (event) => {
+      loadPreset(event.target.value);
+    });
+
+    ui.chargeControls.style.display = "none";
+    resize();
+    loadPreset("dipole");
+    updateChargeUIReadout();
+    updateStageReadouts();
+    state.lastFrameTime = performance.now();
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

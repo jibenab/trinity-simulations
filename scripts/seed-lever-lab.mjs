@@ -17,7 +17,11 @@ const code = readFileSync(
   join(root, "files/simulations/lever-lab.html"),
   "utf-8",
 );
-const args = JSON.stringify({ code });
+const svgCode = readFileSync(
+  join(root, "files/simulations/lever-lab.svg"),
+  "utf-8",
+);
+const args = JSON.stringify({ code, svgCode });
 
 // Use execFileSync (not execSync) so args are passed directly — no shell quoting issues
 const convexBin = join(root, "node_modules/.bin/convex");

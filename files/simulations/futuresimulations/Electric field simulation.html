@@ -99,8 +99,9 @@
             width: 100%;
             flex: 1;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(360px, 0.92fr);
+            grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.78fr);
             gap: 0;
+            min-height: 0;
         }
 
         .sim-panel {
@@ -110,6 +111,39 @@
             flex-direction: column;
             background: var(--paper);
             border-right: 1px solid var(--rule-soft);
+        }
+
+        .viz-panel .canvas-container {
+            flex: 1;
+            min-height: 520px;
+            aspect-ratio: auto;
+        }
+
+        .side-panel {
+            min-height: 0;
+        }
+
+        .side-panel .control-area {
+            flex: 0 0 auto;
+            gap: 20px;
+            padding: 20px;
+            border-bottom: 1px solid var(--rule-soft);
+        }
+
+        .graph-shell {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 20px;
+        }
+
+        .graph-container {
+            flex: 1;
+            min-height: 280px;
+            max-height: 360px;
+            aspect-ratio: auto;
+            border: 1px solid var(--stage-rule);
         }
 
         .sim-panel:last-child {
@@ -258,19 +292,6 @@
             color: var(--accent);
         }
 
-        .callout {
-            background: var(--accent-soft);
-            border: 1px dashed rgba(12, 17, 21, 0.28);
-            color: var(--ink);
-            margin-top: auto;
-            padding: 16px;
-            border-radius: 4px;
-            font-size: 15px;
-            font-weight: 600;
-            line-height: 1.55;
-            text-align: center;
-        }
-
         .graph-title {
             margin: 5px 0 0;
             color: var(--ink);
@@ -360,6 +381,12 @@
                 border-right: 0;
                 border-bottom: 1px solid var(--rule-soft);
             }
+
+            .viz-panel .canvas-container,
+            .graph-container {
+                min-height: 420px;
+                max-height: none;
+            }
         }
 
         @media (max-width: 640px) {
@@ -382,6 +409,37 @@
                 flex-direction: column;
             }
         }
+
+        @media (min-width: 961px) and (max-width: 1180px) {
+            .workspace {
+                grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+            }
+
+            .panel-toolbar,
+            .panel-heading,
+            .graph-shell,
+            .side-panel .control-area,
+            .control-area {
+                padding: 16px;
+            }
+
+            .viz-panel .canvas-container {
+                min-height: 460px;
+            }
+
+            .graph-container {
+                min-height: 240px;
+                max-height: 300px;
+            }
+
+            .readout-grid {
+                gap: 12px;
+            }
+
+            .readout-value {
+                font-size: 21px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -398,7 +456,7 @@
     <main class="workspace">
         
         <!-- Left Panel: Visualization -->
-        <section class="sim-panel">
+        <section class="sim-panel viz-panel">
             <div class="panel-toolbar">
                 <div class="mode-controls">
                     <button id="btn-solid" class="sim-btn active">Solid (Non-Conducting)</button>
@@ -412,6 +470,14 @@
                 <div class="drag-note">
                     Drag the + test charge
                 </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Graph -->
+        <section class="sim-panel side-panel">
+            <div class="panel-heading">
+                <div class="eyebrow">Live graph</div>
+                <h2 class="graph-title">Electric Field vs Distance</h2>
             </div>
 
             <div class="control-area">
@@ -431,22 +497,12 @@
                         <div class="readout-value accent" id="val-e">0.00</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="callout" id="pedagogical-text">
-                    Behaves like a point charge at centre
+            <div class="graph-shell">
+                <div class="canvas-container graph-container">
+                    <canvas id="graph-canvas" width="600" height="600"></canvas>
                 </div>
-            </div>
-        </section>
-
-        <!-- Right Panel: Graph -->
-        <section class="sim-panel">
-            <div class="panel-heading">
-                <div class="eyebrow">Live graph</div>
-                <h2 class="graph-title">Electric Field vs Distance</h2>
-            </div>
-            
-            <div class="canvas-container">
-                <canvas id="graph-canvas" width="600" height="600"></canvas>
             </div>
         </section>
     </main>
@@ -503,13 +559,55 @@
         const rSlider = document.getElementById('r-slider');
         const valR = document.getElementById('val-r');
         const valE = document.getElementById('val-e');
-        const pedText = document.getElementById('pedagogical-text');
 
         // --- Canvas Setup ---
-        // Logical coordinates
-        const R_PIXELS = 80;
-        const CX = 300;
-        const CY = 300;
+        let vizLayout = {
+            width: 600,
+            height: 600,
+            cx: 300,
+            cy: 300,
+            sphereRadius: 75,
+            arrowScale: 94
+        };
+        let graphLayout = {
+            width: 600,
+            height: 600
+        };
+
+        function syncCanvasResolution(canvas, ctx) {
+            const rect = canvas.getBoundingClientRect();
+            const width = Math.max(1, Math.round(rect.width));
+            const height = Math.max(1, Math.round(rect.height));
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+
+            return { width, height };
+        }
+
+        function updateCanvasLayouts() {
+            const vizSize = syncCanvasResolution(vizCanvas, ctxViz);
+            const graphSize = syncCanvasResolution(graphCanvas, ctxGraph);
+            const stageSize = Math.min(vizSize.width, vizSize.height);
+            const sphereRadius = Math.max(54, Math.min(82, stageSize * 0.125));
+
+            vizLayout = {
+                width: vizSize.width,
+                height: vizSize.height,
+                cx: vizSize.width / 2,
+                cy: vizSize.height / 2,
+                sphereRadius,
+                arrowScale: sphereRadius * 1.25
+            };
+
+            graphLayout = {
+                width: graphSize.width,
+                height: graphSize.height
+            };
+        }
 
         // --- Interactivity ---
         btnSolid.addEventListener('click', () => setType('solid'));
@@ -539,21 +637,18 @@
         function handleDragEvent(evt) {
             if (!state.isDragging) return;
             const rect = vizCanvas.getBoundingClientRect();
-            // Calculate scale based on actual vs logical size
-            const scaleX = vizCanvas.width / rect.width;
-            const scaleY = vizCanvas.height / rect.height;
 
             const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
             const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
 
-            const x = (clientX - rect.left) * scaleX;
-            const y = (clientY - rect.top) * scaleY;
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
 
-            const dx = x - CX;
-            const dy = y - CY;
+            const dx = x - vizLayout.cx;
+            const dy = y - vizLayout.cy;
             const distPx = Math.sqrt(dx*dx + dy*dy);
             
-            state.r = Math.min(3, distPx / R_PIXELS); // Cap at r/R = 3
+            state.r = Math.min(3, distPx / vizLayout.sphereRadius); // Cap at r/R = 3
             state.theta = Math.atan2(dy, dx);
             
             updateControls();
@@ -590,34 +685,13 @@
             const eField = getElectricField(state.r, state.type);
             valR.innerText = state.r.toFixed(2);
             valE.innerText = eField.toFixed(2);
-
-            // Update pedagogical text
-            let region = '';
-            let msg = '';
-            
-            if (state.r < 0.98) region = 'inside';
-            else if (state.r >= 0.98 && state.r <= 1.02) region = 'surface';
-            else region = 'outside';
-
-            if (region === 'inside') {
-                if (state.type === 'solid') {
-                    msg = "Inside solid (non-conducting): Field grows linearly — only enclosed charge matters.";
-                } else {
-                    msg = "Inside hollow/conducting: Zero field — charge resides only on the surface.";
-                }
-            } else if (region === 'surface') {
-                msg = "At surface: Maximum field — full charge Q acts as enclosed.";
-            } else {
-                msg = "Outside: Behaves like a point charge at the centre.";
-            }
-            
-            pedText.innerText = msg;
         }
 
         // --- Drawing Routines ---
 
         function drawViz() {
-            ctxViz.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+            const { width, height, cx, cy, sphereRadius, arrowScale } = vizLayout;
+            ctxViz.clearRect(0, 0, width, height);
 
             // 1. Draw Field Lines
             if (state.showLines) {
@@ -632,15 +706,15 @@
                         // Faint lines inside
                         ctxViz.beginPath();
                         ctxViz.strokeStyle = 'rgba(12, 17, 21, 0.12)';
-                        ctxViz.moveTo(CX, CY);
-                        ctxViz.lineTo(CX + R_PIXELS * cosA, CY + R_PIXELS * sinA);
+                        ctxViz.moveTo(cx, cy);
+                        ctxViz.lineTo(cx + sphereRadius * cosA, cy + sphereRadius * sinA);
                         ctxViz.stroke();
                     }
                     
                     // Strong lines outside (fading out)
                     const grad = ctxViz.createLinearGradient(
-                        CX + R_PIXELS * cosA, CY + R_PIXELS * sinA, 
-                        CX + 4*R_PIXELS * cosA, CY + 4*R_PIXELS * sinA
+                        cx + sphereRadius * cosA, cy + sphereRadius * sinA,
+                        cx + 4 * sphereRadius * cosA, cy + 4 * sphereRadius * sinA
                     );
                     grad.addColorStop(0, 'rgba(22, 131, 159, 0.52)');
                     grad.addColorStop(1, 'rgba(22, 131, 159, 0)');
@@ -648,22 +722,22 @@
                     ctxViz.beginPath();
                     ctxViz.strokeStyle = grad;
                     // Start from R for both (for hollow, there are no lines inside)
-                    ctxViz.moveTo(CX + R_PIXELS * cosA, CY + R_PIXELS * sinA);
-                    ctxViz.lineTo(CX + 4*R_PIXELS * cosA, CY + 4*R_PIXELS * sinA);
+                    ctxViz.moveTo(cx + sphereRadius * cosA, cy + sphereRadius * sinA);
+                    ctxViz.lineTo(cx + 4 * sphereRadius * cosA, cy + 4 * sphereRadius * sinA);
                     ctxViz.stroke();
 
                     // Arrow heads on field lines
-                    const arrowDist = R_PIXELS * 1.5;
+                    const arrowDist = sphereRadius * 1.5;
                     ctxViz.fillStyle = 'rgba(22, 131, 159, 0.62)';
-                    drawArrowHead(ctxViz, CX + arrowDist*cosA, CY + arrowDist*sinA, angle, 6);
+                    drawArrowHead(ctxViz, cx + arrowDist * cosA, cy + arrowDist * sinA, angle, 6);
                 }
             }
 
             // 2. Draw Sphere
             ctxViz.beginPath();
-            ctxViz.arc(CX, CY, R_PIXELS, 0, 2 * Math.PI);
+            ctxViz.arc(cx, cy, sphereRadius, 0, 2 * Math.PI);
             if (state.type === 'solid') {
-                const grad = ctxViz.createRadialGradient(CX, CY, 0, CX, CY, R_PIXELS);
+                const grad = ctxViz.createRadialGradient(cx, cy, 0, cx, cy, sphereRadius);
                 grad.addColorStop(0, 'rgba(22, 131, 159, 0.28)');
                 grad.addColorStop(1, 'rgba(22, 131, 159, 0.06)');
                 ctxViz.fillStyle = grad;
@@ -679,32 +753,32 @@
             // Labels for Sphere
             ctxViz.fillStyle = THEME.ink;
             ctxViz.font = "500 14px 'JetBrains Mono'";
-            ctxViz.fillText("R", CX + 10, CY - R_PIXELS + 20);
+            ctxViz.fillText("R", cx + 10, cy - sphereRadius + 20);
             
             // Draw Radius indicator
             ctxViz.beginPath();
             ctxViz.strokeStyle = THEME.faint;
             ctxViz.setLineDash([4, 4]);
-            ctxViz.moveTo(CX, CY);
-            ctxViz.lineTo(CX, CY - R_PIXELS);
+            ctxViz.moveTo(cx, cy);
+            ctxViz.lineTo(cx, cy - sphereRadius);
             ctxViz.stroke();
             ctxViz.setLineDash([]);
 
             // 3. Draw Test Charge System
-            const tx = CX + state.r * R_PIXELS * Math.cos(state.theta);
-            const ty = CY + state.r * R_PIXELS * Math.sin(state.theta);
+            const tx = cx + state.r * sphereRadius * Math.cos(state.theta);
+            const ty = cy + state.r * sphereRadius * Math.sin(state.theta);
 
             // Line 'r' from center
             ctxViz.beginPath();
             ctxViz.strokeStyle = THEME.accent;
             ctxViz.lineWidth = 1;
-            ctxViz.moveTo(CX, CY);
+            ctxViz.moveTo(cx, cy);
             ctxViz.lineTo(tx, ty);
             ctxViz.stroke();
 
             // Label 'r'
-            const midX = CX + (state.r * R_PIXELS / 2) * Math.cos(state.theta);
-            const midY = CY + (state.r * R_PIXELS / 2) * Math.sin(state.theta);
+            const midX = cx + (state.r * sphereRadius / 2) * Math.cos(state.theta);
+            const midY = cy + (state.r * sphereRadius / 2) * Math.sin(state.theta);
             ctxViz.fillStyle = THEME.accent;
             ctxViz.fillText("r", midX + 5, midY - 5);
 
@@ -720,7 +794,7 @@
             // E Vector Arrow
             const E = getElectricField(state.r, state.type);
             if (E > 0.01) {
-                const vectorLen = E * 100; // scale factor for visual arrow
+                const vectorLen = E * arrowScale; // scale factor for visual arrow
                 const vx = tx + vectorLen * Math.cos(state.theta);
                 const vy = ty + vectorLen * Math.sin(state.theta);
 
@@ -740,11 +814,12 @@
         }
 
         function drawGraph() {
-            ctxGraph.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+            const { width, height } = graphLayout;
+            ctxGraph.clearRect(0, 0, width, height);
             
-            const m = 50; // margin
-            const w = graphCanvas.width - 2 * m;
-            const h = graphCanvas.height - 2 * m;
+            const m = Math.max(42, Math.min(54, width * 0.09));
+            const w = width - 2 * m;
+            const h = height - 2 * m;
 
             // Coordinate Mappers
             const mapX = (r) => m + (r / 3) * w;
@@ -871,6 +946,7 @@
 
         // Main Loop / Render Call
         function draw() {
+            updateCanvasLayouts();
             drawViz();
             drawGraph();
         }
@@ -880,7 +956,7 @@
         updateControls();
         draw();
         
-        // Handle window resize lightly (canvas intrinsic size vs css size)
+        // Keep the backing canvas crisp on responsive/high-DPI layouts.
         window.addEventListener('resize', draw);
 
     </script>
