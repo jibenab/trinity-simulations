@@ -46,6 +46,8 @@ export function SimThumb({
           "additive",
           "accumulate",
           "fill",
+          "href",
+          "xlink:href",
         ],
       })
     : "";

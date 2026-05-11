@@ -441,3 +441,51 @@ export const seedTransportOfSperm = internalMutation({
     return { action: "inserted", id };
   },
 });
+
+export const seedRadiansDegree = internalMutation({
+  args: {
+    code: v.string(),
+    svgCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const content = {
+      slug: "radians-degree",
+      type: "simulation" as const,
+      title: "Degrees & Radians",
+      subject: "Math" as const,
+      grade: "Class 11",
+      chapter: "Trigonometric Functions",
+      level: "Core" as const,
+      minutes: 10,
+      concepts: ["degrees", "radians", "unit circle", "arc length"],
+      svgCode: args.svgCode,
+      code: args.code,
+      prompt:
+        "Unwrap the arc. Why does 180 degrees become pi radians on a unit circle?",
+      published: true,
+      featured: false,
+    };
+
+    const existing = await ctx.db
+      .query("content")
+      .withIndex("by_slug", (q) => q.eq("slug", content.slug))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ...content,
+        updatedAt: now,
+      });
+      return { action: "updated", id: existing._id };
+    }
+
+    const id = await ctx.db.insert("content", {
+      ...content,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { action: "inserted", id };
+  },
+});

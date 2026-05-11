@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centre of Gravity - Trinity Simulation Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #EFF2F5;
+            --bg-alt: #E2E7EC;
+            --paper: #F7F8FA;
+            --ink: #0C1115;
+            --ink-soft: #2B333A;
+            --ink-mute: #6B7680;
+            --rule-soft: rgba(12, 17, 21, 0.14);
+            --stage-rule: rgba(12, 17, 21, 0.12);
+            --stage-grid: rgba(12, 17, 21, 0.08);
+            --dark: #FFFFFF;
+            --dark-ink: #0C1115;
+            --dark-mute: #4A5560;
+            --accent: oklch(0.52 0.12 200);
+            --accent-ink: #F7F8FA;
+            --accent-soft: rgba(22, 131, 159, 0.12);
+            --danger: #B94B42;
+            --warning: #B8652C;
+            --font-ui: "Manrope", system-ui, sans-serif;
+            --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--bg);
+            color: var(--ink);
+            -webkit-font-smoothing: antialiased;
+            font-feature-settings: "ss01", "cv11";
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            appearance: none;
+            -webkit-appearance: none;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 1280px;
+            height: 100dvh;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            border-left: 1px solid var(--rule-soft);
+            border-right: 1px solid var(--rule-soft);
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--ink);
+            background: var(--paper);
+        }
+
+        .eyebrow,
+        .label-mono,
+        label,
+        th,
+        .value-readout {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow,
+        label,
+        th {
+            color: var(--ink-mute);
+        }
+
+        h1 {
+            margin-top: 4px;
+            font-size: clamp(26px, 3.4vw, 38px);
+            font-weight: 600;
+            line-height: 0.98;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+        }
+
+        .header-note {
+            max-width: 520px;
+            margin-top: 8px;
+            color: var(--ink-soft);
+            font-size: 14px;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            color: var(--ink);
+            background: var(--paper);
+            transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+
+        .icon-btn:hover {
+            background: var(--ink);
+            color: var(--bg);
+        }
+
+        .icon-btn:active {
+            transform: translateY(1px);
+        }
+
+        .icon-btn svg {
+            width: 17px;
+            height: 17px;
+            fill: currentColor;
+            stroke: currentColor;
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .container {
+            flex: 1;
+            min-height: 0;
+            min-width: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0;
+            border-bottom: 1px solid var(--rule-soft);
+            background: var(--paper);
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .tab-btn {
+            min-height: 48px;
+            padding: 12px 14px;
+            border-right: 1px solid var(--rule-soft);
+            color: var(--ink-mute);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-alt);
+            color: var(--ink);
+        }
+
+        .tab-btn.active {
+            background: var(--ink);
+            color: var(--bg);
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            min-height: 0;
+            min-width: 0;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .tab-content.active {
+            display: flex;
+            animation: fadeIn 0.18s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .sim-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+            gap: 14px;
+            min-width: 0;
+            min-height: min(560px, calc(100dvh - 220px));
+        }
+
+        .canvas-container {
+            position: relative;
+            min-height: 390px;
+            overflow: hidden;
+            border: 1px solid var(--stage-rule);
+            border-radius: 4px;
+            background:
+                linear-gradient(var(--stage-grid) 0.5px, transparent 0.5px),
+                linear-gradient(90deg, var(--stage-grid) 0.5px, transparent 0.5px),
+                var(--dark);
+            background-size: 24px 24px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            min-height: inherit;
+            touch-action: none;
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-width: 0;
+            padding: 16px;
+            border: 1px solid var(--rule-soft);
+            border-radius: 4px;
+            background: var(--paper);
+        }
+
+        .controls-panel h3 {
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .control-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .value-readout {
+            min-width: 62px;
+            padding: 3px 0;
+            color: var(--ink);
+            text-align: right;
+            letter-spacing: 0.06em;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 30px;
+            margin: 0;
+            accent-color: var(--accent);
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 2px;
+            background: var(--rule-soft);
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            margin-top: -8px;
+            border: 2px solid var(--ink);
+            border-radius: 999px;
+            background: var(--paper);
+        }
+
+        .data-box {
+            display: grid;
+            gap: 8px;
+            padding: 12px;
+            border: 1px solid var(--rule-soft);
+            background: var(--bg);
+            color: var(--ink-soft);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .formula-box {
+            padding: 12px;
+            border: 1px dashed var(--rule-soft);
+            background: var(--bg-alt);
+            color: var(--ink);
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        th,
+        td {
+            padding: 9px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--rule-soft);
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .font-mono {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.02em;
+        }
+        
+        .btn,
+        .toggle-btn {
+            min-height: 42px;
+            padding: 10px 12px;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+        
+        .btn:hover,
+        .toggle-btn:hover {
+            background: var(--bg-alt);
+        }
+
+        .btn:active,
+        .toggle-btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary,
+        .toggle-btn.active {
+            background: var(--ink);
+            color: var(--bg);
+        }
+
+        .toggle-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .key-concept-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            min-width: 0;
+            margin-top: 14px;
+            padding: 14px 16px;
+            border: 1px solid var(--rule-soft);
+            border-left: 3px solid var(--ink);
+            background: var(--paper);
+        }
+
+        .concept-icon {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .concept-text h3 {
+            margin-bottom: 4px;
+            color: var(--ink);
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .concept-text p {
+            max-width: 900px;
+            color: var(--ink-soft);
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .help-btn {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            z-index: 10;
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--stage-rule);
+            border-radius: 999px;
+            background: var(--dark);
+            color: var(--dark-ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .help-btn:hover {
+            background: var(--ink);
+            color: var(--bg);
+        }
+
+        .status-stable { color: var(--accent); }
+        .status-critical { color: var(--warning); }
+        .status-tipped { color: var(--danger); font-weight: 700; }
+
+        .overlay-label {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 9;
+            padding: 5px 8px;
+            border: 1px solid currentColor;
+            background: var(--dark);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+        }
+
+        .stage-readout {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            z-index: 9;
+            display: grid;
+            gap: 4px;
+            color: var(--dark-mute);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        @media (max-width: 900px) {
+            header {
+                align-items: flex-start;
+                flex-direction: column;
+                min-width: 0;
+            }
+
+            header > div:first-child {
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            .header-note {
+                max-width: 100%;
+            }
+
+            .tabs {
+                display: flex;
+                grid-template-columns: none;
+            }
+
+            .tab-btn {
+                flex: 0 0 150px;
+            }
+
+            .sim-layout {
+                grid-template-columns: 1fr;
+                min-height: 0;
+            }
+
+            .canvas-container,
+            canvas {
+                min-height: 430px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .tab-content {
+                padding: 10px;
+            }
+
+            .canvas-container,
+            canvas {
+                min-height: 360px;
+            }
+
+            .controls-panel {
+                padding: 12px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.001ms !important;
+                transition-duration: 0.001ms !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+        <div>
+            <div class="eyebrow">Simulation · Physics</div>
+            <h1>Centre of Gravity</h1>
+            <p class="header-note">Shift height, width, tilt, and posture to test when the plumb line leaves the base of support.</p>
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" id="play-toggle" type="button" onclick="togglePlay()" aria-label="Pause simulation">
+                <svg id="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h3v14H8zM13 5h3v14h-3z"></path></svg>
+            </button>
+            <button class="icon-btn" type="button" onclick="resetCurrentTab()" aria-label="Reset current simulation">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" d="M4 12a8 8 0 1 0 2.35-5.65"></path><path fill="none" d="M4 5v6h6"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(1)">01 · Stability</button>
+            <button class="tab-btn" onclick="switchTab(2)">02 · Tall vs Wide</button>
+            <button class="tab-btn" onclick="switchTab(3)">03 · Vehicles</button>
+            <button class="tab-btn" onclick="switchTab(4)">04 · Posture</button>
+        </div>
+
+        <div id="tab1" class="tab-content active">
+            <div class="sim-layout">
+                <div class="canvas-container">
+                    <button class="help-btn" onclick="alert('Adjust sliders to see how height, width, and tilt angle affect stability. The object topples when the CoG line falls outside its base.')">?</button>
+                    <div class="stage-readout" aria-hidden="true">
+                        <div id="t1-stage-tilt">TILT  0°</div>
+                        <div id="t1-stage-crit">CRITICAL  38.7°</div>
+                    </div>
+                    <canvas id="canvas1"></canvas>
+                    <div id="label1" class="overlay-label status-stable">STABLE</div>
+                </div>
+                
+                <div class="controls-panel">
+                    <h3>Simulation Controls</h3>
+                    
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label>Surface Tilt</label>
+                            <span id="t1-tilt-val" class="value-readout">0°</span>
+                        </div>
+                        <input type="range" id="t1-tilt" min="0" max="60" value="0" step="1">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label>Object Height</label>
+                            <span id="t1-height-val" class="value-readout">100px</span>
+                        </div>
+                        <input type="range" id="t1-height" min="40" max="200" value="100" step="1">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label>Object Width</label>
+                            <span id="t1-width-val" class="value-readout">80px</span>
+                        </div>
+                        <input type="range" id="t1-width" min="40" max="200" value="80" step="1">
+                    </div>
+
+                    <div class="data-box">
+                        <div class="control-header" style="margin-bottom: 0.5rem">
+                            <label>Critical Angle (θ)</label>
+                            <span id="t1-crit-val" class="value-readout status-critical">38.7°</span>
+                        </div>
+                        <div class="control-header">
+                            <label>Current Status</label>
+                            <span id="t1-status-val" class="value-readout status-stable">Stable</span>
+                        </div>
+                    </div>
+
+                    <div class="formula-box">
+                        tan(θ<sub>critical</sub>) = (Width / 2) / CoG Height
+                    </div>
+                </div>
+            </div>
+            
+            <div class="key-concept-card">
+                <div class="concept-icon">01</div>
+                <div class="concept-text">
+                    <h3>Key Concept: The Plumb Line Rule</h3>
+                    <p>An object is stable as long as the vertical line passing straight down through its Centre of Gravity falls <strong>within</strong> its base of support. Once the line crosses the edge of the base, the object will topple over.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab2" class="tab-content">
+            <div class="sim-layout">
+                <div class="canvas-container">
+                    <button class="help-btn" onclick="alert('Watch both blocks as the surface tilts. Note which one topples first and why.')">?</button>
+                    <div class="stage-readout" aria-hidden="true">
+                        <div id="t2-stage-tilt">TILT  0°</div>
+                        <div>COMPARE  HIGH / LOW COG</div>
+                    </div>
+                    <canvas id="canvas2"></canvas>
+                </div>
+                
+                <div class="controls-panel">
+                    <h3>Comparative Controls</h3>
+                    
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label>Shared Surface Tilt</label>
+                            <span id="t2-tilt-val" class="value-readout">0°</span>
+                        </div>
+                        <input type="range" id="t2-tilt" min="0" max="60" value="0" step="1">
+                    </div>
+
+                    <button class="btn btn-primary" onclick="document.getElementById('t2-tilt').value=0; updateTab2();">Reset Tilt to 0°</button>
+
+                    <div class="data-box" style="padding:0; overflow:hidden;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Tall Block</th>
+                                    <th>Wide Block</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Dimensions</td>
+                                    <td class="font-mono">40 x 140</td>
+                                    <td class="font-mono">140 x 40</td>
+                                </tr>
+                                <tr>
+                                    <td>CoG Height</td>
+                                    <td class="status-tipped">High (70px)</td>
+                                    <td class="status-stable">Low (20px)</td>
+                                </tr>
+                                <tr>
+                                    <td>Critical Angle</td>
+                                    <td class="font-mono status-critical">15.9°</td>
+                                    <td class="font-mono status-stable">74.1°</td>
+                                </tr>
+                                <tr>
+                                    <td>Status</td>
+                                    <td id="t2-status-tall" style="font-weight:bold">Stable</td>
+                                    <td id="t2-status-wide" style="font-weight:bold">Stable</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="key-concept-card">
+                <div class="concept-icon">02</div>
+                <div class="concept-text">
+                    <h3>Key Concept: Form Factor Matters</h3>
+                    <p>Objects with a <strong>lower Centre of Gravity</strong> and a <strong>wider base</strong> are inherently more stable. They require a much steeper angle or larger force to push their CoG vertical line outside their base.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab3" class="tab-content">
+            <div class="sim-layout">
+                <div class="canvas-container">
+                    <button class="help-btn" onclick="alert('Switch modes. Adjust ride height for cars or passenger distribution for buses to see how engineering choices affect vehicle stability on banked curves.')">?</button>
+                    <div class="stage-readout" aria-hidden="true">
+                        <div id="t3-stage-bank">BANK  0°</div>
+                        <div id="t3-stage-mode">MODEL  CAR</div>
+                    </div>
+                    <canvas id="canvas3"></canvas>
+                    <div id="label3" class="overlay-label status-stable" style="top: 1rem;">STABLE GRIP</div>
+                </div>
+                
+                <div class="controls-panel">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" id="btn-car" onclick="setMode3('car')">Racing Car</button>
+                        <button class="toggle-btn" id="btn-bus" onclick="setMode3('bus')">Double-Decker Bus</button>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label>Road Bank Angle</label>
+                            <span id="t3-bank-val" class="value-readout">0°</span>
+                        </div>
+                        <input type="range" id="t3-bank" min="0" max="45" value="0" step="1">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label>Corner Speed</label>
+                            <span id="t3-speed-val" class="value-readout">40 km/h</span>
+                        </div>
+                        <input type="range" id="t3-speed" min="20" max="140" value="40" step="5">
+                    </div>
+
+                    <div id="car-controls">
+                        <div class="control-group">
+                            <div class="control-header">
+                                <label>Ride Height</label>
+                                <span id="t3-ride-val" class="value-readout">Low</span>
+                            </div>
+                            <input type="range" id="t3-ride" min="10" max="60" value="15" step="1">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-header">
+                                <label>Suspension Stiffness</label>
+                                <span id="t3-stiff-val" class="value-readout">Firm</span>
+                            </div>
+                            <input type="range" id="t3-stiff" min="1" max="10" value="7" step="1">
+                        </div>
+                    </div>
+
+                    <div id="bus-controls" style="display:none;">
+                        <div class="control-group">
+                            <div class="control-header">
+                                <label>Upper Deck Passengers</label>
+                                <span id="t3-upper-val" class="value-readout">0</span>
+                            </div>
+                            <input type="range" id="t3-upper" min="0" max="30" value="0" step="1">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-header">
+                                <label>Lower Deck Passengers</label>
+                                <span id="t3-lower-val" class="value-readout">10</span>
+                            </div>
+                            <input type="range" id="t3-lower" min="0" max="30" value="10" step="1">
+                        </div>
+                    </div>
+
+                    <div class="data-box" id="t3-insight">
+                        <span class="label-mono">Insight</span> Formula 1 cars sit very low to the ground to maintain a low CoG, allowing them to take sharp, banked bends without tipping over.
+                    </div>
+                </div>
+            </div>
+
+            <div class="key-concept-card">
+                <div class="concept-icon">03</div>
+                <div class="concept-text">
+                    <h3>Key Concept: Engineering for Stability</h3>
+                    <p>Real-world vehicles are designed with CoG in mind. Racing cars optimize for lowest possible CoG for speed in corners. Double-decker buses have strict regulations on top-heaviness (e.g., no standing on the upper deck) to prevent tipping on sloped roads.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab4" class="tab-content">
+            <div class="sim-layout">
+                <div class="canvas-container">
+                    <button class="help-btn" onclick="alert('Click different postures to see how the human body automatically adjusts its limbs to keep the Centre of Gravity over the feet (the base of support).')">?</button>
+                    <div class="stage-readout" aria-hidden="true">
+                        <div id="t4-stage-cog">COG  ~57%</div>
+                        <div id="t4-stage-base">BASE  TWO FEET</div>
+                    </div>
+                    <canvas id="canvas4"></canvas>
+                    <div id="label4" class="overlay-label status-stable" style="top: 1rem;">BALANCED</div>
+                </div>
+                
+                <div class="controls-panel">
+                    <h3>Posture Presets</h3>
+                    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                        <button class="btn btn-primary" data-posture="straight" onclick="setPosture('straight')">Standing Straight</button>
+                        <button class="btn" data-posture="lean" onclick="setPosture('lean')">Leaning Forward</button>
+                        <button class="btn" data-posture="leg" onclick="setPosture('leg')">Lifting Left Leg</button>
+                        <button class="btn" data-posture="arms" onclick="setPosture('arms')">Arms Out Wide</button>
+                    </div>
+
+                    <div class="data-box" style="margin-top: 1rem;">
+                        <div class="control-header" style="margin-bottom: 0.5rem">
+                            <label>CoG Height</label>
+                            <span id="t4-cog-val" class="value-readout">~57% of height</span>
+                        </div>
+                        <div class="control-header">
+                            <label>Status</label>
+                            <span id="t4-status-val" class="value-readout status-stable">Balanced</span>
+                        </div>
+                    </div>
+
+                    <div class="data-box" id="t4-insight">
+                        CoG is centered over both feet. This is the most stable and restful position.
+                    </div>
+                </div>
+            </div>
+
+            <div class="key-concept-card">
+                <div class="concept-icon">04</div>
+                <div class="concept-text">
+                    <h3>Key Concept: Biomechanical Balance</h3>
+                    <p>The human body is highly dynamic. To maintain balance, your nervous system and muscles constantly shift your body parts to ensure your total Centre of Gravity remains over your base of support (your footprints). If it moves outside, you must step or fall.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+    <script>
+        // Utilities
+        const toRad = deg => deg * Math.PI / 180;
+        const toDeg = rad => rad * 180 / Math.PI;
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let isPlaying = !prefersReducedMotion;
+
+        function cssVar(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+
+        const theme = {
+            bg: cssVar('--bg'),
+            bgAlt: cssVar('--bg-alt'),
+            paper: cssVar('--paper'),
+            ink: cssVar('--ink'),
+            inkSoft: cssVar('--ink-soft'),
+            inkMute: cssVar('--ink-mute'),
+            rule: cssVar('--rule-soft'),
+            dark: cssVar('--dark'),
+            darkInk: cssVar('--dark-ink'),
+            darkMute: cssVar('--dark-mute'),
+            accent: cssVar('--accent'),
+            danger: cssVar('--danger'),
+            warning: cssVar('--warning')
+        };
+
+        function withAlpha(ctx, alpha, draw) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            draw();
+            ctx.restore();
+        }
+
+        function setPlayIcon() {
+            const icon = document.getElementById('play-icon');
+            const button = document.getElementById('play-toggle');
+            if (!icon || !button) return;
+            button.setAttribute('aria-label', isPlaying ? 'Pause simulation' : 'Play simulation');
+            icon.innerHTML = isPlaying
+                ? '<path d="M8 5h3v14H8zM13 5h3v14h-3z"></path>'
+                : '<path d="M8 5v14l11-7z"></path>';
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            setPlayIcon();
+        }
+
+        function resetCurrentTab() {
+            const activeTab = [...document.querySelectorAll('.tab-content')].findIndex(el => el.classList.contains('active')) + 1;
+            if (activeTab === 1) {
+                document.getElementById('t1-tilt').value = 0;
+                document.getElementById('t1-height').value = 100;
+                document.getElementById('t1-width').value = 80;
+                t1_anim_tip = 0;
+            }
+            if (activeTab === 2) {
+                document.getElementById('t2-tilt').value = 0;
+                t2_anim_tall = 0;
+                t2_anim_wide = 0;
+            }
+            if (activeTab === 3) {
+                document.getElementById('t3-bank').value = 0;
+                document.getElementById('t3-speed').value = 40;
+                document.getElementById('t3-ride').value = 15;
+                document.getElementById('t3-stiff').value = 7;
+                document.getElementById('t3-upper').value = 0;
+                document.getElementById('t3-lower').value = 10;
+                t3_anim_tip = 0;
+            }
+            if (activeTab === 4) {
+                setPosture('straight');
+            }
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabIndex) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`tab${tabIndex}`).classList.add('active');
+            document.querySelectorAll('.tab-btn')[tabIndex - 1].classList.add('active');
+
+            // Force resize update for canvas when tab becomes visible
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        // Global Animation Loop
+        let lastTime = 0;
+        function animateLoop(timestamp) {
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+            const frameDt = isPlaying ? dt : 0;
+
+            // Draw active tab
+            if(document.getElementById('tab1').classList.contains('active')) renderTab1(frameDt);
+            if(document.getElementById('tab2').classList.contains('active')) renderTab2(frameDt);
+            if(document.getElementById('tab3').classList.contains('active')) renderTab3(frameDt);
+            if(document.getElementById('tab4').classList.contains('active')) renderTab4(frameDt);
+
+            requestAnimationFrame(animateLoop);
+        }
+
+        // Canvas Setup Utility
+        function setupCanvas(id) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+            
+            function resize() {
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const rect = container.getBoundingClientRect();
+                canvas.width = Math.round(rect.width * dpr);
+                canvas.height = Math.round(rect.height * dpr);
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+            return { canvas, ctx };
+        }
+
+        // Common Drawing Utilities
+        function drawCoGMarker(ctx, x, y, radius = 6) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = theme.accent;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = theme.dark;
+            ctx.stroke();
+
+            // Draw black/yellow quadrants (classic CoG symbol)
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, radius, 0, Math.PI/2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, radius, Math.PI, Math.PI*1.5); ctx.fill();
+            
+            ctx.fillStyle = theme.ink;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, radius, Math.PI/2, Math.PI); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, radius, Math.PI*1.5, Math.PI*2); ctx.fill();
+        }
+
+        const t1 = setupCanvas('canvas1');
+        let t1_anim_tip = 0; // Tipping animation angle
+
+        function renderTab1(dt) {
+            const { canvas, ctx } = t1;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            // Get state from inputs
+            const tiltDeg = parseFloat(document.getElementById('t1-tilt').value);
+            const objW = parseFloat(document.getElementById('t1-width').value);
+            const objH = parseFloat(document.getElementById('t1-height').value);
+            const tiltRad = toRad(tiltDeg);
+
+            // Update UI Readouts
+            document.getElementById('t1-tilt-val').textContent = tiltDeg + '°';
+            document.getElementById('t1-height-val').textContent = objH + 'px';
+            document.getElementById('t1-width-val').textContent = objW + 'px';
+            document.getElementById('t1-stage-tilt').textContent = `TILT  ${tiltDeg}°`;
+
+            // Physics Calculations
+            const critAngleRad = Math.atan2(objW / 2, objH / 2);
+            const critAngleDeg = toDeg(critAngleRad);
+            document.getElementById('t1-crit-val').textContent = critAngleDeg.toFixed(1) + '°';
+            document.getElementById('t1-stage-crit').textContent = `CRITICAL  ${critAngleDeg.toFixed(1)}°`;
+
+            const isTipping = tiltDeg > critAngleDeg;
+            const isCritical = Math.abs(tiltDeg - critAngleDeg) <= 1 && !isTipping;
+
+            // Status UI updates
+            const label = document.getElementById('label1');
+            const statusVal = document.getElementById('t1-status-val');
+            
+            if (isTipping) {
+                label.textContent = "TIPPED OVER";
+                label.className = "overlay-label status-tipped";
+                statusVal.textContent = "Tipped";
+                statusVal.className = "value-readout status-tipped";
+                // Animate tipping fall
+                t1_anim_tip = Math.min(t1_anim_tip + 0.05 * (dt/16), Math.PI/2); 
+            } else {
+                t1_anim_tip = 0; // Reset
+                if (isCritical) {
+                    label.textContent = "CRITICAL ANGLE";
+                    label.className = "overlay-label status-critical";
+                    statusVal.textContent = "Critical";
+                    statusVal.className = "value-readout status-critical";
+                } else {
+                    label.textContent = "STABLE";
+                    label.className = "overlay-label status-stable";
+                    statusVal.textContent = "Stable";
+                    statusVal.className = "value-readout status-stable";
+                }
+            }
+
+            // --- DRAWING ---
+            ctx.clearRect(0, 0, width, height);
+            
+            // Setup scene origin (center bottom)
+            const originX = width / 2;
+            const originY = height - 100;
+
+            // Draw Ground Pivot / Base visual
+            ctx.save();
+            ctx.translate(originX, originY);
+            
+            // Draw Ground (tilted)
+            ctx.rotate(-tiltRad); // Ground rotates opposite to slider intuition to make object look like it's on a ramp
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = theme.ink;
+            ctx.beginPath();
+            ctx.moveTo(-width, 0);
+            ctx.lineTo(width, 0);
+            ctx.stroke();
+
+            // Hatching for ground
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = theme.inkMute;
+            withAlpha(ctx, 0.35, () => {
+                for(let i = -width; i < width; i+= 20) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i-10, 15); ctx.stroke();
+                }
+            });
+
+            // Pivot Point (lower right corner of the box, assuming positive tilt tilts left relative to ground)
+            // Actually, let's keep box flat and rotate ground. 
+            // Box sits on ground. Base goes from -objW/2 to +objW/2.
+            
+            // If tipping, box rotates around its downhill corner (-objW/2)
+            ctx.save();
+            
+            // Translate to pivot corner
+            ctx.translate(-objW/2, 0);
+            
+            // Apply tipping rotation if unstable
+            if (t1_anim_tip > 0) {
+                ctx.rotate(-t1_anim_tip); 
+            }
+
+            // Translate back to draw box from center
+            ctx.translate(objW/2, 0);
+
+            // Draw Box
+            ctx.fillStyle = theme.paper;
+            ctx.strokeStyle = theme.ink;
+            ctx.lineWidth = 2;
+            ctx.fillRect(-objW/2, -objH, objW, objH);
+            ctx.strokeRect(-objW/2, -objH, objW, objH);
+
+            // CoG coordinates in box local space
+            const cogX = 0;
+            const cogY = -objH/2;
+
+            // Draw inner crosshair
+            ctx.strokeStyle = theme.ink;
+            withAlpha(ctx, 0.14, () => {
+                ctx.beginPath(); ctx.moveTo(cogX, 0); ctx.lineTo(cogX, -objH); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-objW/2, cogY); ctx.lineTo(objW/2, cogY); ctx.stroke();
+            });
+
+            // Highlight Base
+            ctx.strokeStyle = theme.ink;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(-objW/2, 0);
+            ctx.lineTo(objW/2, 0);
+            ctx.stroke();
+
+            // Draw CoG Marker
+            drawCoGMarker(ctx, cogX, cogY);
+
+            // Calculate world-down vector for CoG line
+            // The box is rotated by t1_anim_tip relative to ground.
+            // Ground is rotated by -tiltRad relative to world.
+            // So world down in box space:
+            ctx.save();
+            ctx.translate(cogX, cogY);
+            // Reverse rotations to point straight down in world space
+            ctx.rotate(tiltRad + t1_anim_tip);
+
+            // Draw vertical CoG plumb line
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, 500); // long line down
+            
+            // Color based on status
+            ctx.strokeStyle = isTipping ? theme.danger : (isCritical ? theme.warning : theme.accent);
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw arrowhead
+            ctx.beginPath();
+            ctx.moveTo(-5, 490); ctx.lineTo(5, 490); ctx.lineTo(0, 500); ctx.fillStyle = ctx.strokeStyle; ctx.fill();
+            
+            ctx.restore(); // restore from cog down vector
+
+            ctx.restore(); // restore from box tipping
+            ctx.restore(); // restore from ground setup
+        }
+
+        const t2 = setupCanvas('canvas2');
+        let t2_anim_tall = 0;
+        let t2_anim_wide = 0;
+
+        function updateTab2() {
+            // Triggered on reset button
+        }
+
+        function renderTab2(dt) {
+            const { canvas, ctx } = t2;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            const tiltDeg = parseFloat(document.getElementById('t2-tilt').value);
+            const tiltRad = toRad(tiltDeg);
+            document.getElementById('t2-tilt-val').textContent = tiltDeg + '°';
+            document.getElementById('t2-stage-tilt').textContent = `TILT  ${tiltDeg}°`;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Block Definitions
+            const tall = { w: 40, h: 140, color: theme.paper };
+            const wide = { w: 140, h: 40, color: theme.paper };
+            
+            const critTall = toDeg(Math.atan2(tall.w/2, tall.h/2));
+            const critWide = toDeg(Math.atan2(wide.w/2, wide.h/2));
+
+            const isTallTipping = tiltDeg > critTall;
+            const isWideTipping = tiltDeg > critWide;
+
+            // Update UI table
+            const statTall = document.getElementById('t2-status-tall');
+            const statWide = document.getElementById('t2-status-wide');
+
+            statTall.textContent = isTallTipping ? "TIPPED" : "Stable";
+            statTall.className = isTallTipping ? "status-tipped" : "status-stable";
+            
+            statWide.textContent = isWideTipping ? "TIPPED" : "Stable";
+            statWide.className = isWideTipping ? "status-tipped" : "status-stable";
+
+            // Animations
+            t2_anim_tall = isTallTipping ? Math.min(t2_anim_tall + 0.05 * (dt/16), Math.PI/2) : 0;
+            t2_anim_wide = isWideTipping ? Math.min(t2_anim_wide + 0.05 * (dt/16), Math.PI/2) : 0;
+
+            // Helper to draw a block on a ramp
+            function drawBlockSystem(offsetX, block, isTipping, animAngle) {
+                ctx.save();
+                ctx.translate(offsetX, height - 100);
+                
+                // Ground
+                ctx.rotate(-tiltRad);
+                ctx.lineWidth = 3; ctx.strokeStyle = theme.ink;
+                ctx.beginPath(); ctx.moveTo(-150, 0); ctx.lineTo(150, 0); ctx.stroke();
+
+                // Block
+                ctx.save();
+                ctx.translate(-block.w/2, 0); // pivot
+                if (animAngle > 0) ctx.rotate(-animAngle);
+                ctx.translate(block.w/2, 0);
+
+                ctx.fillStyle = block.color;
+                ctx.strokeStyle = theme.ink; ctx.lineWidth = 2;
+                ctx.fillRect(-block.w/2, -block.h, block.w, block.h);
+                ctx.strokeRect(-block.w/2, -block.h, block.w, block.h);
+
+                // CoG
+                const cogX = 0, cogY = -block.h/2;
+                drawCoGMarker(ctx, cogX, cogY);
+
+                // Plumb line
+                ctx.save();
+                ctx.translate(cogX, cogY);
+                ctx.rotate(tiltRad + animAngle); // point straight down in world space
+                
+                ctx.beginPath(); ctx.setLineDash([4, 4]); ctx.moveTo(0, 0); ctx.lineTo(0, 300);
+                ctx.strokeStyle = isTipping ? theme.danger : theme.accent;
+                ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]);
+                ctx.restore();
+
+                // Label
+                ctx.rotate(tiltRad); // upright text
+                ctx.fillStyle = isTipping ? theme.danger : theme.darkMute;
+                ctx.font = '600 14px "Manrope"';
+                ctx.textAlign = 'center';
+                ctx.fillText(isTipping ? "TIPPED!" : "Stable", 0, -block.h - 20);
+
+                ctx.restore();
+                ctx.restore();
+            }
+
+            // Draw Left System (Tall)
+            drawBlockSystem(width/2 - 150, tall, isTallTipping, t2_anim_tall);
+            // Draw Right System (Wide)
+            drawBlockSystem(width/2 + 150, wide, isWideTipping, t2_anim_wide);
+        }
+
+        const t3 = setupCanvas('canvas3');
+        let t3_mode = 'car';
+        let t3_anim_tip = 0;
+
+        function setMode3(mode) {
+            t3_mode = mode;
+            document.getElementById('btn-car').classList.toggle('active', mode === 'car');
+            document.getElementById('btn-bus').classList.toggle('active', mode === 'bus');
+            document.getElementById('car-controls').style.display = mode === 'car' ? 'block' : 'none';
+            document.getElementById('bus-controls').style.display = mode === 'bus' ? 'block' : 'none';
+            
+            const insight = document.getElementById('t3-insight');
+            if (mode === 'car') {
+                insight.innerHTML = '<span class="label-mono">Insight</span> Formula 1 cars sit very low to the ground to maintain a low CoG, allowing them to take sharp, banked bends without tipping.';
+                document.getElementById('t3-stage-mode').textContent = 'MODEL  CAR';
+            } else {
+                insight.innerHTML = '<span class="label-mono">Insight</span> Double-decker buses become top-heavy as the upper deck fills, raising the CoG. This limits safe operation on severely sloped roads.';
+                document.getElementById('t3-stage-mode').textContent = 'MODEL  BUS';
+            }
+            // Reset sliders
+            document.getElementById('t3-bank').value = 0;
+            document.getElementById('t3-speed').value = 40;
+        }
+
+        function drawWheel(ctx, x, y, radius, compression = 0) {
+            ctx.save();
+            ctx.translate(x, y + compression);
+            ctx.fillStyle = theme.ink;
+            ctx.strokeStyle = theme.darkMute;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.strokeStyle = theme.bgAlt;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.55, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawSpring(ctx, x, topY, bottomY, compression = 0) {
+            const coils = 4;
+            const width = 10;
+            const y1 = topY;
+            const y2 = bottomY + compression;
+            ctx.save();
+            ctx.strokeStyle = theme.ink;
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(x, y1);
+            for (let i = 1; i <= coils * 2; i++) {
+                const t = i / (coils * 2);
+                const px = x + (i % 2 === 0 ? -width : width);
+                const py = y1 + (y2 - y1) * t;
+                ctx.lineTo(px, py);
+            }
+            ctx.lineTo(x, y2);
+            ctx.stroke();
+            ctx.strokeStyle = theme.darkMute;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + 15, y1);
+            ctx.lineTo(x + 15, y2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawPassengerGrid(ctx, count, x, y, w, h) {
+            const columns = 6;
+            const rows = 5;
+            const max = Math.min(count, columns * rows);
+            const gapX = w / (columns + 1);
+            const gapY = h / (rows + 1);
+            ctx.fillStyle = theme.ink;
+            for (let i = 0; i < max; i++) {
+                const col = i % columns;
+                const row = Math.floor(i / columns);
+                const px = x + gapX * (col + 1);
+                const py = y + gapY * (row + 1);
+                ctx.beginPath();
+                ctx.arc(px, py, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function renderTab3(dt) {
+            const { canvas, ctx } = t3;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            const bankDeg = parseFloat(document.getElementById('t3-bank').value);
+            const speed = parseFloat(document.getElementById('t3-speed').value);
+            const bankRad = toRad(bankDeg);
+            document.getElementById('t3-bank-val').textContent = bankDeg + '°';
+            document.getElementById('t3-speed-val').textContent = speed + ' km/h';
+            document.getElementById('t3-stage-bank').textContent = `BANK  ${bankDeg}°`;
+            const speedLoad = Math.max(0, (speed - 35) / 105);
+
+            ctx.clearRect(0, 0, width, height);
+
+            let cogHeight, baseHalfWidth, isTipping;
+
+            const originX = width / 2;
+            const originY = height - 100;
+
+            ctx.save();
+            ctx.translate(originX, originY);
+            
+            // Draw Road
+            ctx.rotate(-bankRad);
+            ctx.lineWidth = 10; ctx.strokeStyle = theme.ink;
+            ctx.beginPath(); ctx.moveTo(-width, 0); ctx.lineTo(width, 0); ctx.stroke();
+            
+            // Road stripes
+            ctx.lineWidth = 2; ctx.strokeStyle = theme.dark; ctx.setLineDash([18, 18]);
+            withAlpha(ctx, 0.75, () => {
+                ctx.beginPath(); ctx.moveTo(-width, 0); ctx.lineTo(width, 0); ctx.stroke();
+            });
+            ctx.setLineDash([]);
+
+            if (speed > 65) {
+                ctx.save();
+                ctx.rotate(bankRad);
+                ctx.strokeStyle = theme.warning;
+                ctx.fillStyle = theme.warning;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 5]);
+                const arrowY = -210;
+                const arrowLen = Math.min(170, 42 + speedLoad * 150);
+                ctx.beginPath();
+                ctx.moveTo(-arrowLen / 2, arrowY);
+                ctx.lineTo(arrowLen / 2, arrowY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.moveTo(arrowLen / 2, arrowY);
+                ctx.lineTo(arrowLen / 2 - 10, arrowY - 5);
+                ctx.lineTo(arrowLen / 2 - 10, arrowY + 5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.font = '500 10px "JetBrains Mono"';
+                ctx.textAlign = 'center';
+                ctx.fillText('LATERAL LOAD', 0, arrowY - 12);
+                ctx.restore();
+            }
+
+            if (t3_mode === 'car') {
+                const rideH = parseFloat(document.getElementById('t3-ride').value);
+                const stiffness = parseFloat(document.getElementById('t3-stiff').value);
+                const rideStr = rideH < 25 ? 'Low' : (rideH < 45 ? 'Medium' : 'High');
+                const stiffStr = stiffness < 4 ? 'Soft' : (stiffness < 8 ? 'Firm' : 'Race');
+                document.getElementById('t3-ride-val').textContent = rideStr;
+                document.getElementById('t3-stiff-val').textContent = stiffStr;
+
+                // Car Specs
+                const trackWidth = 120;
+                baseHalfWidth = trackWidth / 2;
+                // Car chassis base Y is -rideH. 
+                // Let chassis CoG be 30px above chassis base.
+                cogHeight = rideH + 30; 
+
+                const critAngle = toDeg(Math.atan2(baseHalfWidth, cogHeight));
+                const rollDeg = speedLoad * speedLoad * (12 - stiffness) * (0.9 + rideH / 80);
+                const dynamicRiskDeg = bankDeg + speedLoad * speedLoad * 20 * (1.25 - stiffness / 16) * (0.9 + rideH / 90);
+                isTipping = dynamicRiskDeg > critAngle;
+                t3_anim_tip = isTipping ? Math.min(t3_anim_tip + 0.05*(dt/16), Math.PI/2) : 0;
+
+                // Draw Car
+                ctx.save();
+                ctx.translate(-baseHalfWidth, 0); // pivot on inner wheel
+                if (t3_anim_tip > 0) ctx.rotate(-t3_anim_tip);
+                ctx.translate(baseHalfWidth, 0);
+
+                const outerCompression = Math.min(15, speedLoad * (12 - stiffness) * 1.8);
+                const innerExtension = -Math.min(6, speedLoad * (11 - stiffness) * 0.8);
+
+                // Wheels
+                drawWheel(ctx, -trackWidth/2, -15, 15, innerExtension);
+                drawWheel(ctx, trackWidth/2, -15, 15, outerCompression);
+                drawSpring(ctx, -trackWidth/2, -rideH - 8, -32, innerExtension);
+                drawSpring(ctx, trackWidth/2, -rideH - 8, -32, outerCompression);
+
+                // Body (trapezoid)
+                ctx.save();
+                ctx.rotate(toRad(-rollDeg));
+                ctx.fillStyle = theme.paper;
+                ctx.strokeStyle = theme.ink;
+                ctx.beginPath();
+                ctx.moveTo(-trackWidth/2 - 20, -rideH);
+                ctx.lineTo(trackWidth/2 + 20, -rideH);
+                ctx.lineTo(trackWidth/2 - 10, -rideH - 40);
+                ctx.lineTo(-trackWidth/2 + 30, -rideH - 40);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+                
+                // Wing
+                ctx.fillStyle = theme.ink;
+                ctx.fillRect(-trackWidth/2 - 30, -rideH - 20, 20, 5);
+                ctx.fillRect(trackWidth/2 + 10, -rideH - 10, 30, 5);
+                ctx.restore();
+
+                // CoG
+                drawCoGMarker(ctx, 0, -cogHeight);
+                drawPlumbLine(ctx, 0, -cogHeight, bankRad, t3_anim_tip, isTipping);
+                
+                ctx.restore();
+
+            } else {
+                // Bus Specs
+                const upPax = parseInt(document.getElementById('t3-upper').value);
+                const lowPax = parseInt(document.getElementById('t3-lower').value);
+                document.getElementById('t3-upper-val').textContent = upPax;
+                document.getElementById('t3-lower-val').textContent = lowPax;
+
+                const busW = 80;
+                baseHalfWidth = busW / 2;
+                const lowDeckY = 30; // height of deck from ground
+                const upDeckY = 110;
+                
+                // Mass calculations (arbitrary units)
+                const massEmpty = 100;
+                const cogEmptyY = 70; 
+                const massLow = lowPax * 5;
+                const massUp = upPax * 5;
+                const totalMass = massEmpty + massLow + massUp;
+                
+                // Weighted average for CoG Height
+                cogHeight = ((massEmpty * cogEmptyY) + (massLow * lowDeckY) + (massUp * upDeckY)) / totalMass;
+
+                const critAngle = toDeg(Math.atan2(baseHalfWidth, cogHeight));
+                const topHeavy = massUp / Math.max(1, totalMass);
+                const busRollDeg = speedLoad * speedLoad * (8 + topHeavy * 18);
+                const dynamicRiskDeg = bankDeg + speedLoad * speedLoad * (16 + topHeavy * 18);
+                isTipping = dynamicRiskDeg > critAngle;
+                t3_anim_tip = isTipping ? Math.min(t3_anim_tip + 0.05*(dt/16), Math.PI/2) : 0;
+
+                // Draw Bus
+                ctx.save();
+                ctx.translate(-baseHalfWidth, 0); // pivot
+                if (t3_anim_tip > 0) ctx.rotate(-t3_anim_tip);
+                ctx.translate(baseHalfWidth, 0);
+
+                // Wheels
+                const busOuterCompression = Math.min(13, speedLoad * (8 + topHeavy * 12));
+                const busInnerExtension = -Math.min(5, speedLoad * 5);
+                drawWheel(ctx, -busW/2 + 10, -15, 15, busInnerExtension);
+                drawWheel(ctx, busW/2 - 10, -15, 15, busOuterCompression);
+                drawSpring(ctx, -busW/2 + 10, -58, -31, busInnerExtension);
+                drawSpring(ctx, busW/2 - 10, -58, -31, busOuterCompression);
+
+                // Body
+                ctx.save();
+                ctx.rotate(toRad(-busRollDeg));
+                ctx.fillStyle = theme.paper;
+                ctx.strokeStyle = theme.ink;
+                ctx.fillRect(-busW/2, -180, busW, 165);
+                ctx.strokeRect(-busW/2, -180, busW, 165);
+                
+                // Windows
+                ctx.fillStyle = theme.bgAlt;
+                const upperDeck = { x: -busW/2 + 8, y: -168, w: busW - 16, h: 48 };
+                const lowerDeck = { x: -busW/2 + 8, y: -92, w: busW - 16, h: 52 };
+                ctx.fillRect(upperDeck.x, upperDeck.y, upperDeck.w, upperDeck.h);
+                ctx.fillRect(lowerDeck.x, lowerDeck.y, lowerDeck.w, lowerDeck.h);
+
+                // Passengers (dots)
+                drawPassengerGrid(ctx, upPax, upperDeck.x, upperDeck.y, upperDeck.w, upperDeck.h);
+                drawPassengerGrid(ctx, lowPax, lowerDeck.x, lowerDeck.y, lowerDeck.w, lowerDeck.h);
+                ctx.restore();
+
+                // CoG
+                drawCoGMarker(ctx, 0, -cogHeight);
+                drawPlumbLine(ctx, 0, -cogHeight, bankRad, t3_anim_tip, isTipping);
+
+                ctx.restore();
+            }
+
+            ctx.restore();
+
+            // Label UI
+            const label = document.getElementById('label3');
+            if (isTipping) {
+                label.textContent = "ROLL LIMIT";
+                label.className = "overlay-label status-tipped";
+            } else if (speed > 85) {
+                label.textContent = "BODY ROLL";
+                label.className = "overlay-label status-critical";
+            } else {
+                label.textContent = "STABLE GRIP";
+                label.className = "overlay-label status-stable";
+            }
+        }
+
+        // Helper for T3 plumb line
+        function drawPlumbLine(ctx, x, y, bankRad, animTip, isTipping) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(bankRad + animTip); // Point straight down in world space
+            ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.moveTo(0, 0); ctx.lineTo(0, 400);
+            ctx.strokeStyle = isTipping ? theme.danger : theme.accent;
+            ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]);
+            
+            // Highlight contact patch intersection area roughly
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath(); ctx.arc(0, Math.abs(y), 5, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+
+        const t4 = setupCanvas('canvas4');
+        let currentPosture = 'straight';
+        
+        const poses = {
+            straight: { lean: 0, hip: 0, foot: 58, lift: 0, arms: 12, msg: "CoG is centered over both feet. Most stable position." },
+            lean:     { lean: 22, hip: 8, foot: 34, lift: 0, arms: 4, msg: "Torso inclines from the ankles. CoG shifts toward the toe edge but remains supported." },
+            leg:      { lean: -4, hip: 24, foot: 46, lift: 76, arms: 48, msg: "Base narrows to one foot. The torso shifts over the stance foot to balance." },
+            arms:     { lean: 0, hip: 0, foot: 60, lift: 0, arms: 86, msg: "Arms widen the shape slightly, but torso mass still dominates the total CoG." }
+        };
+
+        let animState = { lean: 0, hip: 0, foot: 58, lift: 0, arms: 12 };
+        let wobblePhase = 0;
+
+        function setPosture(p) {
+            currentPosture = p;
+            
+            // Update buttons
+            const btns = document.getElementById('tab4').querySelectorAll('.btn');
+            btns.forEach(b => b.classList.toggle('btn-primary', b.dataset.posture === p));
+
+            document.getElementById('t4-insight').textContent = poses[p].msg;
+        }
+
+        function renderTab4(dt) {
+            const { canvas, ctx } = t4;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const target = poses[currentPosture];
+            const speed = 0.1;
+            Object.keys(animState).forEach(key => {
+                animState[key] += (target[key] - animState[key]) * speed;
+            });
+
+            const originX = width / 2;
+            const groundY = height - 100;
+
+            // Draw Ground
+            ctx.lineWidth = 4; ctx.strokeStyle = theme.ink;
+            ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width, groundY); ctx.stroke();
+
+            const segs = {
+                torsoL: 104, torsoMass: 52,
+                legL: 116, legMass: 15,
+                armL: 76, armMass: 5,
+                headR: 18, headMass: 8
+            };
+
+            const leanRad = toRad(animState.lean);
+            const rightFoot = { x: originX + animState.foot / 2, y: groundY };
+            const leftFoot = { x: originX - animState.foot / 2, y: groundY - animState.lift };
+            const hip = { x: originX + animState.hip, y: groundY - segs.legL };
+            const shoulder = {
+                x: hip.x + Math.sin(leanRad) * segs.torsoL,
+                y: hip.y - Math.cos(leanRad) * segs.torsoL
+            };
+            const head = {
+                x: shoulder.x + Math.sin(leanRad) * (segs.headR + 14),
+                y: shoulder.y - Math.cos(leanRad) * (segs.headR + 14)
+            };
+            const leftKnee = {
+                x: (leftFoot.x + hip.x) / 2 - (currentPosture === 'leg' ? 26 : 8),
+                y: (leftFoot.y + hip.y) / 2 + 8
+            };
+            const rightKnee = {
+                x: (rightFoot.x + hip.x) / 2 + 7,
+                y: (rightFoot.y + hip.y) / 2 + 10
+            };
+            const leftArmAng = toRad(-animState.arms);
+            const rightArmAng = toRad(animState.arms);
+            const leftHand = {
+                x: shoulder.x + Math.sin(leftArmAng) * segs.armL,
+                y: shoulder.y + Math.cos(leftArmAng) * segs.armL
+            };
+            const rightHand = {
+                x: shoulder.x + Math.sin(rightArmAng) * segs.armL,
+                y: shoulder.y + Math.cos(rightArmAng) * segs.armL
+            };
+
+            const cmTorsoX = (hip.x + shoulder.x)/2, cmTorsoY = (hip.y + shoulder.y)/2;
+            const cmRLegX = (hip.x + rightFoot.x)/2, cmRLegY = (hip.y + rightFoot.y)/2;
+            const cmLLegX = (hip.x + leftFoot.x)/2, cmLLegY = (hip.y + leftFoot.y)/2;
+            const cmRArmX = (shoulder.x + rightHand.x)/2, cmRArmY = (shoulder.y + rightHand.y)/2;
+            const cmLArmX = (shoulder.x + leftHand.x)/2, cmLArmY = (shoulder.y + leftHand.y)/2;
+            const cmHeadX = head.x, cmHeadY = head.y;
+
+            const totalMass = segs.torsoMass + 2*segs.legMass + 2*segs.armMass + segs.headMass;
+            
+            let cogX = (cmTorsoX*segs.torsoMass + cmRLegX*segs.legMass + cmLLegX*segs.legMass + 
+                        cmRArmX*segs.armMass + cmLArmX*segs.armMass + cmHeadX*segs.headMass) / totalMass;
+            let cogY = (cmTorsoY*segs.torsoMass + cmRLegY*segs.legMass + cmLLegY*segs.legMass + 
+                        cmRArmY*segs.armMass + cmLArmY*segs.armMass + cmHeadY*segs.headMass) / totalMass;
+
+
+            let bosMin = rightFoot.x - 22;
+            let bosMax = rightFoot.x + 26;
+            
+            if (Math.abs(leftFoot.y - groundY) < 12) {
+                bosMin = Math.min(bosMin, leftFoot.x - 22);
+                bosMax = Math.max(bosMax, leftFoot.x + 26);
+            }
+
+            const isBalanced = cogX >= bosMin && cogX <= bosMax;
+            const edgeDistance = Math.min(Math.abs(cogX - bosMin), Math.abs(bosMax - cogX));
+            const isNearEdge = isBalanced && edgeDistance < 18;
+
+            // Wobble mechanics if unbalanced
+            if (!isBalanced) {
+                wobblePhase += dt * 0.01;
+                // Add tiny offset to rendering, not physics state, to show instability
+                const wX = Math.sin(wobblePhase) * 5;
+                ctx.translate(wX, 0);
+            } else {
+                wobblePhase = 0;
+            }
+
+            // --- DRAWING ---
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Draw Base of Support indicator on ground
+            ctx.fillStyle = isBalanced ? theme.accent : theme.danger;
+            withAlpha(ctx, 0.14, () => {
+                ctx.fillRect(bosMin, groundY - 5, bosMax - bosMin, 10);
+            });
+            ctx.strokeStyle = isBalanced ? theme.accent : theme.danger;
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(bosMin, groundY); ctx.lineTo(bosMax, groundY); ctx.stroke();
+
+            const bodyColor = theme.ink;
+            const backColor = theme.inkMute;
+
+            function segment(a, b, lineWidth, color) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+            }
+
+            function joint(point, radius = 4) {
+                ctx.fillStyle = theme.dark;
+                ctx.strokeStyle = theme.ink;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // Feet
+            segment({ x: leftFoot.x - 22, y: leftFoot.y }, { x: leftFoot.x + 18, y: leftFoot.y }, 8, Math.abs(leftFoot.y - groundY) < 12 ? backColor : theme.inkMute);
+            segment({ x: rightFoot.x - 22, y: rightFoot.y }, { x: rightFoot.x + 24, y: rightFoot.y }, 8, bodyColor);
+
+            // Back side first for depth.
+            segment(leftFoot, leftKnee, 14, backColor);
+            segment(leftKnee, hip, 14, backColor);
+            segment(shoulder, leftHand, 11, backColor);
+
+            segment(rightFoot, rightKnee, 16, bodyColor);
+            segment(rightKnee, hip, 16, bodyColor);
+            segment(hip, shoulder, 24, bodyColor);
+            segment(shoulder, rightHand, 11, bodyColor);
+
+            [leftKnee, rightKnee, hip, shoulder].forEach(p => joint(p, 4));
+            ctx.fillStyle = bodyColor;
+            ctx.beginPath(); ctx.arc(head.x, head.y, segs.headR, 0, Math.PI*2); ctx.fill();
+
+            // Draw CoG
+            drawCoGMarker(ctx, cogX, cogY);
+
+            // Plumb Line
+            ctx.beginPath(); ctx.setLineDash([5, 5]);
+            ctx.moveTo(cogX, cogY); ctx.lineTo(cogX, groundY);
+            ctx.strokeStyle = isBalanced ? theme.accent : theme.danger;
+            ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]);
+
+            // UI Updates
+            const totalH = groundY - (head.y - segs.headR);
+            const cogH = groundY - cogY;
+            const pct = Math.round((cogH / totalH) * 100);
+            
+            document.getElementById('t4-cog-val').textContent = `~${pct}% of body height`;
+            document.getElementById('t4-stage-cog').textContent = `COG  ~${pct}%`;
+            document.getElementById('t4-stage-base').textContent = Math.abs(leftFoot.y - groundY) < 12 ? 'BASE  TWO FEET' : 'BASE  ONE FOOT';
+            
+            const statusUI = document.getElementById('t4-status-val');
+            const labelUI = document.getElementById('label4');
+            if (isBalanced) {
+                statusUI.textContent = isNearEdge ? "Balanced - Near Edge" : "Balanced";
+                statusUI.className = isNearEdge ? "value-readout status-critical" : "value-readout status-stable";
+                labelUI.textContent = isNearEdge ? "NEAR EDGE" : "BALANCED";
+                labelUI.className = isNearEdge ? "overlay-label status-critical" : "overlay-label status-stable";
+            } else {
+                statusUI.textContent = "Unbalanced - Falling";
+                statusUI.className = "value-readout status-tipped";
+                labelUI.textContent = "WOULD FALL";
+                labelUI.className = "overlay-label status-tipped";
+            }
+        }
+
+        // Initialize Start
+        window.onload = function() {
+            // Trigger initial render bounds
+            setPlayIcon();
+            switchTab(1);
+            requestAnimationFrame(animateLoop);
+        };
+
+    </script>
+</body>
+</html>

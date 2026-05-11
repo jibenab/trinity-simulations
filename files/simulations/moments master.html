@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Moments Master - Trinity Simulation Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #EFF2F5;
+      --bg-alt: #E2E7EC;
+      --paper: #F7F8FA;
+      --ink: #0C1115;
+      --ink-soft: #2B333A;
+      --ink-mute: #6B7680;
+      --rule-soft: rgba(12,17,21,0.14);
+      --stage-rule: rgba(12,17,21,0.12);
+      --stage-grid: rgba(12,17,21,0.08);
+      --dark: #FFFFFF;
+      --dark-ink: #0C1115;
+      --dark-mute: #4A5560;
+      --accent: oklch(0.52 0.12 200);
+      --accent-rgb: 22, 131, 159;
+      --accent-ink: #F7F8FA;
+      --success: #2E8B57;
+      --danger: #B94B42;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+      --sans: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "ss01", "cv11";
+      touch-action: manipulation;
+    }
+
+    button,
+    input { font: inherit; }
+
+    button {
+      min-height: 44px;
+      cursor: pointer;
+      border: 0;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    h1,
+    h2,
+    p { margin: 0; }
+
+    .app {
+      display: flex;
+      width: 100%;
+      max-width: 1280px;
+      height: 100dvh;
+      min-height: 0;
+      margin: 0 auto;
+      flex-direction: column;
+      overflow: hidden;
+      border-left: 1px solid var(--rule-soft);
+      border-right: 1px solid var(--rule-soft);
+      background: var(--bg);
+    }
+
+    .topbar {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--ink);
+      background: var(--paper);
+      padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+    }
+
+    .eyebrow,
+    .label-mono,
+    .chip,
+    .stage-readout,
+    .rule-row span:last-child,
+    .result-cell span,
+    .value {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow {
+      color: var(--ink-mute);
+      letter-spacing: 0.14em;
+    }
+
+    h1 {
+      margin-top: 3px;
+      color: var(--ink);
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .hud {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      min-height: 34px;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: var(--paper);
+      padding: 7px 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .chip.dark {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    main {
+      display: grid;
+      flex: 1 1 auto;
+      min-height: 0;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+    }
+
+    .question-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+      gap: 14px;
+      border-bottom: 1px solid var(--ink);
+      background: var(--paper);
+      padding: 12px 16px;
+    }
+
+    .question-box {
+      min-height: 86px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      border-left: 3px solid var(--ink);
+      background: var(--bg-alt);
+      padding: 13px 14px;
+      color: var(--ink-soft);
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .question-box b {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .control-stack {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .input-panel {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+      padding: 10px 12px;
+    }
+
+    .control-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--ink-soft);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .value {
+      min-width: 84px;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      padding: 7px 9px;
+      color: var(--ink);
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 34px;
+      margin: 0;
+      accent-color: var(--accent);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 3px;
+      background: var(--rule-soft);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 24px;
+      height: 24px;
+      margin-top: -10px;
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      background: var(--paper);
+      -webkit-appearance: none;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: var(--ink);
+      color: var(--bg);
+      padding: 10px 15px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .feedback {
+      display: none;
+      border: 1px solid var(--rule-soft);
+      padding: 9px 11px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .feedback.success,
+    .feedback.error { display: block; }
+
+    .feedback.success {
+      border-color: var(--success);
+      color: var(--success);
+      background: rgba(46,139,87,0.1);
+    }
+
+    .feedback.error {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: rgba(185,75,66,0.1);
+    }
+
+    .stage-wrap {
+      min-height: 0;
+      padding: 14px 16px;
+      background: var(--bg);
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 260px;
+      overflow: hidden;
+      border: 1px solid var(--stage-rule);
+      border-radius: 4px;
+      background:
+        linear-gradient(var(--stage-grid) 0.5px, transparent 0.5px),
+        linear-gradient(90deg, var(--stage-grid) 0.5px, transparent 0.5px),
+        var(--dark);
+      background-size: 24px 24px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .stage-readout {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      display: grid;
+      gap: 4px;
+      color: var(--dark-mute);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+    }
+
+    .prompt {
+      flex: 0 0 auto;
+      border-top: 1px solid var(--rule-soft);
+      background: var(--paper);
+      padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .overlay-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      background: rgba(239,242,245,0.96);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .overlay-card {
+      width: min(520px, 100%);
+      max-height: calc(100dvh - 40px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      padding: 28px;
+    }
+
+    .overlay-card h2 {
+      margin-top: 8px;
+      font-size: clamp(28px, 4vw, 38px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .overlay-card p {
+      margin-top: 14px;
+      color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .rules {
+      display: grid;
+      gap: 8px;
+      margin: 20px 0;
+      text-align: left;
+    }
+
+    .rule-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-top: 1px solid var(--rule-soft);
+      padding-top: 8px;
+      color: var(--ink-soft);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .rule-row span:last-child {
+      color: var(--ink);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 20px 0;
+    }
+
+    .result-cell {
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+      padding: 12px 8px;
+    }
+
+    .result-cell strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .result-cell span {
+      display: block;
+      margin-top: 5px;
+      color: var(--ink-mute);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .hud { justify-content: flex-start; }
+
+      main { grid-template-rows: auto minmax(0, 1fr) auto; }
+
+      .question-panel {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px 12px;
+      }
+
+      .question-box {
+        min-height: 0;
+        max-height: 150px;
+        font-size: 15px;
+      }
+
+      .stage-wrap { padding: 10px 12px; }
+      .actions { grid-template-columns: 1fr; }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .topbar {
+        gap: 8px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+      }
+
+      h1 { font-size: 24px; }
+      .hud .chip { min-height: 32px; font-size: 10px; }
+      .question-panel {
+        gap: 8px;
+        padding: 8px;
+      }
+
+      .question-box {
+        max-height: 92px;
+        padding: 9px 11px;
+        font-size: 14px;
+      }
+
+      .input-panel { padding: 8px 10px; }
+      .actions { grid-template-columns: 1fr 1fr; }
+      .btn {
+        min-height: 42px;
+        padding-right: 10px;
+        padding-left: 10px;
+        font-size: 13px;
+      }
+
+      .stage-wrap { padding: 8px; }
+      .stage { min-height: 170px; }
+      .stage-readout {
+        top: 8px;
+        left: 8px;
+        font-size: 9px;
+      }
+
+      .prompt {
+        padding: 7px 12px max(7px, env(safe-area-inset-bottom));
+        font-size: 12px;
+      }
+      .overlay-card { padding: 22px; }
+    }
+
+    @media (max-height: 720px) and (min-width: 901px) {
+      .topbar { padding-top: 9px; padding-bottom: 9px; }
+      h1 { font-size: 24px; }
+      .chip { min-height: 30px; padding: 5px 8px; font-size: 10px; }
+      .question-panel { padding-top: 9px; padding-bottom: 9px; }
+      .question-box { min-height: 68px; padding: 10px 12px; font-size: 14px; }
+      .stage-wrap { padding-top: 10px; padding-bottom: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Simulation · Physics</div>
+        <h1>Moments Master</h1>
+      </div>
+      <div class="hud" aria-label="Game status">
+        <div id="levelBadge" class="chip dark">Level 1 / 10</div>
+        <div class="chip">Score <span id="scoreValue">0</span></div>
+        <div class="chip">Time <span id="timerValue">0:00</span></div>
+        <div class="chip">Streak <span id="streakValue">0</span></div>
+      </div>
+    </header>
+
+    <main>
+      <section class="question-panel" aria-label="Challenge">
+        <div class="question-box" id="questionText">Start the run to load the first moments challenge.</div>
+        <div class="control-stack">
+          <div class="input-panel">
+            <div class="control-header">
+              <span id="inputLabel">Answer</span>
+              <span class="value"><span id="answerValue">50</span> <span id="answerUnit">cm</span></span>
+            </div>
+            <input type="range" id="answerSlider" min="0" max="100" step="5" value="50" aria-label="Answer" />
+          </div>
+          <div class="actions">
+            <button id="btnAction" class="btn" type="button">Check Answer</button>
+            <button id="btnReset" class="btn ghost" type="button">Reset Run</button>
+          </div>
+          <div id="feedbackBox" class="feedback" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="stage-wrap">
+        <div class="stage" id="stage">
+          <canvas id="simCanvas"></canvas>
+          <div class="stage-readout">
+            <div>ACW  <span id="antiReadout">0</span> gf cm</div>
+            <div>CW   <span id="clockReadout">0</span> gf cm</div>
+            <div>NET  <span id="netReadout">0</span> gf cm</div>
+          </div>
+        </div>
+      </section>
+
+      <p class="prompt" id="promptText">Try matching clockwise moment to anticlockwise moment before checking.</p>
+    </main>
+
+    <div id="startScreen" class="overlay-screen">
+      <div class="overlay-card">
+        <div class="eyebrow">Ten timed puzzles</div>
+        <h2>Balance the meter rule.</h2>
+        <p>Every distance answer lands on a 0 or 5 cm mark. Use moment = force x perpendicular distance.</p>
+        <div class="rules">
+          <div class="rule-row"><span>Correct answer</span><span>+100</span></div>
+          <div class="rule-row"><span>Fast solve bonus</span><span>up to +50</span></div>
+          <div class="rule-row"><span>Streak bonus</span><span>+10 each</span></div>
+          <div class="rule-row"><span>Retry penalty</span><span>-15</span></div>
+        </div>
+        <button id="btnStartGame" class="btn" type="button" style="width:100%;">Start Run</button>
+      </div>
+    </div>
+
+    <div id="endScreen" class="overlay-screen hidden">
+      <div class="overlay-card">
+        <div class="eyebrow">Run complete</div>
+        <h2>Score sent to the app.</h2>
+        <p id="resultCopy">Your leaderboard result is based on score first, then faster completion time.</p>
+        <div class="result-grid">
+          <div class="result-cell"><strong id="finalScore">0</strong><span>Score</span></div>
+          <div class="result-cell"><strong id="finalTime">0:00</strong><span>Time</span></div>
+          <div class="result-cell"><strong id="finalAccuracy">0%</strong><span>Accuracy</span></div>
+        </div>
+        <button id="btnPlayAgain" class="btn" type="button" style="width:100%;">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__TRINITY_INIT__ = window.__TRINITY_INIT__ || { userName: "Student", slug: "lever-lab", contentType: "game" };
+
+    const css = getComputedStyle(document.documentElement);
+    const color = (name) => css.getPropertyValue(name).trim();
+    const COLORS = {
+      bg: color("--dark"),
+      grid: color("--stage-grid"),
+      text: color("--dark-ink"),
+      mute: color("--dark-mute"),
+      paper: color("--paper"),
+      ink: color("--ink"),
+      accent: color("--accent"),
+      success: color("--success"),
+      danger: color("--danger"),
+      rule: color("--rule-soft")
+    };
+
+    const UI = {
+      app: document.getElementById("app"),
+      questionText: document.getElementById("questionText"),
+      promptText: document.getElementById("promptText"),
+      answerSlider: document.getElementById("answerSlider"),
+      answerValue: document.getElementById("answerValue"),
+      answerUnit: document.getElementById("answerUnit"),
+      inputLabel: document.getElementById("inputLabel"),
+      btnAction: document.getElementById("btnAction"),
+      btnReset: document.getElementById("btnReset"),
+      feedbackBox: document.getElementById("feedbackBox"),
+      levelBadge: document.getElementById("levelBadge"),
+      scoreValue: document.getElementById("scoreValue"),
+      timerValue: document.getElementById("timerValue"),
+      streakValue: document.getElementById("streakValue"),
+      antiReadout: document.getElementById("antiReadout"),
+      clockReadout: document.getElementById("clockReadout"),
+      netReadout: document.getElementById("netReadout"),
+      startScreen: document.getElementById("startScreen"),
+      endScreen: document.getElementById("endScreen"),
+      finalScore: document.getElementById("finalScore"),
+      finalTime: document.getElementById("finalTime"),
+      finalAccuracy: document.getElementById("finalAccuracy"),
+      resultCopy: document.getElementById("resultCopy")
+    };
+
+    const canvas = document.getElementById("simCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const simState = {
+      fulcrum: 50,
+      ruleWeight: 0,
+      weights: [],
+      showPhysics: false,
+      currentAngle: 0,
+      velocity: 0
+    };
+
+    const gameState = {
+      currentLevel: 0,
+      totalLevels: 10,
+      state: "IDLE",
+      currentPuzzle: null,
+      score: 0,
+      streak: 0,
+      correct: 0,
+      attempts: 0,
+      wrongAttemptsThisLevel: 0,
+      startedAt: 0,
+      levelStartedAt: 0,
+      submitted: false,
+      timerId: 0
+    };
+
+    let width = 1;
+    let height = 1;
+    let margin = 50;
+    let pxPerCm = 1;
+    let beamY = 1;
+    let renderStarted = false;
+
+    const randFrom = (items) => items[Math.floor(Math.random() * items.length)];
+    const range = (start, end, step) => {
+      const out = [];
+      for (let value = start; value <= end; value += step) out.push(value);
+      return out;
+    };
+
+    function formatTime(totalSeconds) {
+      const seconds = Math.max(0, Math.floor(totalSeconds));
+      const minutes = Math.floor(seconds / 60);
+      return minutes + ":" + String(seconds % 60).padStart(2, "0");
+    }
+
+    function elapsedSeconds() {
+      return gameState.startedAt ? (performance.now() - gameState.startedAt) / 1000 : 0;
+    }
+
+    function levelSeconds() {
+      return gameState.levelStartedAt ? (performance.now() - gameState.levelStartedAt) / 1000 : 0;
+    }
+
+    function distanceText(pos, fulcrum) {
+      const dist = Math.abs(pos - fulcrum);
+      if (pos < fulcrum) return dist + " cm to the left of the pivot";
+      if (pos > fulcrum) return dist + " cm to the right of the pivot";
+      return "at the pivot";
+    }
+
+    function sideOf(pos, fulcrum) {
+      return pos < fulcrum ? "left" : "right";
+    }
+
+    function answerSideControls(targetPos, fulcrum) {
+      const answerIsLeft = targetPos < fulcrum;
+      return {
+        min: answerIsLeft ? 0 : fulcrum + 5,
+        max: answerIsLeft ? fulcrum - 5 : 100,
+        initialAnswer: answerIsLeft ? fulcrum - 25 : fulcrum + 25
+      };
+    }
+
+    function resize() {
+      const rect = document.getElementById("stage").getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      width = Math.max(1, rect.width);
+      height = Math.max(1, rect.height);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      margin = width < 480 ? Math.max(22, Math.min(30, width * 0.07)) : Math.max(34, Math.min(90, width * 0.11));
+      pxPerCm = (width - margin * 2) / 100;
+      beamY = width < 480 || height < 230
+        ? Math.max(72, Math.min(height * 0.52, height - 76))
+        : Math.max(118, Math.min(height * 0.48, height - 150));
+    }
+
+    function makeSingleWeightPuzzle() {
+      const options = [];
+      range(20, 90, 10).forEach((fixedMass) => {
+        range(10, 40, 5).forEach((leftDist) => {
+          range(10, 45, 5).forEach((rightDist) => {
+            const userMass = fixedMass * leftDist / rightDist;
+            if (Number.isInteger(userMass) && userMass >= 10 && userMass <= 100 && userMass % 5 === 0) {
+              options.push({ fixedMass, leftDist, rightDist, userMass });
+            }
+          });
+        });
+      });
+      const pick = randFrom(options);
+      const fixedPos = 50 - pick.leftDist;
+      const targetPos = 50 + pick.rightDist;
+      const controls = answerSideControls(targetPos, 50);
+      return {
+        type: "position",
+        inputLabel: "Position of movable weight",
+        answerUnit: "cm",
+        min: controls.min,
+        max: controls.max,
+        step: 5,
+        initialAnswer: controls.initialAnswer,
+        setup: {
+          fulcrum: 50,
+          ruleWeight: 0,
+          weights: [{ mass: pick.fixedMass, pos: fixedPos, dir: "down", role: "fixed" }]
+        },
+        userWeight: { mass: pick.userMass, pos: controls.initialAnswer, dir: "down" },
+        correctAnswer: targetPos,
+        question: "A light meter rule is pivoted at <b>50 cm</b>. A <b>" + pick.fixedMass + " gf</b> weight acts <b>" + pick.leftDist + " cm left</b> of the pivot. Where should the <b>" + pick.userMass + " gf</b> weight be placed on the right?",
+        prompt: "Set the cm mark so clockwise moment equals anticlockwise moment."
+      };
+    }
+
+    function makeTwoWeightPuzzle() {
+      const options = [];
+      range(20, 60, 10).forEach((m1) => {
+        range(10, 35, 5).forEach((d1) => {
+          range(20, 60, 10).forEach((m2) => {
+            range(5, 35, 5).forEach((d2) => {
+              range(10, 45, 5).forEach((rightDist) => {
+                const userMass = (m1 * d1 + m2 * d2) / rightDist;
+                if (Number.isInteger(userMass) && userMass >= 10 && userMass <= 120 && userMass % 5 === 0) {
+                  options.push({ m1, d1, m2, d2, rightDist, userMass });
+                }
+              });
+            });
+          });
+        });
+      });
+      const pick = randFrom(options);
+      const targetPos = 50 + pick.rightDist;
+      const controls = answerSideControls(targetPos, 50);
+      return {
+        type: "position",
+        inputLabel: "Position of balancing weight",
+        answerUnit: "cm",
+        min: controls.min,
+        max: controls.max,
+        step: 5,
+        initialAnswer: controls.initialAnswer,
+        setup: {
+          fulcrum: 50,
+          ruleWeight: 0,
+          weights: [
+            { mass: pick.m1, pos: 50 - pick.d1, dir: "down", role: "fixed" },
+            { mass: pick.m2, pos: 50 - pick.d2, dir: "down", role: "fixed" }
+          ]
+        },
+        userWeight: { mass: pick.userMass, pos: controls.initialAnswer, dir: "down" },
+        correctAnswer: targetPos,
+        question: "Two weights hang to the left of a <b>50 cm</b> pivot: <b>" + pick.m1 + " gf</b> at <b>" + pick.d1 + " cm</b> and <b>" + pick.m2 + " gf</b> at <b>" + pick.d2 + " cm</b> from the pivot. Place a <b>" + pick.userMass + " gf</b> weight on the right.",
+        prompt: "Add the two left moments, then divide by the balancing weight."
+      };
+    }
+
+    function makeRuleWeightPuzzle() {
+      const options = [];
+      range(55, 80, 5).forEach((fulcrum) => {
+        const ruleDist = fulcrum - 50;
+        range(20, 120, 10).forEach((ruleWeight) => {
+          range(10, 35, 5).forEach((knownDist) => {
+            const knownMass = ruleWeight * ruleDist / knownDist;
+            if (Number.isInteger(knownMass) && knownMass >= 10 && knownMass <= 120 && knownMass % 5 === 0) {
+              options.push({ fulcrum, ruleWeight, knownDist, knownMass });
+            }
+          });
+        });
+      });
+      const pick = randFrom(options);
+      const knownPos = pick.fulcrum + pick.knownDist;
+      return {
+        type: "mass",
+        inputLabel: "Weight of meter rule",
+        answerUnit: "gf",
+        min: 10,
+        max: 120,
+        step: 5,
+        initialAnswer: 50,
+        setup: {
+          fulcrum: pick.fulcrum,
+          ruleWeight: 0,
+          weights: [{ mass: pick.knownMass, pos: knownPos, dir: "down", role: "fixed" }]
+        },
+        hiddenRuleWeight: pick.ruleWeight,
+        correctAnswer: pick.ruleWeight,
+        question: "A uniform meter rule balances at <b>" + pick.fulcrum + " cm</b>. A <b>" + pick.knownMass + " gf</b> weight hangs <b>" + pick.knownDist + " cm to the right</b> of the pivot. Find the weight of the meter rule.",
+        prompt: "The rule weight acts at its centre of gravity, the 50 cm mark."
+      };
+    }
+
+    function makeUpwardForcePuzzle() {
+      const options = [];
+      range(20, 70, 10).forEach((upForce) => {
+        range(10, 35, 5).forEach((upDist) => {
+          range(20, 70, 10).forEach((rightMass) => {
+            range(10, 40, 5).forEach((rightDist) => {
+              range(10, 45, 5).forEach((leftDist) => {
+                const userMass = (upForce * upDist + rightMass * rightDist) / leftDist;
+                if (Number.isInteger(userMass) && userMass >= 10 && userMass <= 120 && userMass % 5 === 0) {
+                  options.push({ upForce, upDist, rightMass, rightDist, leftDist, userMass });
+                }
+              });
+            });
+          });
+        });
+      });
+      const pick = randFrom(options);
+      const targetPos = 50 - pick.leftDist;
+      const controls = answerSideControls(targetPos, 50);
+      return {
+        type: "position",
+        inputLabel: "Position of downward weight",
+        answerUnit: "cm",
+        min: controls.min,
+        max: controls.max,
+        step: 5,
+        initialAnswer: controls.initialAnswer,
+        setup: {
+          fulcrum: 50,
+          ruleWeight: 0,
+          weights: [
+            { mass: pick.upForce, pos: 50 - pick.upDist, dir: "up", role: "fixed" },
+            { mass: pick.rightMass, pos: 50 + pick.rightDist, dir: "down", role: "fixed" }
+          ]
+        },
+        userWeight: { mass: pick.userMass, pos: controls.initialAnswer, dir: "down" },
+        correctAnswer: targetPos,
+        question: "An upward force of <b>" + pick.upForce + " gf</b> acts <b>" + pick.upDist + " cm left</b> of the pivot. A <b>" + pick.rightMass + " gf</b> weight acts <b>" + pick.rightDist + " cm right</b>. Place the <b>" + pick.userMass + " gf</b> downward weight on the left.",
+        prompt: "Remember that an upward force on the left gives a clockwise moment."
+      };
+    }
+
+    function generatorForLevel() {
+      if (gameState.currentLevel < 3) return makeSingleWeightPuzzle;
+      if (gameState.currentLevel < 6) return makeTwoWeightPuzzle;
+      if (gameState.currentLevel < 8) return makeRuleWeightPuzzle;
+      return makeUpwardForcePuzzle;
+    }
+
+    function resetGame() {
+      gameState.currentLevel = 0;
+      gameState.state = "INPUT";
+      gameState.score = 0;
+      gameState.streak = 0;
+      gameState.correct = 0;
+      gameState.attempts = 0;
+      gameState.wrongAttemptsThisLevel = 0;
+      gameState.startedAt = performance.now();
+      gameState.levelStartedAt = performance.now();
+      gameState.submitted = false;
+      clearInterval(gameState.timerId);
+      gameState.timerId = setInterval(updateHud, 250);
+      loadNextLevel();
+      updateHud();
+    }
+
+    function updateHud() {
+      UI.scoreValue.textContent = String(gameState.score);
+      UI.streakValue.textContent = String(gameState.streak);
+      UI.timerValue.textContent = formatTime(elapsedSeconds());
+      UI.levelBadge.textContent = "Level " + Math.min(gameState.currentLevel + 1, gameState.totalLevels) + " / " + gameState.totalLevels;
+    }
+
+    function loadNextLevel() {
+      if (gameState.currentLevel >= gameState.totalLevels) {
+        finishGame();
+        return;
+      }
+
+      const puzzle = generatorForLevel()();
+      gameState.currentPuzzle = puzzle;
+      gameState.state = "INPUT";
+      gameState.wrongAttemptsThisLevel = 0;
+      gameState.levelStartedAt = performance.now();
+
+      simState.fulcrum = puzzle.setup.fulcrum;
+      simState.ruleWeight = puzzle.setup.ruleWeight;
+      simState.weights = JSON.parse(JSON.stringify(puzzle.setup.weights));
+      simState.showPhysics = false;
+      simState.currentAngle = 0;
+      simState.velocity = 0;
+
+      if (puzzle.type === "position") {
+        simState.weights.push({ ...puzzle.userWeight, role: "user" });
+      }
+
+      UI.questionText.innerHTML = puzzle.question;
+      UI.promptText.textContent = puzzle.prompt;
+      UI.inputLabel.textContent = puzzle.inputLabel;
+      UI.answerUnit.textContent = puzzle.answerUnit;
+      UI.answerSlider.min = String(puzzle.min);
+      UI.answerSlider.max = String(puzzle.max);
+      UI.answerSlider.step = String(puzzle.step);
+      UI.answerSlider.value = String(puzzle.initialAnswer);
+      UI.answerValue.textContent = String(puzzle.initialAnswer);
+      UI.btnAction.textContent = "Check Answer";
+      UI.btnAction.disabled = false;
+      UI.feedbackBox.className = "feedback";
+      UI.feedbackBox.textContent = "";
+      updateUserAnswer(puzzle.initialAnswer);
+      updateHud();
+      requestAnimationFrame(resize);
+    }
+
+    function scoreCurrentLevel() {
+      const seconds = levelSeconds();
+      const speedBonus = Math.max(0, Math.round(50 - seconds * 2));
+      const streakBonus = gameState.streak * 10;
+      const retryPenalty = gameState.wrongAttemptsThisLevel * 15;
+      return Math.max(25, 100 + speedBonus + streakBonus - retryPenalty);
+    }
+
+    function finishGame() {
+      gameState.state = "DONE";
+      clearInterval(gameState.timerId);
+      const total = Math.floor(elapsedSeconds());
+      const accuracy = gameState.attempts ? Math.round((gameState.correct / gameState.attempts) * 100) : 0;
+      UI.finalScore.textContent = String(gameState.score);
+      UI.finalTime.textContent = formatTime(total);
+      UI.finalAccuracy.textContent = accuracy + "%";
+      UI.resultCopy.textContent = window.__TRINITY_INIT__ && window.__TRINITY_INIT__.userName
+        ? "Nice run, " + window.__TRINITY_INIT__.userName + ". Your score is ranked before completion time."
+        : "Your leaderboard result is ranked by score first, then faster completion time.";
+      UI.endScreen.classList.remove("hidden");
+      updateHud();
+
+      if (!gameState.submitted) {
+        gameState.submitted = true;
+        parent.postMessage({ type: "score", value: gameState.score, timeTaken: total }, "*");
+      }
+    }
+
+    function calculateMoments() {
+      let anti = 0;
+      let clock = 0;
+
+      simState.weights.forEach((w) => {
+        const dist = Math.abs(w.pos - simState.fulcrum);
+        const isDown = w.dir !== "up";
+        if (w.pos < simState.fulcrum) {
+          if (isDown) anti += w.mass * dist;
+          else clock += w.mass * dist;
+        } else if (w.pos > simState.fulcrum) {
+          if (isDown) clock += w.mass * dist;
+          else anti += w.mass * dist;
+        }
+      });
+
+      if (simState.ruleWeight > 0) {
+        const dist = Math.abs(50 - simState.fulcrum);
+        if (50 < simState.fulcrum) clock += simState.ruleWeight * dist;
+        else if (50 > simState.fulcrum) anti += simState.ruleWeight * dist;
+      }
+
+      return { anti, clock, net: anti - clock };
+    }
+
+    function updateReadouts() {
+      const moments = calculateMoments();
+      UI.antiReadout.textContent = Math.round(moments.anti);
+      UI.clockReadout.textContent = Math.round(moments.clock);
+      UI.netReadout.textContent = Math.round(moments.net);
+      return moments;
+    }
+
+    function updatePhysics() {
+      const moments = updateReadouts();
+      const targetAngle = simState.showPhysics
+        ? -Math.max(-1, Math.min(1, moments.net / 650)) * (14 * Math.PI / 180)
+        : 0;
+      const force = (targetAngle - simState.currentAngle) * 0.08;
+      simState.velocity += force;
+      simState.velocity *= 0.84;
+      simState.currentAngle += simState.velocity;
+    }
+
+    function updateUserAnswer(value) {
+      const puzzle = gameState.currentPuzzle;
+      if (!puzzle) return;
+      const numeric = Number(value);
+      UI.answerValue.textContent = String(numeric);
+
+      if (puzzle.type === "position") {
+        const userWeight = simState.weights.find((w) => w.role === "user");
+        if (userWeight) userWeight.pos = numeric;
+      } else {
+        simState.ruleWeight = numeric;
+      }
+      updateReadouts();
+    }
+
+    function showFeedback(type, msg) {
+      UI.feedbackBox.className = "feedback " + type;
+      UI.feedbackBox.textContent = msg;
+    }
+
+    function drawRulerMarks(originX, thickness) {
+      const compact = width < 480 || height < 230;
+      ctx.strokeStyle = COLORS.text;
+      ctx.fillStyle = COLORS.text;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (let cm = 0; cm <= 100; cm += 5) {
+        const x = originX + cm * pxPerCm;
+        const major = cm % 10 === 0;
+        ctx.lineWidth = major ? 1.1 : 0.75;
+        ctx.beginPath();
+        ctx.moveTo(x, -thickness / 2);
+        ctx.lineTo(x, major ? thickness / 2 : -thickness / 2 + 8);
+        ctx.stroke();
+        if (major) {
+          ctx.font = "600 " + (compact ? 8 : 10) + "px JetBrains Mono, monospace";
+          ctx.fillText(String(cm), x, thickness / 2 + 6);
+        }
+      }
+    }
+
+    function drawWeight(weight, thickness) {
+      const compact = width < 480 || height < 230;
+      const stringLen = compact ? 20 : 32;
+      const upBoxY = compact ? -56 : -72;
+      const localX = (weight.pos - simState.fulcrum) * pxPerCm;
+      const isUser = weight.role === "user";
+      const fill = isUser ? COLORS.accent : COLORS.ink;
+      ctx.save();
+      ctx.translate(localX, 0);
+      ctx.strokeStyle = COLORS.text;
+      ctx.lineWidth = 1.3;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      if (weight.dir === "up") {
+        ctx.beginPath();
+        ctx.moveTo(0, -thickness / 2);
+        ctx.lineTo(0, -thickness / 2 - stringLen);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-5, -thickness / 2 - 8);
+        ctx.lineTo(0, -thickness / 2 - 17);
+        ctx.lineTo(5, -thickness / 2 - 8);
+        ctx.fillStyle = COLORS.text;
+        ctx.fill();
+        drawBlock(fill, upBoxY, weight.mass, isUser);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0, thickness / 2);
+        ctx.lineTo(0, thickness / 2 + stringLen);
+        ctx.stroke();
+        drawBlock(fill, thickness / 2 + stringLen, weight.mass, isUser);
+      }
+
+      ctx.restore();
+    }
+
+    function drawBlock(fill, y, label, isUser) {
+      const compact = width < 480 || height < 230;
+      const boxW = compact ? 28 : 38;
+      const boxH = compact ? 30 : 40;
+      if (isUser && gameState.state === "INPUT") {
+        ctx.strokeStyle = COLORS.accent;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(-boxW / 2 - 6, y - 6, boxW + 12, boxH + 12);
+        ctx.setLineDash([]);
+      }
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = COLORS.text;
+      ctx.lineWidth = 1.3;
+      ctx.fillRect(-boxW / 2, y, boxW, boxH);
+      ctx.strokeRect(-boxW / 2, y, boxW, boxH);
+      ctx.fillStyle = isUser ? COLORS.text : COLORS.paper;
+      ctx.font = "700 " + (compact ? 10 : 12) + "px Manrope, sans-serif";
+      ctx.fillText(String(label), 0, y + (compact ? 11 : 14));
+      ctx.font = "500 " + (compact ? 7 : 9) + "px JetBrains Mono, monospace";
+      ctx.fillText("gf", 0, y + (compact ? 22 : 28));
+    }
+
+    function drawDistanceLabels(originX, thickness) {
+      const puzzle = gameState.currentPuzzle;
+      if (!puzzle || puzzle.type !== "position") return;
+      const userWeight = simState.weights.find((w) => w.role === "user");
+      if (!userWeight) return;
+      const pivotX = 0;
+      const userX = (userWeight.pos - simState.fulcrum) * pxPerCm;
+      const compact = width < 480 || height < 230;
+      const y = -thickness / 2 - (compact ? 18 : 24);
+      ctx.save();
+      ctx.strokeStyle = COLORS.mute;
+      ctx.fillStyle = COLORS.mute;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(pivotX, y);
+      ctx.lineTo(userX, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "600 " + (compact ? 8 : 10) + "px JetBrains Mono, monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(Math.abs(userWeight.pos - simState.fulcrum) + " cm", userX / 2, y - (compact ? 11 : 14));
+      ctx.restore();
+    }
+
+    function drawRuleWeightMarker(thickness) {
+      if (simState.ruleWeight <= 0) return;
+      const compact = width < 480 || height < 230;
+      const localX = (50 - simState.fulcrum) * pxPerCm;
+      ctx.save();
+      ctx.translate(localX, 0);
+      ctx.strokeStyle = COLORS.mute;
+      ctx.fillStyle = COLORS.mute;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, -thickness / 2 - 12);
+      ctx.lineTo(0, thickness / 2 + (compact ? 46 : 64));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "600 " + (compact ? 8 : 10) + "px JetBrains Mono, monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("C.G. 50 cm", 0, -thickness / 2 - (compact ? 14 : 18));
+      if (gameState.currentPuzzle && gameState.currentPuzzle.type === "mass") {
+        drawWeight({ mass: simState.ruleWeight, pos: 50, dir: "down", role: "rule" }, thickness);
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      updatePhysics();
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, width, height);
+
+      const compact = width < 480 || height < 230;
+      const thickness = compact ? 18 : 24;
+      const fulcrumScreenX = margin + simState.fulcrum * pxPerCm;
+
+      ctx.save();
+      ctx.translate(fulcrumScreenX, beamY + thickness / 2);
+      ctx.fillStyle = COLORS.ink;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(compact ? -18 : -25, compact ? 34 : 48);
+      ctx.lineTo(compact ? 18 : 25, compact ? 34 : 48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = COLORS.text;
+      ctx.font = "600 " + (compact ? 8 : 11) + "px JetBrains Mono, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(simState.fulcrum + " cm", 0, compact ? 38 : 54);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(fulcrumScreenX, beamY);
+      ctx.rotate(simState.currentAngle);
+      const originX = -simState.fulcrum * pxPerCm;
+
+      ctx.fillStyle = COLORS.paper;
+      ctx.strokeStyle = COLORS.text;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(originX, -thickness / 2, 100 * pxPerCm, thickness, 4);
+      } else {
+        ctx.rect(originX, -thickness / 2, 100 * pxPerCm, thickness);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      drawRulerMarks(originX, thickness);
+      drawDistanceLabels(originX, thickness);
+      drawRuleWeightMarker(thickness);
+      simState.weights.forEach((weight) => drawWeight(weight, thickness));
+      ctx.restore();
+
+      requestAnimationFrame(draw);
+    }
+
+    function startRender() {
+      if (renderStarted) return;
+      renderStarted = true;
+      requestAnimationFrame(draw);
+    }
+
+    UI.answerSlider.addEventListener("input", (event) => {
+      updateUserAnswer(event.target.value);
+    });
+
+    UI.btnAction.addEventListener("click", () => {
+      const puzzle = gameState.currentPuzzle;
+      if (!puzzle || gameState.state === "IDLE" || gameState.state === "DONE") return;
+
+      if (gameState.state === "INPUT") {
+        const userAnswer = Number(UI.answerSlider.value);
+        const isCorrect = Math.abs(userAnswer - puzzle.correctAnswer) < 0.1;
+        gameState.state = "EVALUATING";
+        gameState.attempts += 1;
+        UI.btnAction.disabled = true;
+
+        if (puzzle.type === "mass") simState.ruleWeight = userAnswer;
+        simState.showPhysics = true;
+
+        setTimeout(() => {
+          UI.btnAction.disabled = false;
+          if (isCorrect) {
+            gameState.correct += 1;
+            gameState.streak += 1;
+            const gained = scoreCurrentLevel();
+            gameState.score += gained;
+            showFeedback("success", "Correct. The moments balance at " + puzzle.correctAnswer + " " + puzzle.answerUnit + ". +" + gained + " points.");
+            UI.btnAction.textContent = gameState.currentLevel + 1 >= gameState.totalLevels ? "Finish Run" : "Next Level";
+            gameState.state = "SOLVED";
+          } else {
+            gameState.streak = 0;
+            gameState.wrongAttemptsThisLevel += 1;
+            gameState.score = Math.max(0, gameState.score - 15);
+            if (puzzle.type === "position") {
+              showFeedback("error", "Not balanced yet. The answer is on a 0 or 5 cm mark. Retry penalty: -15.");
+            } else {
+              showFeedback("error", "Not balanced yet. Use the 50 cm centre of gravity. Retry penalty: -15.");
+            }
+            UI.btnAction.textContent = "Try Again";
+            gameState.state = "RETRY";
+          }
+          updateHud();
+        }, 650);
+      } else if (gameState.state === "SOLVED") {
+        gameState.currentLevel += 1;
+        loadNextLevel();
+      } else if (gameState.state === "RETRY") {
+        gameState.state = "INPUT";
+        simState.showPhysics = false;
+        UI.btnAction.textContent = "Check Answer";
+        UI.feedbackBox.className = "feedback";
+        UI.feedbackBox.textContent = "";
+      }
+    });
+
+    UI.btnReset.addEventListener("click", () => {
+      UI.endScreen.classList.add("hidden");
+      UI.startScreen.classList.remove("hidden");
+      gameState.state = "IDLE";
+      clearInterval(gameState.timerId);
+      updateHud();
+    });
+
+    document.getElementById("btnStartGame").addEventListener("click", () => {
+      UI.startScreen.classList.add("hidden");
+      resize();
+      resetGame();
+      startRender();
+    });
+
+    document.getElementById("btnPlayAgain").addEventListener("click", () => {
+      UI.endScreen.classList.add("hidden");
+      resize();
+      resetGame();
+      startRender();
+    });
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", () => setTimeout(resize, 120));
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.type === "init") window.__TRINITY_INIT__ = event.data;
+    });
+
+    resize();
+    startRender();
+  </script>
+</body>
+</html>
