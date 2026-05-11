@@ -18,6 +18,7 @@ Tone: precise, calm, textbook-scientific. Never playful-cartoon. Never corporate
 - Design at iPad-landscape first. Must gracefully reflow to iPad portrait (834 × 1194) and phone (≥ 375 px).
 - Hit targets ≥ **44 px** on touch.
 - Minimum body font size on mobile: **15 px**. Minimum label-mono: **11 px**.
+- In iPad fullscreen/PWA use, do not let the document body become the primary scroll surface. Lock page-level scroll (`html`, `body`, and the app root at `100dvh`, `overflow: hidden`, `overscroll-behavior: none`) and put any necessary vertical scrolling inside an internal content panel with `overflow-y: auto`, `-webkit-overflow-scrolling: touch`, and `overscroll-behavior: contain`. This reduces accidental pull-down minimization / browser chrome reveal gestures.
 
 ---
 
@@ -215,6 +216,7 @@ When adding a new simulation:
 - [ ] Simulation has play/pause/reset and at most 4 parameters
 - [ ] Stage has a faint grid and mono readouts
 - [ ] Works at 1194×834 and at 375×667
+- [ ] iPad fullscreen does not rely on body/page scroll; scrollable content is contained inside an internal panel
 - [ ] No hardcoded colors in SVGs or component CSS — all use `var(--token)`
 
 <!-- convex-ai-start -->

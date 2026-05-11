@@ -45,17 +45,18 @@ export const seedLeverLab = internalMutation({
 
     if (existing) {
       await ctx.db.patch(existing._id, {
-        type: "simulation",
-        title: "Moments & Equilibrium",
+        type: "game",
+        title: "Moments Master",
         subject: "Physics",
         grade: "Class 10",
-        chapter: "Equilibrium",
+        chapter: "Moments and Equilibrium",
         level: "Core",
-        minutes: 12,
+        minutes: 10,
         concepts: [
           "moments",
           "equilibrium",
           "fulcrum",
+          "timed problem solving",
           "clockwise moment",
           "anticlockwise moment",
         ],
@@ -69,17 +70,18 @@ export const seedLeverLab = internalMutation({
 
     const id = await ctx.db.insert("content", {
       slug: "lever-lab",
-      type: "simulation",
-      title: "Moments & Equilibrium",
+      type: "game",
+      title: "Moments Master",
       subject: "Physics",
       grade: "Class 10",
-      chapter: "Equilibrium",
+      chapter: "Moments and Equilibrium",
       level: "Core",
-      minutes: 12,
+      minutes: 10,
       concepts: [
         "moments",
         "equilibrium",
         "fulcrum",
+        "timed problem solving",
         "clockwise moment",
         "anticlockwise moment",
       ],
