@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>The Return Journey — Trinity Simulation Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    :root {
+      --bg:        #EFF2F5;
+      --bg-alt:    #E2E7EC;
+      --paper:     #F7F8FA;
+      --ink:       #0C1115;
+      --ink-soft:  #2B333A;
+      --ink-mute:  #6B7680;
+      --rule-soft: rgba(12, 17, 21, 0.14);
+      --dark:      #FFFFFF;
+      --dark-ink:  #0C1115;
+      --dark-mute: #4A5560;
+      --accent:    oklch(0.52 0.12 200);
+      --accent-hex:#268296;
+      --accent-ink:#F7F8FA;
+      --scalar:    #b8652c;
+      --mono:      "JetBrains Mono", ui-monospace, monospace;
+      --sans:      "Manrope", system-ui, sans-serif;
+      --stage-grid:rgba(12, 17, 21, 0.055);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; cursor: pointer; }
+    button { appearance: none; -webkit-appearance: none; border: 0; background: none; }
+
+    .hidden { display: none !important; }
+
+    /* ── App shell ── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 20px;
+      background: var(--paper);
+      border-bottom: 1px solid var(--ink);
+      z-index: 10;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .topbar h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-top: 3px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .time-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 999px;
+      background: var(--bg);
+      padding: 5px 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      white-space: nowrap;
+    }
+
+    .time-chip strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.15s;
+      color: var(--ink);
+    }
+    .icon-btn:hover { background: var(--bg-alt); }
+    .icon-btn:active { transform: scale(0.92); }
+    .icon-btn.running {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .icon-btn svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      fill: currentColor;
+    }
+    .icon-btn svg.stroke-only {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Scrollable content ── */
+    .content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Stage ── */
+    .stage-wrap {
+      flex-shrink: 0;
+      position: relative;
+      height: 260px;
+      background: var(--dark);
+      border-bottom: 1px solid var(--rule-soft);
+      overflow: hidden;
+    }
+
+    @media (min-height: 780px) { .stage-wrap { height: 300px; } }
+
+    .stage-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--stage-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #simCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+    }
+
+    .stage-readouts {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      z-index: 5;
+      display: flex;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .readout {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+      background: rgba(247, 248, 250, 0.9);
+      border: 1px solid var(--rule-soft);
+      padding: 3px 8px;
+      line-height: 1.6;
+    }
+
+    /* ── Dashboard ── */
+    .dashboard {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--ink);
+      background: var(--paper);
+    }
+
+    .val-card {
+      padding: 12px 14px;
+      border-right: 1px solid var(--rule-soft);
+    }
+    .val-card:last-child { border-right: 0; }
+
+    .val-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .val-name {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .badge {
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid currentColor;
+      padding: 1px 5px;
+      border-radius: 999px;
+    }
+    .badge.scalar { color: var(--scalar); }
+    .badge.vector { color: var(--accent-hex); }
+
+    .val-number {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--ink);
+      transition: color 0.1s;
+    }
+
+    .val-unit {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--ink-mute);
+      margin-left: 2px;
+    }
+
+    @keyframes flash-val {
+      0%, 100% { color: var(--ink); }
+      40%       { color: var(--ink-soft); }
+    }
+    .val-flash { animation: flash-val 0.25s ease-out; }
+
+    /* ── Graphs ── */
+    .graphs-row {
+      flex: 1;
+      min-height: 200px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    .graph-panel {
+      position: relative;
+      overflow: hidden;
+      background: var(--dark);
+    }
+    .graph-panel + .graph-panel { border-left: 1px solid var(--rule-soft); }
+
+    .graph-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--stage-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .graph-hud {
+      position: absolute;
+      top: 8px;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      pointer-events: none;
+    }
+
+    .graph-title {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+    }
+
+    .graph-legend {
+      display: flex;
+      gap: 9px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dark-mute);
+    }
+
+    .legend-pip {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .legend-dash {
+      width: 14px;
+      height: 2px;
+      border-top: 2px dashed currentColor;
+    }
+
+    #xtGraph, #vtGraph {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+    }
+
+    /* ── Parameter strip ── */
+    .param-strip {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 10px 20px;
+      background: var(--paper);
+      border-top: 1px solid var(--rule-soft);
+    }
+
+    .param-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .param-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 110px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--rule-soft);
+      -webkit-appearance: none;
+      appearance: none;
+      outline: none;
+      accent-color: var(--ink);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--paper);
+      border-radius: 50%;
+      background: var(--ink);
+      -webkit-appearance: none;
+      box-shadow: 0 1px 3px rgba(12, 17, 21, 0.2);
+    }
+
+    .param-val {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--ink);
+      min-width: 26px;
+    }
+
+    /* Toggle switch */
+    .switch {
+      position: relative;
+      width: 34px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: var(--bg-alt);
+      border: 1px solid var(--rule-soft);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .switch-track::after {
+      content: "";
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--ink-mute);
+      transition: transform 0.15s, background 0.15s;
+    }
+    .switch input:checked + .switch-track { background: var(--ink); border-color: var(--ink); }
+    .switch input:checked + .switch-track::after { transform: translateX(16px); background: var(--paper); }
+
+    /* ── Prompt ── */
+    .prompt-strip {
+      flex-shrink: 0;
+      padding: 10px 20px;
+      background: var(--bg);
+      color: var(--ink-soft);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.5;
+      border-top: 1px solid var(--rule-soft);
+      border-left: 3px solid var(--accent);
+    }
+
+    /* ── Modals ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(239, 242, 245, 0.94);
+      place-items: center;
+      padding: 20px;
+    }
+    .modal-overlay.visible { display: grid; }
+
+    .modal-card {
+      width: min(480px, 100%);
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      box-shadow: 8px 8px 0 var(--ink);
+      padding: 28px 28px 24px;
+    }
+
+    .modal-eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+    }
+
+    .modal-title {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-top: 4px;
+      line-height: 1.1;
+    }
+
+    .modal-body {
+      margin-top: 10px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .predict-list {
+      margin: 14px 0 18px;
+      display: grid;
+      gap: 0;
+      list-style: none;
+    }
+
+    .predict-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border-top: 1px solid var(--rule-soft);
+      padding: 8px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-soft);
+    }
+
+    .predict-item .num {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--ink-mute);
+      padding-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .sc { color: var(--scalar); }
+    .vc { color: var(--accent-hex); }
+
+    /* End modal table */
+    .table-wrap { overflow-x: auto; margin: 14px 0; }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .summary-table th {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--ink);
+    }
+    .summary-table th.sc { color: var(--scalar); }
+    .summary-table th.vc { color: var(--accent-hex); }
+    .summary-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--rule-soft);
+      font-weight: 600;
+      color: var(--ink-soft);
+    }
+    .summary-table tr:last-child td { background: var(--bg-alt); color: var(--ink); font-weight: 700; }
+    .summary-table td.sc { color: var(--scalar); }
+    .summary-table td.vc { color: var(--accent-hex); }
+
+    .takeaway {
+      background: var(--bg-alt);
+      border-left: 3px solid var(--accent);
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--ink-soft);
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      width: 100%;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: scale(0.97); }
+    .btn.ghost { background: transparent; color: var(--ink); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .topbar h1 { font-size: 17px; }
+      .dashboard { grid-template-columns: repeat(2, 1fr); }
+      .val-card:nth-child(2) { border-right: 0; }
+      .val-card:nth-child(3), .val-card:nth-child(4) { border-top: 1px solid var(--rule-soft); }
+      .val-card:nth-child(4) { border-right: 0; }
+      .graphs-row { grid-template-columns: 1fr; }
+      .graph-panel + .graph-panel { border-left: 0; border-top: 1px solid var(--rule-soft); }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">Simulation · Physics</div>
+      <h1>The Return Journey</h1>
+    </div>
+    <div class="topbar-right">
+      <div class="time-chip">T &nbsp;<strong id="timeReadout">0.0 h</strong></div>
+      <button id="playPauseBtn" class="icon-btn" aria-label="Play">
+        <!-- Play icon -->
+        <svg id="playIcon" viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+        <!-- Pause icon -->
+        <svg id="pauseIcon" class="hidden" viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>
+      </button>
+      <button id="resetBtn" class="icon-btn" aria-label="Reset">
+        <svg class="stroke-only" viewBox="0 0 24 24"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .49-4.03"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Scrollable content ── -->
+  <div class="content">
+
+    <!-- Stage -->
+    <div class="stage-wrap">
+      <canvas id="simCanvas"></canvas>
+      <div class="stage-readouts">
+        <div class="readout" id="rdDist">DIST  <span id="rdDistVal">0</span> km</div>
+        <div class="readout" id="rdDisp">DISP  <span id="rdDispVal">0</span> km</div>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+      <div class="val-card">
+        <div class="val-meta">
+          <span class="val-name">Distance</span>
+          <span class="badge scalar">Scalar</span>
+        </div>
+        <div class="val-number" id="valDistance">0<span class="val-unit">km</span></div>
+      </div>
+      <div class="val-card">
+        <div class="val-meta">
+          <span class="val-name">Displacement</span>
+          <span class="badge vector">Vector</span>
+        </div>
+        <div class="val-number" id="valDisplacement">0<span class="val-unit">km</span></div>
+      </div>
+      <div class="val-card">
+        <div class="val-meta">
+          <span class="val-name">Speed</span>
+          <span class="badge scalar">Scalar</span>
+        </div>
+        <div class="val-number" id="valSpeed">0<span class="val-unit">km/h</span></div>
+      </div>
+      <div class="val-card">
+        <div class="val-meta">
+          <span class="val-name">Velocity</span>
+          <span class="badge vector">Vector</span>
+        </div>
+        <div class="val-number" id="valVelocity">0<span class="val-unit">km/h</span></div>
+      </div>
+    </div>
+
+    <!-- Graphs -->
+    <div class="graphs-row">
+      <div class="graph-panel">
+        <div class="graph-hud">
+          <span class="graph-title">Position vs Time</span>
+          <div class="graph-legend">
+            <div class="legend-item"><div class="legend-pip" style="background:#b8652c"></div>Distance</div>
+            <div class="legend-item"><div class="legend-pip" style="background:#268296"></div>Displacement</div>
+          </div>
+        </div>
+        <canvas id="xtGraph"></canvas>
+      </div>
+      <div class="graph-panel">
+        <div class="graph-hud">
+          <span class="graph-title">Velocity vs Time</span>
+          <div class="graph-legend">
+            <div class="legend-item"><div class="legend-dash" style="color:#b8652c"></div>Speed</div>
+            <div class="legend-item"><div class="legend-pip" style="background:#268296"></div>Velocity</div>
+          </div>
+        </div>
+        <canvas id="vtGraph"></canvas>
+      </div>
+    </div>
+
+    <!-- Parameter strip -->
+    <div class="param-strip">
+      <div class="param-group">
+        <span class="param-label">Sim Speed</span>
+        <input type="range" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
+        <span class="param-val" id="speedVal">1.0×</span>
+      </div>
+      <div class="param-group">
+        <span class="param-label">Pause at Turn</span>
+        <label class="switch">
+          <input type="checkbox" id="pauseToggle" checked>
+          <span class="switch-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Prompt -->
+    <div class="prompt-strip">
+      What happens to displacement when the car returns to its starting point — and why does distance behave differently?
+    </div>
+
+  </div><!-- /.content -->
+
+  <!-- Turn modal -->
+  <div id="turnModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-eyebrow">Check Point — Town B</div>
+      <div class="modal-title">The car turns around.</div>
+      <div class="modal-body">Before resuming, predict what will happen on the return leg:</div>
+      <ul class="predict-list">
+        <li class="predict-item"><span class="num">01</span><span>Does <em class="sc">distance</em> decrease or keep growing?</span></li>
+        <li class="predict-item"><span class="num">02</span><span>What happens to <em class="vc">displacement</em>?</span></li>
+        <li class="predict-item"><span class="num">03</span><span>Does <em class="sc">speed</em> change?</span></li>
+        <li class="predict-item"><span class="num">04</span><span>What will be the sign of <em class="vc">velocity</em>?</span></li>
+      </ul>
+      <button id="resumeBtn" class="btn" type="button">Resume Journey</button>
+    </div>
+  </div>
+
+  <!-- End modal -->
+  <div id="endModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-eyebrow">Journey Complete</div>
+      <div class="modal-title">Same start. Same end. Different numbers.</div>
+      <div class="table-wrap">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Checkpoint</th>
+              <th class="sc">Distance</th>
+              <th class="vc">Displacement</th>
+              <th class="sc">Speed</th>
+              <th class="vc">Velocity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Start (Town A)</td>
+              <td>0 km</td><td>0 km</td><td>30 km/h</td><td>+30 km/h</td>
+            </tr>
+            <tr>
+              <td>Turn (Town B)</td>
+              <td class="sc">60 km</td>
+              <td class="vc">60 km</td>
+              <td>30 km/h</td>
+              <td class="vc">−30 km/h</td>
+            </tr>
+            <tr>
+              <td>End (Town A)</td>
+              <td class="sc">120 km</td>
+              <td class="vc">0 km</td>
+              <td>30 km/h</td>
+              <td class="vc">0 km/h avg</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="takeaway">Distance accumulates to 120 km — it ignores direction. Displacement returns to 0 km — it only cares about the straight-line gap between start and end.</div>
+      <button id="restartBtn" class="btn ghost" type="button">Play Again</button>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<script>
+  // ── Canvas palette (resolved from CSS tokens) ──
+  const C = {
+    bg:       '#EFF2F5',
+    bgAlt:    '#E2E7EC',
+    paper:    '#F7F8FA',
+    ink:      '#0C1115',
+    inkSoft:  '#2B333A',
+    inkMute:  '#6B7680',
+    dark:     '#FFFFFF',
+    accent:   '#268296',
+    scalar:   '#b8652c',
+    road:     '#2B333A',
+    roadLine: '#F7F8FA',
+    ground:   '#D8E2D0',
+    sky:      '#EFF2F5',
+    cloud:    'rgba(255,255,255,0.75)',
+    mountain1:'#C8D0D8',
+    mountain2:'#A8B4BE',
+  };
+
+  // ── Physics config ──
+  const config = {
+    totalDistance: 60,
+    turnTime:      2.0,
+    totalTime:     4.0,
+    speedSim:      30,
+    realSecsPerHour: 4
+  };
+
+  // ── State ──
+  let state = {
+    t: 0, x: 0,
+    distance: 0, displacement: 0,
+    speed: 0, velocity: 0,
+    isRunning: false,
+    playbackRate: 1,
+    pauseAtTurn: true,
+    hasPausedAtTurn: false,
+    isFinished: false,
+    lastFrameTime: 0,
+    direction: 1
+  };
+
+  let lastInts = { dist: -1, disp: -1, speed: -1, vel: -1 };
+  let clouds = [];
+  let particles = [];
+  let history = [];
+
+  // ── Audio ──
+  let synth, audioReady = false;
+
+  async function initAudio() {
+    if (audioReady) return;
+    await Tone.start();
+    synth = new Tone.FMSynth({
+      harmonicity: 3, modulationIndex: 10,
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 1 },
+      modulation: { type: 'square' },
+      modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.2 }
+    }).toDestination();
+    synth.volume.value = -14;
+    audioReady = true;
+  }
+
+  function playSound(type) {
+    if (!audioReady || !synth) return;
+    if (type === 'turn') {
+      synth.triggerAttackRelease('E5', '8n');
+      setTimeout(() => synth.triggerAttackRelease('A5', '4n'), 150);
+    } else if (type === 'end') {
+      ['C5','E5','G5','C6'].forEach((n, i) => setTimeout(() => synth.triggerAttackRelease(n, i < 3 ? '8n' : '2n'), i * 150));
+    }
+  }
+
+  // ── DOM refs ──
+  const $ = id => document.getElementById(id);
+  const ui = {
+    playBtn:       $('playPauseBtn'),
+    playIcon:      $('playIcon'),
+    pauseIcon:     $('pauseIcon'),
+    timeReadout:   $('timeReadout'),
+    speedSlider:   $('speedSlider'),
+    speedVal:      $('speedVal'),
+    pauseToggle:   $('pauseToggle'),
+    valDistance:   $('valDistance'),
+    valDisplacement:$('valDisplacement'),
+    valSpeed:      $('valSpeed'),
+    valVelocity:   $('valVelocity'),
+    rdDistVal:     $('rdDistVal'),
+    rdDispVal:     $('rdDispVal'),
+    turnModal:     $('turnModal'),
+    endModal:      $('endModal'),
+    resumeBtn:     $('resumeBtn'),
+    restartBtn:    $('restartBtn'),
+    resetBtn:      $('resetBtn'),
+  };
+
+  const canvasMain = $('simCanvas');
+  const ctxMain    = canvasMain.getContext('2d');
+  const canvasXT   = $('xtGraph');
+  const ctxXT      = canvasXT.getContext('2d');
+  const canvasVT   = $('vtGraph');
+  const ctxVT      = canvasVT.getContext('2d');
+
+  // ── Init ──
+  function init() {
+    ui.playBtn.addEventListener('click', async () => {
+      await initAudio();
+      togglePlay();
+    });
+    ui.speedSlider.addEventListener('input', e => {
+      state.playbackRate = parseFloat(e.target.value);
+      ui.speedVal.textContent = state.playbackRate.toFixed(1) + '×';
+    });
+    ui.pauseToggle.addEventListener('change', e => { state.pauseAtTurn = e.target.checked; });
+    ui.resumeBtn.addEventListener('click', resumeFromTurn);
+    ui.restartBtn.addEventListener('click', resetSimulation);
+    ui.resetBtn.addEventListener('click', resetSimulation);
+
+    for (let i = 0; i < 7; i++) {
+      clouds.push({ x: Math.random() * 1000, y: 15 + Math.random() * 50, speed: 0.08 + Math.random() * 0.2, scale: 0.5 + Math.random() * 0.7 });
+    }
+
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
+    resetSimulation();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function resizeCanvases() {
+    const dpr = window.devicePixelRatio || 1;
+    const setup = (canvas, ctx) => {
+      const r = canvas.parentElement.getBoundingClientRect();
+      canvas.width  = r.width  * dpr;
+      canvas.height = r.height * dpr;
+      ctx.scale(dpr, dpr);
+      canvas.style.width  = r.width  + 'px';
+      canvas.style.height = r.height + 'px';
+    };
+    setup(canvasMain, ctxMain);
+    setup(canvasXT, ctxXT);
+    setup(canvasVT, ctxVT);
+    drawAll();
+  }
+
+  // ── Playback ──
+  function togglePlay() {
+    if (state.isFinished) {
+      resetSimulation();
+      state.isRunning = true;
+    } else {
+      state.isRunning = !state.isRunning;
+    }
+    updatePlayBtn();
+    if (state.isRunning) state.lastFrameTime = performance.now();
+  }
+
+  function updatePlayBtn() {
+    if (state.isRunning) {
+      ui.playBtn.classList.add('running');
+      ui.playIcon.classList.add('hidden');
+      ui.pauseIcon.classList.remove('hidden');
+      ui.playBtn.setAttribute('aria-label', 'Pause');
+    } else {
+      ui.playBtn.classList.remove('running');
+      ui.pauseIcon.classList.add('hidden');
+      ui.playIcon.classList.remove('hidden');
+      ui.playBtn.setAttribute('aria-label', state.isFinished ? 'Restart' : 'Play');
+    }
+  }
+
+  function showModal(el) {
+    ui.turnModal.classList.remove('visible');
+    ui.endModal.classList.remove('visible');
+    el.classList.add('visible');
+  }
+
+  function hideModals() {
+    ui.turnModal.classList.remove('visible');
+    ui.endModal.classList.remove('visible');
+  }
+
+  function resumeFromTurn() {
+    hideModals();
+    state.isRunning = true;
+    state.lastFrameTime = performance.now();
+    updatePlayBtn();
+  }
+
+  function resetSimulation() {
+    Object.assign(state, {
+      t: 0, x: 0, distance: 0, displacement: 0,
+      speed: 0, velocity: 0,
+      isRunning: false, hasPausedAtTurn: false, isFinished: false, direction: 1
+    });
+    particles = [];
+    history   = [];
+    lastInts  = { dist: -1, disp: -1, speed: -1, vel: -1 };
+    hideModals();
+    updatePlayBtn();
+    calculatePhysics();
+    updateDashboard(true);
+    drawAll();
+  }
+
+  // ── Physics ──
+  function calculatePhysics() {
+    if (state.t === 0) {
+      state.distance = state.displacement = state.x = 0;
+      state.speed = state.velocity = 0;
+      state.direction = 1;
+      return;
+    }
+    if (state.t <= config.turnTime) {
+      state.velocity    = config.speedSim;
+      state.speed       = config.speedSim;
+      state.displacement = config.speedSim * state.t;
+      state.distance    = state.displacement;
+      state.x           = state.displacement;
+      state.direction   = 1;
+    } else {
+      const tR = state.t - config.turnTime;
+      state.velocity    = -config.speedSim;
+      state.speed       = config.speedSim;
+      state.displacement = config.totalDistance - config.speedSim * tR;
+      state.distance    = config.totalDistance + config.speedSim * tR;
+      state.x           = state.displacement;
+      state.direction   = -1;
+    }
+    if (state.t >= config.totalTime) {
+      state.x = 0; state.displacement = 0;
+      state.distance = config.totalDistance * 2;
+      state.velocity = 0; state.speed = 0;
+      state.direction = -1;
+    }
+  }
+
+  // ── Game loop ──
+  function gameLoop(ts) {
+    clouds.forEach(c => { c.x += c.speed; if (c.x > 1200) c.x = -100; });
+
+    if (state.isRunning) {
+      let rDt = (ts - state.lastFrameTime) / 1000;
+      state.lastFrameTime = ts;
+      if (rDt > 0.1) rDt = 0.1;
+
+      const sDt  = (rDt / config.realSecsPerHour) * state.playbackRate;
+      const prevT = state.t;
+      state.t += sDt;
+
+      if (state.pauseAtTurn && !state.hasPausedAtTurn && state.t >= config.turnTime && prevT < config.turnTime) {
+        state.t = config.turnTime;
+        calculatePhysics();
+        state.isRunning = false;
+        state.hasPausedAtTurn = true;
+        updatePlayBtn();
+        playSound('turn');
+        showModal(ui.turnModal);
+      } else if (state.t >= config.totalTime) {
+        state.t = config.totalTime;
+        calculatePhysics();
+        state.isRunning = false;
+        state.isFinished = true;
+        updatePlayBtn();
+        playSound('end');
+        showModal(ui.endModal);
+      } else {
+        calculatePhysics();
+      }
+
+      if (state.speed > 0 && Math.random() > 0.55) {
+        particles.push({
+          x: state.x, vx: state.direction * -0.4 + (Math.random() - 0.5) * 0.15,
+          vy: -0.15 - Math.random() * 0.4, y: 0, life: 1.0, size: 2 + Math.random() * 3
+        });
+      }
+
+      history.push({ t: state.t, distance: state.distance, displacement: state.displacement, speed: state.speed, velocity: state.velocity });
+      updateDashboard();
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.life -= 0.022;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    drawAll();
+    requestAnimationFrame(gameLoop);
+  }
+
+  // ── Dashboard update ──
+  function updateDashboard(force = false) {
+    ui.timeReadout.textContent = state.t.toFixed(1) + ' h';
+
+    const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1);
+
+    function setVal(el, rawVal, key, prefix = false) {
+      const str = (prefix && rawVal > 0 ? '+' : '') + fmt(rawVal);
+      const intV = Math.floor(Math.abs(rawVal));
+      if (force || intV !== lastInts[key]) {
+        lastInts[key] = intV;
+        el.classList.remove('val-flash');
+        void el.offsetWidth;
+        el.classList.add('val-flash');
+      }
+      return str;
+    }
+
+    const unit = (cls, txt) => `<span class="val-unit">${txt}</span>`;
+    const dStr  = setVal(ui.valDistance,    state.distance,    'dist');
+    const dpStr = setVal(ui.valDisplacement, state.displacement,'disp', true);
+    const sStr  = setVal(ui.valSpeed,        state.speed,       'speed');
+    const vStr  = setVal(ui.valVelocity,     state.velocity,    'vel',  true);
+
+    ui.valDistance.innerHTML     = dStr  + unit('km', 'km');
+    ui.valDisplacement.innerHTML = dpStr + unit('km', 'km');
+    ui.valSpeed.innerHTML        = sStr  + unit('km/h', 'km/h');
+    ui.valVelocity.innerHTML     = vStr  + unit('km/h', 'km/h');
+
+    ui.rdDistVal.textContent = fmt(state.distance);
+    ui.rdDispVal.textContent = fmt(state.displacement);
+  }
+
+  // ── Draw main stage ──
+  function drawMainSim() {
+    const r  = canvasMain.parentElement.getBoundingClientRect();
+    const w  = r.width, h = r.height;
+    const ctx = ctxMain;
+
+    // Sky
+    ctx.fillStyle = C.sky;
+    ctx.fillRect(0, 0, w, h);
+
+    // Clouds
+    ctx.fillStyle = C.cloud;
+    clouds.forEach(c => {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, 18 * c.scale, Math.PI * 0.5, Math.PI * 1.5);
+      ctx.arc(c.x + 22 * c.scale, c.y - 9 * c.scale, 22 * c.scale, Math.PI, Math.PI * 2);
+      ctx.arc(c.x + 44 * c.scale, c.y, 18 * c.scale, Math.PI * 1.5, Math.PI * 0.5);
+      ctx.fill();
+    });
+
+    // Coordinate helpers
+    const pad    = 72;
+    const usableW = w - pad * 2;
+    const getPx  = km => pad + (km / config.totalDistance) * usableW;
+    const carPx  = getPx(state.x);
+    const roadY  = h * 0.62;
+
+    // Mountains
+    ctx.fillStyle = C.mountain2;
+    ctx.beginPath();
+    ctx.moveTo(0, roadY - 8);
+    ctx.lineTo(w * 0.28, roadY - 65);
+    ctx.lineTo(w * 0.56, roadY - 8);
+    ctx.fill();
+    ctx.fillStyle = C.mountain1;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.4, roadY - 8);
+    ctx.lineTo(w * 0.72, roadY - 45);
+    ctx.lineTo(w, roadY - 8);
+    ctx.fill();
+
+    // Ground
+    ctx.fillStyle = C.ground;
+    ctx.fillRect(0, roadY - 8, w, h - roadY + 8);
+
+    // Road
+    ctx.beginPath();
+    ctx.moveTo(pad - 24, roadY);
+    ctx.lineTo(w - pad + 24, roadY);
+    ctx.lineWidth = 32;
+    ctx.strokeStyle = C.road;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Road dashes
+    ctx.setLineDash([18, 18]);
+    ctx.lineDashOffset = -(state.distance * 8) % 36;
+    ctx.beginPath();
+    ctx.moveTo(pad - 14, roadY);
+    ctx.lineTo(w - pad + 14, roadY);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = C.roadLine;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── Distance trail ──
+    if (state.t > 0) {
+      const trailEnd = state.t <= config.turnTime ? carPx : getPx(60);
+      ctx.beginPath();
+      ctx.moveTo(getPx(0), roadY - 32);
+      ctx.lineTo(trailEnd, roadY - 32);
+      ctx.strokeStyle = C.scalar;
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.55;
+      ctx.stroke();
+      if (state.t > config.turnTime) {
+        ctx.beginPath();
+        ctx.moveTo(getPx(60), roadY + 32);
+        ctx.lineTo(carPx, roadY + 32);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Displacement vector ──
+    if (state.x > 0.5) {
+      const tip = carPx - state.direction * 10;
+      ctx.beginPath();
+      ctx.moveTo(getPx(0), roadY - 62);
+      ctx.lineTo(tip, roadY - 62);
+      ctx.strokeStyle = C.accent;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'butt';
+      ctx.stroke();
+      // Arrowhead
+      ctx.beginPath();
+      ctx.moveTo(carPx, roadY - 62);
+      ctx.lineTo(carPx - state.direction * 11, roadY - 68);
+      ctx.lineTo(carPx - state.direction * 11, roadY - 56);
+      ctx.closePath();
+      ctx.fillStyle = C.accent;
+      ctx.fill();
+    }
+
+    // Towns
+    const drawTown = (tx, label) => {
+      ctx.fillStyle = C.inkMute;
+      ctx.fillRect(tx - 18, roadY - 55, 26, 40);
+      ctx.fillStyle = C.inkSoft;
+      ctx.fillRect(tx + 4, roadY - 46, 20, 31);
+      ctx.fillStyle = C.ink;
+      ctx.fillRect(tx - 8, roadY - 68, 16, 52);
+      // Sign pole
+      ctx.fillStyle = C.ink;
+      ctx.fillRect(tx - 2, roadY - 28, 4, 22);
+      ctx.fillStyle = C.paper;
+      ctx.strokeStyle = C.ink;
+      ctx.lineWidth = 1;
+      ctx.fillRect(tx - 22, roadY - 44, 44, 18);
+      ctx.strokeRect(tx - 22, roadY - 44, 44, 18);
+      ctx.fillStyle = C.ink;
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, tx, roadY - 35);
+    };
+    drawTown(getPx(0), 'Town A');
+    drawTown(getPx(60), 'Town B');
+
+    // Particles (exhaust)
+    ctx.fillStyle = 'rgba(107, 118, 128, 0.4)';
+    particles.forEach(p => {
+      ctx.beginPath();
+      const px = getPx(p.x) - state.direction * 24;
+      ctx.arc(px, roadY + 4 + p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // ── Car ──
+    ctx.save();
+    ctx.translate(carPx, roadY - 2);
+    if (state.direction === -1) ctx.scale(-1, 1);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(12,17,21,0.18)';
+    ctx.beginPath(); ctx.ellipse(0, 14, 22, 5, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Body
+    ctx.fillStyle = C.accent;
+    ctx.beginPath();
+    ctx.moveTo(-24, 9);
+    ctx.lineTo(19, 9);
+    ctx.quadraticCurveTo(28, 9, 27, 0);
+    ctx.lineTo(14, -5);
+    ctx.quadraticCurveTo(4, -19, -4, -19);
+    ctx.lineTo(-19, -17);
+    ctx.quadraticCurveTo(-28, -14, -27, 0);
+    ctx.fill();
+
+    // Window
+    ctx.fillStyle = C.bg;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(-4, -16); ctx.lineTo(7, -16);
+    ctx.lineTo(11, -5); ctx.lineTo(-17, -5);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Window divider
+    ctx.strokeStyle = C.accent;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-2, -16); ctx.lineTo(-2, -5); ctx.stroke();
+
+    // Headlight
+    if (state.speed > 0) ctx.fillStyle = '#fef08a';
+    else ctx.fillStyle = '#e5e7eb';
+    ctx.beginPath(); ctx.arc(25, 1, 3.5, 0, Math.PI * 2); ctx.fill();
+
+    // Taillight
+    ctx.fillStyle = '#5a1515';
+    ctx.beginPath(); ctx.arc(-25, 1, 2.5, 0, Math.PI * 2); ctx.fill();
+
+    // Wheels
+    const wheel = (wx, wy) => {
+      ctx.fillStyle = C.ink;
+      ctx.beginPath(); ctx.arc(wx, wy, 6.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C.inkMute;
+      ctx.beginPath(); ctx.arc(wx, wy, 2.5, 0, Math.PI * 2); ctx.fill();
+    };
+    wheel(-15, 9);
+    wheel(15, 9);
+
+    ctx.restore();
+  }
+
+  // ── Grid helper ──
+  function drawGrid(ctx, w, h, xSteps, ySteps, yMin, yMax, fmtY) {
+    const pL = 38, pB = 24, pT = 22;
+    const pW = w - pL - 12;
+    const pH = h - pB - pT;
+
+    ctx.lineWidth = 1;
+    ctx.font = '500 9px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.inkMute;
+
+    ctx.strokeStyle = 'rgba(12,17,21,0.07)';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= ySteps; i++) {
+      const val = yMin + (yMax - yMin) * (i / ySteps);
+      const y   = h - pB - (i / ySteps) * pH;
+      ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w - 12, y); ctx.stroke();
+      ctx.fillText(fmtY(val), pL - 5, y);
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i <= xSteps; i++) {
+      const t = config.totalTime * (i / xSteps);
+      const x = pL + (i / xSteps) * pW;
+      ctx.beginPath(); ctx.moveTo(x, pT); ctx.lineTo(x, h - pB); ctx.stroke();
+      ctx.fillText(t + 'h', x, h - pB + 6);
+    }
+
+    ctx.strokeStyle = 'rgba(12,17,21,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pL, pT); ctx.lineTo(pL, h - pB); ctx.stroke();
+
+    let yZero = h - pB;
+    if (yMin < 0 && yMax > 0) yZero = h - pB - ((0 - yMin) / (yMax - yMin)) * pH;
+    ctx.beginPath(); ctx.moveTo(pL, yZero); ctx.lineTo(w - 12, yZero); ctx.stroke();
+
+    return { pL, pB, pT, pW, pH, yZero };
+  }
+
+  // ── x-t graph ──
+  function drawXTGraph() {
+    const r   = canvasXT.parentElement.getBoundingClientRect();
+    const w = r.width, h = r.height;
+    ctxXT.clearRect(0, 0, w, h);
+
+    const maxD = 130;
+    const ax   = drawGrid(ctxXT, w, h, 4, 4, 0, maxD, v => v);
+    if (!history.length) return;
+
+    const gx = t   => ax.pL + (t / config.totalTime) * ax.pW;
+    const gy = val => h - ax.pB - (val / maxD) * ax.pH;
+
+    // Distance line
+    ctxXT.beginPath();
+    ctxXT.moveTo(gx(history[0].t), gy(history[0].distance));
+    for (let i = 1; i < history.length; i++) ctxXT.lineTo(gx(history[i].t), gy(history[i].distance));
+    ctxXT.strokeStyle = C.scalar; ctxXT.lineWidth = 2.5; ctxXT.lineCap = 'round'; ctxXT.lineJoin = 'round'; ctxXT.stroke();
+
+    // Displacement line
+    ctxXT.beginPath();
+    ctxXT.moveTo(gx(history[0].t), gy(history[0].displacement));
+    for (let i = 1; i < history.length; i++) ctxXT.lineTo(gx(history[i].t), gy(history[i].displacement));
+    ctxXT.strokeStyle = C.accent; ctxXT.lineWidth = 2.5; ctxXT.stroke();
+
+    // Current point markers
+    const last = history[history.length - 1];
+    [
+      [C.scalar, gy(last.distance)],
+      [C.accent, gy(last.displacement)]
+    ].forEach(([col, y]) => {
+      ctxXT.beginPath(); ctxXT.arc(gx(last.t), y, 4, 0, Math.PI * 2);
+      ctxXT.fillStyle = col; ctxXT.fill();
+      ctxXT.beginPath(); ctxXT.arc(gx(last.t), y, 2, 0, Math.PI * 2);
+      ctxXT.fillStyle = C.paper; ctxXT.fill();
+    });
+  }
+
+  // ── v-t graph ──
+  function drawVTGraph() {
+    const r   = canvasVT.parentElement.getBoundingClientRect();
+    const w = r.width, h = r.height;
+    ctxVT.clearRect(0, 0, w, h);
+
+    const maxV = 40, minV = -40;
+    const ax   = drawGrid(ctxVT, w, h, 4, 4, minV, maxV, v => (v > 0 ? '+' : '') + v);
+    if (!history.length) return;
+
+    const gx = t   => ax.pL + (t / config.totalTime) * ax.pW;
+    const gy = val => h - ax.pB - ((val - minV) / (maxV - minV)) * ax.pH;
+
+    // Velocity line
+    ctxVT.beginPath();
+    ctxVT.moveTo(gx(history[0].t), gy(history[0].velocity));
+    for (let i = 1; i < history.length; i++) {
+      if (history[i - 1].velocity > 0 && history[i].velocity < 0) ctxVT.lineTo(gx(history[i].t), gy(history[i - 1].velocity));
+      ctxVT.lineTo(gx(history[i].t), gy(history[i].velocity));
+    }
+    ctxVT.strokeStyle = C.accent; ctxVT.lineWidth = 2.5; ctxVT.lineJoin = 'miter'; ctxVT.setLineDash([]); ctxVT.stroke();
+
+    // Speed line (dashed, slightly offset)
+    const off = -3;
+    ctxVT.beginPath();
+    ctxVT.moveTo(gx(history[0].t), gy(history[0].speed) + off);
+    for (let i = 1; i < history.length; i++) {
+      ctxVT.lineTo(gx(history[i].t), gy(history[i].speed) + (history[i].speed === history[i].velocity ? off : 0));
+    }
+    ctxVT.strokeStyle = C.scalar; ctxVT.lineWidth = 2.5; ctxVT.setLineDash([7, 5]); ctxVT.stroke();
+    ctxVT.setLineDash([]);
+
+    // Current point markers
+    const last   = history[history.length - 1];
+    const offLast = last.speed === last.velocity ? off : 0;
+    [[C.scalar, gy(last.speed) + offLast], [C.accent, gy(last.velocity)]].forEach(([col, y]) => {
+      ctxVT.beginPath(); ctxVT.arc(gx(last.t), y, 4, 0, Math.PI * 2);
+      ctxVT.fillStyle = col; ctxVT.fill();
+      ctxVT.beginPath(); ctxVT.arc(gx(last.t), y, 2, 0, Math.PI * 2);
+      ctxVT.fillStyle = C.paper; ctxVT.fill();
+    });
+  }
+
+  function drawAll() {
+    drawMainSim();
+    drawXTGraph();
+    drawVTGraph();
+  }
+
+  window.addEventListener('load', init);
+</script>
+</body>
+</html>

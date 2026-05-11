@@ -442,6 +442,61 @@ export const seedTransportOfSperm = internalMutation({
   },
 });
 
+export const seedScalarVector = internalMutation({
+  args: {
+    code: v.string(),
+    svgCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const content = {
+      slug: "scalar-vector",
+      type: "simulation" as const,
+      title: "The Return Journey",
+      subject: "Physics" as const,
+      grade: "Class 9",
+      chapter: "Motion",
+      level: "Intro" as const,
+      minutes: 10,
+      concepts: [
+        "distance",
+        "displacement",
+        "speed",
+        "velocity",
+        "scalar",
+        "vector",
+      ],
+      svgCode: args.svgCode,
+      code: args.code,
+      prompt:
+        "What happens to displacement when the car returns to its starting point — and why does distance behave differently?",
+      published: true,
+      featured: false,
+    };
+
+    const existing = await ctx.db
+      .query("content")
+      .withIndex("by_slug", (q) => q.eq("slug", content.slug))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ...content,
+        updatedAt: now,
+      });
+      return { action: "updated", id: existing._id };
+    }
+
+    const id = await ctx.db.insert("content", {
+      ...content,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { action: "inserted", id };
+  },
+});
+
 export const seedRadiansDegree = internalMutation({
   args: {
     code: v.string(),
