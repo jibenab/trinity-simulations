@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mitosis Phase Identifier — Trinity Simulation Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #EFF2F5;
+      --bg-alt: #E2E7EC;
+      --paper: #F7F8FA;
+      --ink: #0C1115;
+      --ink-soft: #2B333A;
+      --ink-mute: #6B7680;
+      --rule-soft: rgba(12, 17, 21, 0.14);
+      --stage: #FFFFFF;
+      --stage-rule: rgba(12, 17, 21, 0.22);
+      --stage-grid: rgba(12, 17, 21, 0.06);
+      --dark-ink: #0C1115;
+      --dark-mute: #4A5560;
+      --accent: oklch(0.52 0.12 200);
+      --accent-ink: #F7F8FA;
+      --accent-soft: rgba(22, 131, 159, 0.12);
+      --success: #2e8b57;
+      --success-soft: rgba(46, 139, 87, 0.12);
+      --danger: #b94b42;
+      --danger-soft: rgba(185, 75, 66, 0.12);
+      --warm: #b8652c;
+      --warm-soft: rgba(184, 101, 44, 0.14);
+      --sans: "Manrope", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      margin: 0;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-feature-settings: "ss01", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; color: inherit; }
+
+    button {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      border: 0;
+      background: none;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      width: 100%;
+      background: var(--bg);
+    }
+
+    /* ----- Topbar ----- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+      background: var(--paper);
+      border-bottom: 1px solid var(--ink);
+      flex-shrink: 0;
+    }
+
+    .brand { min-width: 0; }
+
+    .eyebrow {
+      color: var(--ink-mute);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .brand h1 {
+      margin-top: 4px;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .hud {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 6px 12px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: var(--paper);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .chip .val {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .chip.dark {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    /* ----- Main 2-pane ----- */
+    main {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+    }
+
+    /* Stage panel */
+    .stage-panel {
+      position: relative;
+      min-height: 0;
+      padding: 20px;
+      background: var(--bg);
+      border-right: 1px solid var(--ink);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .stage-head .label-mono {
+      color: var(--ink-mute);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .stage {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      background: var(--stage);
+      border: 1px solid var(--stage-rule);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--stage-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .stage-svg {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--dark-ink);
+    }
+
+    .stage-svg svg {
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      display: block;
+    }
+
+    .stage-readout {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      display: flex;
+      gap: 18px;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      color: var(--dark-mute);
+      pointer-events: none;
+    }
+
+    .stage-readout strong {
+      color: var(--dark-ink);
+      font-weight: 500;
+      margin-left: 6px;
+    }
+
+    /* Answer panel */
+    .answer-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--paper);
+    }
+
+    .answer-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 20px 22px 12px;
+    }
+
+    .answer-actions {
+      flex-shrink: 0;
+      padding: 14px 22px 18px;
+      border-top: 1px solid var(--rule-soft);
+      background: var(--paper);
+    }
+
+    .qblock { margin-bottom: 22px; }
+    .qblock:last-child { margin-bottom: 0; }
+
+    .qblock .qhead {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 8px;
+    }
+
+    .qblock .qtext {
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: var(--ink);
+      margin-bottom: 12px;
+      letter-spacing: -0.005em;
+    }
+
+    .opts {
+      display: grid;
+      gap: 8px;
+    }
+
+    .opts.cols-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+      padding: 10px 14px;
+      border: 1px solid var(--rule-soft);
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+      text-align: left;
+    }
+
+    .opt:hover {
+      border-color: var(--ink);
+      background: var(--bg);
+    }
+
+    .opt .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid var(--ink-mute);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .opt.selected {
+      border-color: var(--ink);
+      background: var(--bg-alt);
+      color: var(--ink);
+    }
+
+    .opt.selected .dot {
+      border-color: var(--ink);
+    }
+
+    .opt.selected .dot::after {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      border-radius: 50%;
+      background: var(--ink);
+    }
+
+    .opt.correct {
+      border-color: var(--success);
+      background: var(--success-soft);
+      color: var(--ink);
+    }
+
+    .opt.correct .dot { border-color: var(--success); }
+    .opt.correct .dot::after { background: var(--success); }
+
+    .opt.incorrect {
+      border-color: var(--danger);
+      background: var(--danger-soft);
+      color: var(--ink);
+    }
+
+    .opt.incorrect .dot { border-color: var(--danger); }
+    .opt.incorrect .dot::after { background: var(--danger); }
+
+    .opt.locked { cursor: default; }
+
+    .feedback {
+      display: none;
+      margin-bottom: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+    }
+
+    .feedback.show { display: block; }
+
+    .feedback .ftitle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .feedback .fdot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--ink-mute);
+    }
+
+    .feedback .fexp {
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--ink-soft);
+    }
+
+    .feedback.success { border-color: var(--success); background: var(--success-soft); }
+    .feedback.success .ftitle { color: var(--success); }
+    .feedback.success .fdot { background: var(--success); }
+
+    .feedback.partial { border-color: var(--warm); background: var(--warm-soft); }
+    .feedback.partial .ftitle { color: var(--warm); }
+    .feedback.partial .fdot { background: var(--warm); }
+
+    .feedback.error { border-color: var(--danger); background: var(--danger-soft); }
+    .feedback.error .ftitle { color: var(--danger); }
+    .feedback.error .fdot { background: var(--danger); }
+
+    .btn {
+      display: inline-flex;
+      width: 100%;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: var(--ink);
+      color: var(--bg);
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    /* Overlays */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      background: rgba(239, 242, 245, 0.96);
+      padding: 24px;
+    }
+
+    .overlay.hidden { display: none; }
+
+    .overlay-card {
+      width: min(560px, 100%);
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      box-shadow: 8px 8px 0 var(--ink);
+      padding: 32px;
+      text-align: left;
+    }
+
+    .overlay-card .eyebrow {
+      margin-bottom: 8px;
+    }
+
+    .overlay-card h2 {
+      font-size: 36px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.02;
+      color: var(--ink);
+    }
+
+    .overlay-card p {
+      margin-top: 14px;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+    }
+
+    .rules {
+      display: grid;
+      gap: 8px;
+      margin: 22px 0;
+    }
+
+    .rule-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-top: 1px solid var(--rule-soft);
+      padding-top: 8px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .rule-row span:last-child {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 22px 0;
+    }
+
+    .result-cell {
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .result-cell strong {
+      display: block;
+      font-family: var(--mono);
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -0.005em;
+      line-height: 1;
+      color: var(--ink);
+    }
+
+    .result-cell span {
+      display: block;
+      margin-top: 6px;
+      color: var(--ink-mute);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .review-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--rule-soft);
+    }
+
+    .review-section h3 {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 8px;
+    }
+
+    .review-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .review-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border: 1px solid var(--rule-soft);
+      background: var(--bg);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+
+    .overlay-actions {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    /* SVG token colors */
+    svg .ink { stroke: var(--dark-ink); fill: none; }
+    svg .ink-fill { fill: var(--dark-ink); stroke: none; }
+    svg .mute { stroke: var(--dark-mute); fill: none; }
+    svg .accent { stroke: var(--accent); fill: none; }
+    svg .accent-fill { fill: var(--accent); stroke: none; }
+
+    /* Responsive */
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; grid-template-rows: minmax(280px, 45vh) 1fr; }
+      .stage-panel { border-right: 0; border-bottom: 1px solid var(--ink); padding: 14px; }
+      .answer-scroll { padding: 16px 18px 12px; }
+      .answer-actions { padding: 12px 18px 14px; }
+      .opts.cols-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 12px 14px; flex-direction: column; align-items: flex-start; gap: 10px; }
+      .hud { justify-content: flex-start; }
+      .brand h1 { font-size: 22px; }
+      .overlay-card { padding: 24px; }
+      .overlay-card h2 { font-size: 28px; }
+      .result-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="eyebrow">Biology game · Mitosis and cell division</div>
+        <h1>Mitosis Phase Identifier</h1>
+      </div>
+      <div class="hud" aria-label="Game status">
+        <div id="levelBadge" class="chip dark">Phase 1 / 5</div>
+        <div class="chip">Score <span class="val" id="scoreValue">0</span></div>
+        <div class="chip">Time <span class="val" id="timerValue">0:00</span></div>
+        <div class="chip">Streak <span class="val" id="streakValue">0</span></div>
+      </div>
+    </header>
+
+    <main>
+      <section class="stage-panel">
+        <div class="stage-head">
+          <span class="label-mono">Diagram</span>
+          <span class="label-mono" id="diagramTag">Specimen 01</span>
+        </div>
+        <div class="stage">
+          <div class="stage-readout" id="stageReadout">
+            <span>PHASE <strong id="readoutPhase">— —</strong></span>
+            <span>ROUND <strong id="readoutRound">1/5</strong></span>
+          </div>
+          <div class="stage-svg" id="diagramDisplay"><!-- SVG injected here --></div>
+        </div>
+      </section>
+
+      <section class="answer-panel">
+        <div class="answer-scroll" id="questionsForm">
+          <div class="qblock" id="q1Block">
+            <div class="qhead">Question 1</div>
+            <div class="qtext" id="q1Text">Identify the stage shown in the diagram.</div>
+            <div class="opts cols-2" id="q1Options"></div>
+          </div>
+
+          <div class="qblock" id="q2Block">
+            <div class="qhead">Question 2</div>
+            <div class="qtext" id="q2Text">Follow up question text here.</div>
+            <div class="opts" id="q2Options"></div>
+          </div>
+        </div>
+
+        <div class="answer-actions">
+          <div id="feedbackBox" class="feedback">
+            <div class="ftitle"><span class="fdot"></span><span id="feedbackTitle">Correct</span></div>
+            <div class="fexp" id="feedbackExplanation"></div>
+          </div>
+          <button id="checkBtn" class="btn" type="button" disabled>Submit answers</button>
+          <button id="nextBtn" class="btn ghost" type="button" style="display:none; margin-top:8px;">Next phase</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Start overlay -->
+    <div class="overlay" id="startScreen">
+      <div class="overlay-card">
+        <div class="eyebrow">Five mitosis specimens</div>
+        <h2>Identify each phase. Beat the clock.</h2>
+        <p>Look at the textbook-style diagram, choose the correct phase, then answer the structural follow-up. Speed and streaks bump your score.</p>
+        <div class="rules">
+          <div class="rule-row"><span>Both answers correct</span><span>+200</span></div>
+          <div class="rule-row"><span>One answer correct</span><span>+80</span></div>
+          <div class="rule-row"><span>Speed bonus</span><span>up to +40</span></div>
+          <div class="rule-row"><span>Streak bonus</span><span>+20 each</span></div>
+        </div>
+        <div class="overlay-actions">
+          <button id="startBtn" class="btn" type="button">Start run</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- End overlay -->
+    <div class="overlay hidden" id="endScreen">
+      <div class="overlay-card">
+        <div class="eyebrow">Run complete</div>
+        <h2 id="endTitle">Score sent to the app.</h2>
+        <p id="resultCopy">Your leaderboard result is ranked by score first, then faster completion time.</p>
+        <div class="result-grid">
+          <div class="result-cell"><strong id="finalScore">0</strong><span>Score</span></div>
+          <div class="result-cell"><strong id="finalTime">0:00</strong><span>Time</span></div>
+          <div class="result-cell"><strong id="finalAccuracy">0%</strong><span>Accuracy</span></div>
+        </div>
+        <div class="review-section" id="reviewBlock">
+          <h3>Revisit these phases</h3>
+          <div class="review-list" id="reviewList"></div>
+        </div>
+        <div class="overlay-actions" style="margin-top:18px;">
+          <button id="playAgainBtn" class="btn" type="button">Play again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__TRINITY_INIT__ = window.__TRINITY_INIT__ || { userName: "Student", slug: "stage-identification", contentType: "game" };
+
+    // ---------- Shared SVG defs ----------
+    const svgDefs = `
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#0C1115" />
+        </marker>
+        <marker id="arrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.52 0.12 200)" />
+        </marker>
+      </defs>
+    `;
+
+    // ---------- Question bank ----------
+    const phases = [
+      {
+        phase: "Prophase",
+        svg: `
+          <svg viewBox="0 0 300 300">
+            ${svgDefs}
+            <circle cx="150" cy="150" r="120" stroke="#0C1115" stroke-width="2" fill="none"/>
+            <circle cx="150" cy="150" r="85" stroke="#0C1115" stroke-width="1.5" stroke-dasharray="6,5" fill="none"/>
+            <g stroke="oklch(0.52 0.12 200)" stroke-width="6" stroke-linecap="round" fill="none">
+              <path d="M 110 110 L 135 140 M 135 110 L 110 140"/>
+              <path d="M 170 100 L 195 130 M 195 100 L 170 130"/>
+              <path d="M 120 165 L 145 195 M 145 165 L 120 195"/>
+              <path d="M 160 160 L 185 190 M 185 160 L 160 190"/>
+            </g>
+            <g stroke="#0C1115" stroke-width="1.5" fill="none">
+              <circle cx="80" cy="80" r="4" fill="#0C1115"/>
+              <path d="M 70 80 h -10 M 90 80 h 10 M 80 70 v -10 M 80 90 v 10 M 73 73 l -7 -7 M 87 87 l 7 7 M 73 87 l -7 7 M 87 73 l 7 -7"/>
+              <circle cx="220" cy="220" r="4" fill="#0C1115"/>
+              <path d="M 210 220 h -10 M 230 220 h 10 M 220 210 v -10 M 220 230 v 10 M 213 213 l -7 -7 M 227 227 l 7 7 M 213 227 l -7 7 M 227 213 l 7 -7"/>
+            </g>
+          </svg>
+        `,
+        q1: "Identify the stage of cell division shown above.",
+        options1: ["Prophase", "Metaphase", "Anaphase", "Telophase"],
+        ans1: "Prophase",
+        q2: "Choose the reason that best supports your answer.",
+        options2: [
+          "Chromosomes align at the equator.",
+          "Sister chromatids separate and move to opposite poles.",
+          "Nuclear membrane is disappearing and chromosomes are visible.",
+          "Cleavage furrow is clearly visible."
+        ],
+        ans2: "Nuclear membrane is disappearing and chromosomes are visible.",
+        explanation: "In Prophase, chromatin condenses into visible chromosomes, the nuclear envelope breaks down (dashed circle), and centrioles migrate to opposite poles."
+      },
+      {
+        phase: "Metaphase",
+        svg: `
+          <svg viewBox="0 0 300 300">
+            ${svgDefs}
+            <circle cx="150" cy="150" r="120" stroke="#0C1115" stroke-width="2" fill="none"/>
+            <g stroke="#0C1115" stroke-width="1.5" fill="none">
+              <circle cx="150" cy="40" r="4" fill="#0C1115"/>
+              <path d="M 140 40 h -10 M 160 40 h 10 M 150 30 v -10 M 150 50 v 10 M 143 33 l -7 -7 M 157 47 l 7 7 M 143 47 l -7 7 M 157 33 l 7 -7"/>
+              <circle cx="150" cy="260" r="4" fill="#0C1115"/>
+              <path d="M 140 260 h -10 M 160 260 h 10 M 150 250 v -10 M 150 270 v 10 M 143 253 l -7 -7 M 157 267 l 7 7 M 143 267 l -7 7 M 157 253 l 7 -7"/>
+            </g>
+            <g stroke="#6B7680" stroke-width="1" stroke-dasharray="4,3" fill="none">
+              <line x1="150" y1="50" x2="80" y2="150"/>
+              <line x1="150" y1="50" x2="115" y2="150"/>
+              <line x1="150" y1="50" x2="185" y2="150"/>
+              <line x1="150" y1="50" x2="220" y2="150"/>
+              <line x1="150" y1="250" x2="80" y2="150"/>
+              <line x1="150" y1="250" x2="115" y2="150"/>
+              <line x1="150" y1="250" x2="185" y2="150"/>
+              <line x1="150" y1="250" x2="220" y2="150"/>
+            </g>
+            <line x1="248" y1="92" x2="200" y2="112" stroke="oklch(0.52 0.12 200)" stroke-width="1.5" marker-end="url(#arrowAccent)"/>
+            <text x="252" y="86" font-family="JetBrains Mono, monospace" font-size="15" font-weight="500" fill="oklch(0.52 0.12 200)">X</text>
+            <g stroke="#0C1115" stroke-width="6" stroke-linecap="round" fill="none">
+              <path d="M 70 140 L 90 160 M 90 140 L 70 160"/>
+              <path d="M 105 140 L 125 160 M 125 140 L 105 160"/>
+              <path d="M 175 140 L 195 160 M 195 140 L 175 160"/>
+              <path d="M 210 140 L 230 160 M 230 140 L 210 160"/>
+            </g>
+          </svg>
+        `,
+        q1: "Identify the stage of cell division shown above.",
+        options1: ["Prophase", "Metaphase", "Anaphase", "Telophase"],
+        ans1: "Metaphase",
+        q2: "Identify the structure labelled X.",
+        options2: ["Centromere", "Aster", "Spindle fibre", "Nuclear membrane"],
+        ans2: "Spindle fibre",
+        explanation: "During Metaphase the chromosomes align at the equatorial plate. Structure X is a spindle fibre running from a centriole to the centromere."
+      },
+      {
+        phase: "Anaphase",
+        svg: `
+          <svg viewBox="0 0 300 300">
+            ${svgDefs}
+            <ellipse cx="150" cy="150" rx="100" ry="140" stroke="#0C1115" stroke-width="2" fill="none"/>
+            <g stroke="#0C1115" stroke-width="1.5" fill="none">
+              <circle cx="150" cy="25" r="4" fill="#0C1115"/>
+              <path d="M 140 25 h -10 M 160 25 h 10 M 150 15 v -10 M 150 35 v 10 M 143 18 l -7 -7 M 157 32 l 7 7 M 143 32 l -7 7 M 157 18 l 7 -7"/>
+              <circle cx="150" cy="275" r="4" fill="#0C1115"/>
+              <path d="M 140 275 h -10 M 160 275 h 10 M 150 265 v -10 M 150 285 v 10 M 143 268 l -7 -7 M 157 282 l 7 7 M 143 282 l -7 7 M 157 268 l 7 -7"/>
+            </g>
+            <g stroke="#6B7680" stroke-width="1" stroke-dasharray="4,3" fill="none">
+              <line x1="150" y1="35" x2="80" y2="100"/>
+              <line x1="150" y1="35" x2="120" y2="90"/>
+              <line x1="150" y1="35" x2="180" y2="90"/>
+              <line x1="150" y1="35" x2="220" y2="100"/>
+              <line x1="150" y1="265" x2="80" y2="200"/>
+              <line x1="150" y1="265" x2="120" y2="210"/>
+              <line x1="150" y1="265" x2="180" y2="210"/>
+              <line x1="150" y1="265" x2="220" y2="200"/>
+            </g>
+            <g stroke="oklch(0.52 0.12 200)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <path d="M 70 120 L 80 95 L 90 120"/>
+              <path d="M 110 110 L 120 85 L 130 110"/>
+              <path d="M 170 110 L 180 85 L 190 110"/>
+              <path d="M 210 120 L 220 95 L 230 120"/>
+              <path d="M 70 180 L 80 205 L 90 180"/>
+              <path d="M 110 190 L 120 215 L 130 190"/>
+              <path d="M 170 190 L 180 215 L 190 190"/>
+              <path d="M 210 180 L 220 205 L 230 180"/>
+            </g>
+          </svg>
+        `,
+        q1: "Identify the stage shown in the diagram.",
+        options1: ["Prophase", "Metaphase", "Anaphase", "Telophase"],
+        ans1: "Anaphase",
+        q2: "Which stage of mitosis immediately follows this stage?",
+        options2: ["Prophase", "Metaphase", "Telophase", "Interphase"],
+        ans2: "Telophase",
+        explanation: "This is Anaphase — centromeres split and sister chromatids are pulled to opposite poles. It is followed by Telophase, where nuclei reform."
+      },
+      {
+        phase: "Telophase",
+        svg: `
+          <svg viewBox="0 0 300 300">
+            ${svgDefs}
+            <path d="M 150,30 C 270,30 230,120 180,150 C 230,180 270,270 150,270 C 30,270 70,180 120,150 C 70,120 30,30 150,30 Z" stroke="#0C1115" stroke-width="2" fill="none"/>
+            <circle cx="150" cy="85" r="45" stroke="#0C1115" stroke-width="1.5" stroke-dasharray="5,4" fill="none"/>
+            <circle cx="150" cy="215" r="45" stroke="#0C1115" stroke-width="1.5" stroke-dasharray="5,4" fill="none"/>
+            <g stroke="#0C1115" stroke-width="2" fill="none">
+              <path d="M 130 70 Q 145 90 160 65 T 170 85"/>
+              <path d="M 125 95 Q 150 110 165 95 T 140 75"/>
+              <path d="M 130 200 Q 145 220 160 195 T 170 215"/>
+              <path d="M 125 225 Q 150 240 165 225 T 140 205"/>
+            </g>
+            <circle cx="150" cy="25" r="3" fill="#0C1115"/>
+            <circle cx="150" cy="275" r="3" fill="#0C1115"/>
+            <line x1="38" y1="150" x2="92" y2="150" stroke="oklch(0.52 0.12 200)" stroke-width="1.5" marker-end="url(#arrowAccent)"/>
+            <text x="18" y="156" font-family="JetBrains Mono, monospace" font-size="15" font-weight="500" fill="oklch(0.52 0.12 200)">Z</text>
+          </svg>
+        `,
+        q1: "Identify the stage of cell division.",
+        options1: ["Metaphase", "Anaphase", "Telophase", "Cytokinesis"],
+        ans1: "Telophase",
+        q2: "Name the structure labelled Z in this animal cell.",
+        options2: ["Cell plate", "Cleavage furrow", "Centromere", "Nuclear membrane"],
+        ans2: "Cleavage furrow",
+        explanation: "Telophase in an animal cell — chromatin uncoils, nuclear membranes reform, and a cleavage furrow (Z) pinches the cytoplasm in two."
+      },
+      {
+        phase: "Cytokinesis",
+        svg: `
+          <svg viewBox="0 0 300 300">
+            ${svgDefs}
+            <rect x="50" y="50" width="200" height="200" stroke="#0C1115" stroke-width="3" fill="none"/>
+            <circle cx="100" cy="150" r="35" stroke="#0C1115" stroke-width="1.5" fill="none"/>
+            <circle cx="200" cy="150" r="35" stroke="#0C1115" stroke-width="1.5" fill="none"/>
+            <path d="M 80 140 Q 95 160 110 140 Q 120 160 90 150" stroke="#0C1115" stroke-width="1.5" fill="none"/>
+            <path d="M 180 140 Q 195 160 210 140 Q 220 160 190 150" stroke="#0C1115" stroke-width="1.5" fill="none"/>
+            <line x1="150" y1="55" x2="150" y2="245" stroke="oklch(0.52 0.12 200)" stroke-width="5" stroke-dasharray="10,5"/>
+            <line x1="150" y1="14" x2="150" y2="42" stroke="oklch(0.52 0.12 200)" stroke-width="1.5" marker-end="url(#arrowAccent)"/>
+            <text x="143" y="11" font-family="JetBrains Mono, monospace" font-size="15" font-weight="500" fill="oklch(0.52 0.12 200)">Y</text>
+          </svg>
+        `,
+        q1: "Identify the cellular process shown above.",
+        options1: ["Karyokinesis", "Cytokinesis", "Plasmolysis", "Crossing over"],
+        ans1: "Cytokinesis",
+        q2: "Identify the structure Y forming in this plant cell.",
+        options2: ["Cleavage furrow", "Spindle fibre", "Cell plate", "Middle lamella"],
+        ans2: "Cell plate",
+        explanation: "This is Cytokinesis in a plant cell. Plant cells lack a cleavage furrow — instead a cell plate (Y) forms down the centre and matures into a new cell wall."
+      }
+    ];
+
+    // ---------- Game state ----------
+    const UI = {
+      diagramDisplay: document.getElementById("diagramDisplay"),
+      diagramTag: document.getElementById("diagramTag"),
+      readoutPhase: document.getElementById("readoutPhase"),
+      readoutRound: document.getElementById("readoutRound"),
+      levelBadge: document.getElementById("levelBadge"),
+      scoreValue: document.getElementById("scoreValue"),
+      timerValue: document.getElementById("timerValue"),
+      streakValue: document.getElementById("streakValue"),
+      q1Text: document.getElementById("q1Text"),
+      q1Options: document.getElementById("q1Options"),
+      q2Text: document.getElementById("q2Text"),
+      q2Options: document.getElementById("q2Options"),
+      checkBtn: document.getElementById("checkBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      feedbackBox: document.getElementById("feedbackBox"),
+      feedbackTitle: document.getElementById("feedbackTitle"),
+      feedbackExplanation: document.getElementById("feedbackExplanation"),
+      startScreen: document.getElementById("startScreen"),
+      endScreen: document.getElementById("endScreen"),
+      startBtn: document.getElementById("startBtn"),
+      playAgainBtn: document.getElementById("playAgainBtn"),
+      finalScore: document.getElementById("finalScore"),
+      finalTime: document.getElementById("finalTime"),
+      finalAccuracy: document.getElementById("finalAccuracy"),
+      reviewList: document.getElementById("reviewList"),
+      reviewBlock: document.getElementById("reviewBlock"),
+      endTitle: document.getElementById("endTitle"),
+      resultCopy: document.getElementById("resultCopy")
+    };
+
+    const game = {
+      idx: 0,
+      total: phases.length,
+      score: 0,
+      streak: 0,
+      correctSubAnswers: 0,
+      totalSubAnswers: 0,
+      startedAt: 0,
+      levelStartedAt: 0,
+      timerId: 0,
+      selectedQ1: null,
+      selectedQ2: null,
+      state: "IDLE",
+      submitted: false,
+      confused: new Set()
+    };
+
+    // ---------- Helpers ----------
+    function formatTime(s) {
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return m + ":" + (r < 10 ? "0" : "") + r;
+    }
+
+    function elapsed() {
+      return (performance.now() - game.startedAt) / 1000;
+    }
+
+    function levelElapsed() {
+      return (performance.now() - game.levelStartedAt) / 1000;
+    }
+
+    function updateHud() {
+      UI.levelBadge.textContent = "Phase " + Math.min(game.idx + 1, game.total) + " / " + game.total;
+      UI.scoreValue.textContent = game.score;
+      UI.streakValue.textContent = game.streak;
+      UI.timerValue.textContent = formatTime(Math.floor(elapsed()));
+    }
+
+    function startTimer() {
+      clearInterval(game.timerId);
+      game.timerId = setInterval(updateHud, 250);
+    }
+
+    // ---------- Question loading ----------
+    function makeOption(text, group) {
+      const div = document.createElement("button");
+      div.type = "button";
+      div.className = "opt";
+      div.dataset.value = text;
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      const span = document.createElement("span");
+      span.textContent = text;
+      div.appendChild(dot);
+      div.appendChild(span);
+      div.addEventListener("click", () => selectOption(div, group, text));
+      return div;
+    }
+
+    function selectOption(el, group, value) {
+      if (game.state !== "INPUT") return;
+      const container = group === 1 ? UI.q1Options : UI.q2Options;
+      Array.from(container.children).forEach((c) => c.classList.remove("selected"));
+      el.classList.add("selected");
+      if (group === 1) game.selectedQ1 = value;
+      else game.selectedQ2 = value;
+      UI.checkBtn.disabled = !(game.selectedQ1 && game.selectedQ2);
+    }
+
+    function loadRound() {
+      const q = phases[game.idx];
+      game.state = "INPUT";
+      game.selectedQ1 = null;
+      game.selectedQ2 = null;
+      game.levelStartedAt = performance.now();
+
+      UI.diagramDisplay.innerHTML = q.svg;
+      UI.diagramTag.textContent = "Specimen " + String(game.idx + 1).padStart(2, "0");
+      UI.readoutPhase.textContent = "— —";
+      UI.readoutRound.textContent = (game.idx + 1) + "/" + game.total;
+      UI.q1Text.textContent = q.q1;
+      UI.q2Text.textContent = q.q2;
+
+      UI.q1Options.innerHTML = "";
+      UI.q1Options.classList.toggle("cols-2", q.options1.length === 4);
+      q.options1.forEach((o) => UI.q1Options.appendChild(makeOption(o, 1)));
+
+      UI.q2Options.innerHTML = "";
+      UI.q2Options.classList.toggle("cols-2", q.options2.length === 4 && q.options2.every((s) => s.length < 18));
+      q.options2.forEach((o) => UI.q2Options.appendChild(makeOption(o, 2)));
+
+      UI.checkBtn.style.display = "";
+      UI.checkBtn.disabled = true;
+      UI.checkBtn.textContent = "Submit answers";
+      UI.nextBtn.style.display = "none";
+      UI.feedbackBox.classList.remove("show", "success", "partial", "error");
+
+      updateHud();
+    }
+
+    // ---------- Scoring ----------
+    function scoreRound(roundCorrect) {
+      // base: 100 per correct sub-answer (max 200)
+      const base = roundCorrect * 100;
+      // speed bonus only on perfect round, up to +40
+      let speed = 0;
+      if (roundCorrect === 2) {
+        const sec = levelElapsed();
+        speed = Math.max(0, Math.round(40 - sec * 2));
+      }
+      // streak bonus only if this round was perfect
+      const streakBonus = roundCorrect === 2 ? game.streak * 20 : 0;
+      // small consolation for 1 correct
+      const partial = roundCorrect === 1 ? -20 : 0;
+      return Math.max(0, base + speed + streakBonus + partial);
+    }
+
+    function checkAnswers() {
+      if (game.state !== "INPUT") return;
+      const q = phases[game.idx];
+      const q1Right = game.selectedQ1 === q.ans1;
+      const q2Right = game.selectedQ2 === q.ans2;
+      const roundCorrect = (q1Right ? 1 : 0) + (q2Right ? 1 : 0);
+
+      // Highlight options
+      Array.from(UI.q1Options.children).forEach((c) => {
+        c.classList.add("locked");
+        if (c.dataset.value === q.ans1) c.classList.add("correct");
+        else if (c.dataset.value === game.selectedQ1 && !q1Right) c.classList.add("incorrect");
+      });
+      Array.from(UI.q2Options.children).forEach((c) => {
+        c.classList.add("locked");
+        if (c.dataset.value === q.ans2) c.classList.add("correct");
+        else if (c.dataset.value === game.selectedQ2 && !q2Right) c.classList.add("incorrect");
+      });
+
+      // Update streak / counters
+      if (roundCorrect === 2) game.streak += 1;
+      else {
+        game.streak = 0;
+        game.confused.add(q.phase);
+      }
+      game.correctSubAnswers += roundCorrect;
+      game.totalSubAnswers += 2;
+
+      const gained = scoreRound(roundCorrect);
+      game.score += gained;
+      UI.readoutPhase.textContent = q.phase;
+
+      // Feedback
+      UI.feedbackBox.classList.remove("success", "partial", "error");
+      UI.feedbackBox.classList.add("show");
+      if (roundCorrect === 2) {
+        UI.feedbackBox.classList.add("success");
+        UI.feedbackTitle.textContent = "Perfect · +" + gained;
+      } else if (roundCorrect === 1) {
+        UI.feedbackBox.classList.add("partial");
+        UI.feedbackTitle.textContent = "Partial · +" + gained;
+      } else {
+        UI.feedbackBox.classList.add("error");
+        UI.feedbackTitle.textContent = "Not quite";
+      }
+      UI.feedbackExplanation.textContent = q.explanation;
+
+      // Swap buttons
+      UI.checkBtn.style.display = "none";
+      UI.nextBtn.style.display = "";
+      UI.nextBtn.textContent = game.idx + 1 < game.total ? "Next phase" : "See results";
+      game.state = "REVIEW";
+
+      updateHud();
+    }
+
+    function nextRound() {
+      game.idx += 1;
+      if (game.idx >= game.total) {
+        finishGame();
+      } else {
+        loadRound();
+      }
+    }
+
+    // ---------- Finish ----------
+    function finishGame() {
+      game.state = "DONE";
+      clearInterval(game.timerId);
+      const total = Math.floor(elapsed());
+      const accuracy = game.totalSubAnswers ? Math.round((game.correctSubAnswers / game.totalSubAnswers) * 100) : 0;
+
+      UI.finalScore.textContent = String(game.score);
+      UI.finalTime.textContent = formatTime(total);
+      UI.finalAccuracy.textContent = accuracy + "%";
+
+      UI.resultCopy.textContent = window.__TRINITY_INIT__ && window.__TRINITY_INIT__.userName
+        ? "Nice run, " + window.__TRINITY_INIT__.userName + ". Your score is ranked before completion time."
+        : "Your leaderboard result is ranked by score first, then faster completion time.";
+
+      UI.endTitle.textContent = accuracy === 100 ? "Mastered. Score sent to the app." : "Score sent to the app.";
+
+      UI.reviewList.innerHTML = "";
+      if (game.confused.size === 0) {
+        UI.reviewBlock.style.display = "none";
+      } else {
+        UI.reviewBlock.style.display = "";
+        game.confused.forEach((p) => {
+          const tag = document.createElement("span");
+          tag.className = "review-tag";
+          tag.textContent = p;
+          UI.reviewList.appendChild(tag);
+        });
+      }
+
+      UI.endScreen.classList.remove("hidden");
+
+      if (!game.submitted) {
+        game.submitted = true;
+        try {
+          parent.postMessage({ type: "score", value: game.score, timeTaken: total }, "*");
+        } catch (_e) { /* standalone preview */ }
+      }
+    }
+
+    // ---------- Lifecycle ----------
+    function resetGame() {
+      game.idx = 0;
+      game.score = 0;
+      game.streak = 0;
+      game.correctSubAnswers = 0;
+      game.totalSubAnswers = 0;
+      game.startedAt = performance.now();
+      game.submitted = false;
+      game.confused = new Set();
+      UI.endScreen.classList.add("hidden");
+      startTimer();
+      loadRound();
+    }
+
+    UI.startBtn.addEventListener("click", () => {
+      UI.startScreen.classList.add("hidden");
+      resetGame();
+    });
+    UI.playAgainBtn.addEventListener("click", resetGame);
+    UI.checkBtn.addEventListener("click", checkAnswers);
+    UI.nextBtn.addEventListener("click", nextRound);
+
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.type === "init") {
+        window.__TRINITY_INIT__ = event.data;
+      }
+    });
+  </script>
+</body>
+</html>

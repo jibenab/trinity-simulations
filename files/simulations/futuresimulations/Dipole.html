@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torque on an Electric Dipole | Trinity Simulation Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #eff2f5;
+            --bg-alt: #e2e7ec;
+            --ink: #0c1115;
+            --ink-soft: #2b333a;
+            --ink-mute: #6b7680;
+            --paper: #f7f8fa;
+            --rule-soft: rgba(12, 17, 21, 0.14);
+            --dark: #0c1115;
+            --dark-ink: #eff2f5;
+            --dark-mute: #7f8892;
+            --accent: #72c0d4;
+            --accent-soft: rgba(114, 192, 212, 0.16);
+            --warm: #f08b67;
+            --warm-soft: rgba(240, 139, 103, 0.18);
+            --danger: #df7171;
+            --sans: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+            --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(114, 192, 212, 0.16), transparent 30%),
+                linear-gradient(180deg, #f7f8fa 0%, #eff2f5 100%);
+            color: var(--ink);
+            font-family: var(--sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background: rgba(12, 17, 21, 0.12);
+        }
+
+        .page-shell {
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .app-frame {
+            min-height: calc(100vh - 32px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--rule-soft);
+            border-radius: 20px;
+            background: rgba(247, 248, 250, 0.92);
+            box-shadow: 12px 12px 0 rgba(12, 17, 21, 0.08);
+            backdrop-filter: blur(12px);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 18px 18px 14px;
+            background: transparent;
+            border-bottom: 1px solid var(--rule-soft);
+            z-index: 10;
+        }
+
+        .header-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .header-brand {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-mute);
+        }
+
+        .header-title {
+            font-weight: 600;
+            font-size: clamp(30px, 4vw, 48px);
+            line-height: 0.94;
+            letter-spacing: -0.035em;
+            max-width: 760px;
+        }
+
+        .header-subtitle {
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            padding: 0 14px;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            color: var(--ink);
+        }
+
+        main {
+            display: flex;
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            cursor: default;
+            overflow: hidden;
+            margin: 18px 0 18px 18px;
+            border: 1px solid #2a2a2a;
+            border-radius: 18px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+                var(--dark);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        #canvas-container::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(127, 136, 146, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(127, 136, 146, 0.08) 1px, transparent 1px);
+            background-size: 42px 42px;
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        #control-panel {
+            width: 360px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.72)),
+                var(--bg);
+            border-left: 1px solid var(--rule-soft);
+            display: flex;
+            flex-direction: column;
+            padding: 18px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .panel-section {
+            margin-bottom: 14px;
+            padding: 16px;
+            border: 1px solid var(--rule-soft);
+            border-radius: 16px;
+            background: rgba(247, 248, 250, 0.88);
+        }
+
+        .panel-section h3 {
+            color: var(--ink-mute);
+            font-family: var(--mono);
+            font-size: 11px;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            border-bottom: 1px solid var(--rule-soft);
+            padding-bottom: 8px;
+        }
+
+        .control-group { margin-bottom: 16px; }
+        
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            gap: 10px;
+        }
+        .control-label {
+            color: var(--ink-soft);
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .control-value { color: var(--ink); font-weight: 700; }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(12, 17, 21, 0.14);
+            border-radius: 999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            border: 2px solid var(--paper);
+            box-shadow: 0 0 0 4px var(--accent-soft);
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--ink-soft);
+        }
+        .toggle-group input {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            flex: 0 0 18px;
+        }
+        .toggle-group input:checked::after {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px;
+            width: 10px; height: 10px;
+            background: var(--ink);
+            border-radius: 2px;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--ink);
+            color: var(--ink);
+            padding: 10px 12px;
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 999px;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+            text-align: center;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            background: var(--ink);
+            color: var(--bg);
+        }
+        .btn.primary {
+            background: var(--ink);
+            color: var(--bg);
+            font-weight: 600;
+        }
+        .btn.primary:hover { background: var(--ink-soft); }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        footer {
+            border-top: 1px solid var(--rule-soft);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.72)),
+                var(--bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 10;
+            padding: 14px 18px 18px;
+        }
+
+        .readout-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+
+        .readout-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid var(--rule-soft);
+            background: var(--paper);
+            padding: 10px 15px;
+            border-radius: 12px;
+            min-width: 132px;
+            transition: all 0.3s;
+        }
+        
+        .readout-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-mute);
+            margin-bottom: 4px;
+        }
+        .readout-val { font-size: 1.05rem; color: var(--ink); font-weight: 700; }
+
+        .formula-bar {
+            text-align: center;
+            font-size: 13px;
+            color: var(--ink-soft);
+            margin-top: 10px;
+        }
+
+        .flash-gold {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(114, 192, 212, 0.18);
+        }
+        .flash-red {
+            background: rgba(223, 113, 113, 0.14);
+            border-color: var(--danger);
+            box-shadow: 0 0 0 1px rgba(223, 113, 113, 0.18);
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(12, 17, 21, 0.92);
+            border: 1px solid rgba(239, 242, 245, 0.16);
+            color: var(--dark-ink);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 250px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s, transform 0.4s;
+            z-index: 20;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .tooltip.visible { opacity: 1; transform: translateY(0); }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -6px; left: 20px;
+            width: 10px; height: 10px;
+            background: rgba(12, 17, 21, 0.92);
+            border-bottom: 1px solid rgba(239, 242, 245, 0.16);
+            border-right: 1px solid rgba(239, 242, 245, 0.16);
+            transform: rotate(45deg);
+        }
+
+        .inline-play-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .inline-play-row input {
+            flex-grow: 1;
+        }
+
+        @media (min-width: 980px) {
+            .page-shell {
+                padding: 20px;
+            }
+
+            .app-frame {
+                min-height: calc(100vh - 40px);
+            }
+        }
+
+        @media (max-width: 979px) {
+            .app-frame {
+                min-height: auto;
+            }
+
+            header {
+                flex-direction: column;
+                padding: 14px;
+            }
+
+            main {
+                flex-direction: column;
+                overflow: visible;
+            }
+
+            #canvas-container {
+                margin: 14px;
+                min-height: 52vh;
+            }
+
+            #control-panel {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--rule-soft);
+                padding: 14px;
+                overflow: visible;
+            }
+
+            footer {
+                padding: 14px;
+            }
+
+            .readout-strip {
+                flex-wrap: wrap;
+            }
+
+            .readout-cell {
+                min-width: calc(50% - 5px);
+                flex: 1 1 calc(50% - 5px);
+            }
+
+            .header-subtitle {
+                margin-top: 4px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page-shell {
+                padding: 12px;
+            }
+
+            .header-title {
+                font-size: 38px;
+            }
+
+            #canvas-container {
+                min-height: 46vh;
+                margin: 12px;
+            }
+
+            .readout-cell {
+                min-width: 100%;
+                flex-basis: 100%;
+            }
+
+            .btn-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .inline-play-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            #btn-play-inline {
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <div class="app-frame">
+            <header>
+                <div class="header-copy">
+                    <div class="header-brand">Trinity Simulation Lab · Physics</div>
+                    <div class="header-title">Torque on an electric dipole in a uniform electric field.</div>
+                </div>
+                <div class="header-subtitle">Class XII · Electrostatics</div>
+            </header>
+
+            <main>
+                <div id="canvas-container">
+                    <canvas id="simCanvas"></canvas>
+                    <div id="tooltip-msg" class="tooltip"></div>
+                </div>
+
+                <div id="control-panel">
+                    <div class="panel-section">
+                <h3>Parameters</h3>
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">Charge |q| (nC)</span>
+                        <span class="control-value" id="val-q">5</span>
+                    </div>
+                    <input type="range" id="slider-q" min="1" max="10" step="0.1" value="5">
+                </div>
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">Separation 2a (m)</span>
+                        <span class="control-value" id="val-a">0.5</span>
+                    </div>
+                    <input type="range" id="slider-a" min="0.1" max="1.0" step="0.05" value="0.5">
+                </div>
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">E-Field (N/C)</span>
+                        <span class="control-value" id="val-E">500</span>
+                    </div>
+                    <input type="range" id="slider-E" min="100" max="1000" step="10" value="500">
+                </div>
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-label">Angle θ (deg)</span>
+                        <span class="control-value" id="val-theta">45°</span>
+                    </div>
+                    <div class="inline-play-row">
+                        <input type="range" id="slider-theta" min="0" max="360" step="1" value="45" style="flex-grow: 1;">
+                        <button id="btn-play-inline" class="btn primary" style="width: auto; margin: 0; padding: 4px 10px; min-width: 85px;" onclick="sim.toggleAnimation()">▶ Play</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Display</h3>
+                <label class="toggle-group">
+                    <input type="checkbox" id="t-field" checked> Show Field Lines (E)
+                </label>
+                <label class="toggle-group">
+                    <input type="checkbox" id="t-forces" checked> Show Force Vectors (F)
+                </label>
+                <label class="toggle-group">
+                    <input type="checkbox" id="t-dist"> Show Perp. Distance (d)
+                </label>
+                <label class="toggle-group">
+                    <input type="checkbox" id="t-torque" checked> Show Torque Direction
+                </label>
+                <label class="toggle-group">
+                    <input type="checkbox" id="t-energy" checked> Show Energy Bar (U)
+                </label>
+            </div>
+
+            <div class="panel-section">
+                <h3>Actions</h3>
+                <div class="btn-grid">
+                    <button class="btn" onclick="sim.snapAngle(0)">0° (Stable)</button>
+                    <button class="btn" onclick="sim.snapAngle(90)">90° (Max τ)</button>
+                    <button class="btn" onclick="sim.snapAngle(180)">180° (Unstable)</button>
+                    <button class="btn" onclick="sim.snapAngle(270)">270° (Max τ)</button>
+                </div>
+                <button class="btn primary" id="btn-animate" onclick="sim.toggleAnimation()">▶ Play (Align Dipole)</button>
+            </div>
+                </div>
+            </main>
+
+            <footer>
+                <div class="readout-strip">
+                    <div class="readout-cell" id="cell-p">
+                        <span class="readout-label">Dipole Moment (p)</span>
+                        <span class="readout-val" id="out-p">2.5 nC·m</span>
+                    </div>
+                    <div class="readout-cell" id="cell-E">
+                        <span class="readout-label">E-Field (E)</span>
+                        <span class="readout-val" id="out-E">500 N/C</span>
+                    </div>
+                    <div class="readout-cell" id="cell-theta">
+                        <span class="readout-label">Angle (θ)</span>
+                        <span class="readout-val" id="out-theta">45.0°</span>
+                    </div>
+                    <div class="readout-cell" id="cell-tau">
+                        <span class="readout-label">Torque (τ)</span>
+                        <span class="readout-val" id="out-tau">883.9 µN·m</span>
+                    </div>
+                    <div class="readout-cell" id="cell-U">
+                        <span class="readout-label">Pot. Energy (U)</span>
+                        <span class="readout-val" id="out-U">-883.9 µJ</span>
+                    </div>
+                </div>
+                <div class="formula-bar">
+                    Vectors: <b>τ⃗ = p⃗ × E⃗</b> &nbsp;|&nbsp; Magnitude: <b>|τ| = pE sin(θ)</b> &nbsp;|&nbsp; Energy: <b>U = −pE cos(θ)</b>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip-msg');
+
+        // Color Constants
+        const COLORS = {
+            cyan: '#72C0D4', gold: '#F08B67',
+            pos: '#F08B67', neg: '#72C0D4',
+            forceNeg: '#DF7171', bg: '#0C1115'
+        };
+
+        // State Manager
+        const state = {
+            q: 5,        // nC
+            a: 0.25,     // m (half separation, so 2a = 0.5)
+            E: 500,      // N/C
+            thetaRad: Math.PI / 4, // Radians (45 deg)
+            
+            // Animation/Physics
+            isAnimating: false,
+            angularVelocity: 0,
+            damping: 0.96, // Decreased for faster settling
+            momentOfInertia: 1, // Arbitrary base for nice simulation speed
+            lastTime: 0,
+
+            // Interactions
+            draggingNode: null, // 'pos' or 'neg'
+
+            // Toggles
+            showField: true,
+            showForces: true,
+            showDist: false,
+            showTorque: true,
+            showEnergy: true,
+
+            // Callout tracking
+            seen90: false, seen180: false, seenAnim: false
+        };
+
+        // Utility: Convert to standard 0-360 range for display
+        function getDisplayDegrees() {
+            let deg = (state.thetaRad * 180 / Math.PI) % 360;
+            if (deg < 0) deg += 360;
+            return deg;
+        }
+
+        // Draw an arrow
+        function drawArrow(x0, y0, x1, y1, width, color, headLen=15, glow=false) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            if (glow) {
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = color;
+            }
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x1, y1);
+            ctx.stroke();
+
+            const angle = Math.atan2(y1 - y0, x1 - x0);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x1 - headLen * Math.cos(angle - Math.PI / 6), y1 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x1 - headLen * Math.cos(angle + Math.PI / 6), y1 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+            
+            if (glow) {
+                ctx.shadowBlur = 0; // reset
+            }
+        }
+
+        let cx, cy, scaleMtoPx;
+
+        function resizeCanvas() {
+            const rect = document.getElementById('canvas-container').getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            cx = rect.width / 2;
+            cy = rect.height / 2;
+            scaleMtoPx = Math.min(cx, cy) * 0.8; // 1m = 80% of shortest half-dimension
+            draw();
+        }
+
+        function drawGrid() {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            const gridSize = 40;
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = (cx % gridSize); x < w; x += gridSize) {
+                ctx.moveTo(x, 0); ctx.lineTo(x, h);
+            }
+            for (let y = (cy % gridSize); y < h; y += gridSize) {
+                ctx.moveTo(0, y); ctx.lineTo(w, y);
+            }
+            ctx.stroke();
+        }
+
+        function drawFieldLines() {
+            if (!state.showField) return;
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            const spacing = 60;
+            
+            ctx.globalAlpha = 0.35;
+            for (let y = (cy % spacing); y < h; y += spacing) {
+                // Ignore lines too close to the center to keep dipole clear
+                if (Math.abs(y - cy) < 25) continue; 
+                drawArrow(0, y, w, y, 1.5, COLORS.cyan, 10);
+            }
+            ctx.globalAlpha = 1.0;
+            
+            // Big E label top right
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = COLORS.cyan;
+            ctx.fillStyle = COLORS.cyan;
+            ctx.font = 'bold 22px "JetBrains Mono"';
+            ctx.fillText("E ➔", w - 60, 40);
+            ctx.shadowBlur = 0;
+        }
+
+        function drawDipole() {
+            const aPx = state.a * scaleMtoPx;
+            // standard math angles: right is 0, up is -y, down is +y. 
+            // We use standard math, but on canvas y goes down. 
+            // theta=0 -> +q at right. theta=90 -> +q at top (y -)
+            const dx = aPx * Math.cos(state.thetaRad);
+            const dy = -aPx * Math.sin(state.thetaRad); // negative because canvas Y is down
+            
+            const px = cx + dx, py = cy + dy; // Positive charge
+            const nx = cx - dx, ny = cy - dy; // Negative charge
+            
+            // Draw axis (Glowing Rod)
+            ctx.beginPath();
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = COLORS.cyan;
+            ctx.strokeStyle = 'rgba(79, 195, 247, 0.6)';
+            ctx.lineWidth = 6;
+            ctx.moveTo(nx, ny);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+            ctx.shadowBlur = 0; // reset
+
+            // Dipole moment vector p (from -q to +q)
+            drawArrow(nx, ny, px, py, 3, COLORS.gold, 14, true); // Added glow
+            
+            ctx.fillStyle = COLORS.gold;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = COLORS.gold;
+            ctx.font = 'bold 16px "JetBrains Mono"';
+            ctx.fillText("p", cx + dx*0.3, cy + dy*0.3 - 15);
+            ctx.shadowBlur = 0;
+
+            // Charges (R = 18px for better visibility and gradients)
+            const drawCharge = (x, y, color, sign) => {
+                const r = 18;
+                const grad = ctx.createRadialGradient(x-r/3, y-r/3, r/4, x, y, r);
+                grad.addColorStop(0, '#FFFFFF');
+                grad.addColorStop(0.4, color);
+                grad.addColorStop(1, '#000000');
+                
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                
+                // Add outer glow
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = color;
+                
+                ctx.fillStyle = grad;
+                ctx.fill();
+                
+                // Crisp border
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = '#FFF';
+                ctx.font = 'bold 20px "JetBrains Mono"';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(sign, x, y);
+            };
+
+            drawCharge(nx, ny, COLORS.neg, '−');
+            drawCharge(px, py, COLORS.pos, '+');
+
+            return { px, py, nx, ny };
+        }
+
+        function drawOverlay(coords) {
+            const { px, py, nx, ny } = coords;
+            
+            // 1. Force Vectors
+            if (state.showForces) {
+                // Force magnitude scales with q and E
+                const fLen = 40 + (state.q * state.E) / 500 * 10; 
+                
+                // F+ (rightward)
+                drawArrow(px + 22, py, px + 22 + fLen, py, 3, COLORS.forcePos, 15, true);
+                ctx.fillStyle = COLORS.forcePos;
+                ctx.shadowBlur = 5; ctx.shadowColor = COLORS.forcePos;
+                ctx.fillText("F = qE", px + 22 + fLen/2, py - 20);
+                ctx.shadowBlur = 0;
+
+                // F- (leftward)
+                drawArrow(nx - 22, ny, nx - 22 - fLen, ny, 3, COLORS.forceNeg, 15, true);
+                ctx.fillStyle = COLORS.forceNeg;
+                ctx.shadowBlur = 5; ctx.shadowColor = COLORS.forceNeg;
+                ctx.fillText("F = -qE", nx - 22 - fLen/2, ny - 20);
+                ctx.shadowBlur = 0;
+            }
+
+            // 2. Perpendicular Distance (d)
+            if (state.showDist) {
+                ctx.beginPath();
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = COLORS.cyan;
+                ctx.lineWidth = 2;
+                // Draw vertical line from +q's y to -q's y passing through +q's x
+                ctx.moveTo(px, py);
+                ctx.lineTo(px, ny);
+                ctx.stroke();
+                
+                // Horizontal construction line to -q
+                ctx.moveTo(px, ny);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset
+                
+                ctx.fillStyle = COLORS.cyan;
+                ctx.shadowBlur = 5; ctx.shadowColor = COLORS.cyan;
+                ctx.fillText("d = 2a sin θ", px + 40, cy);
+                ctx.shadowBlur = 0;
+            }
+
+            // 3. Torque Direction Indicator
+            if (state.showTorque) {
+                const deg = getDisplayDegrees();
+                // If aligned (0, 180), no torque
+                if (deg % 180 !== 0) {
+                    const sinTheta = Math.sin(state.thetaRad);
+                    const isClockwise = sinTheta > 0;
+                    const r = 40;
+                    
+                    ctx.beginPath();
+                    ctx.strokeStyle = isClockwise ? COLORS.gold : COLORS.forceNeg;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = ctx.strokeStyle;
+                    ctx.lineWidth = 3;
+                    
+                    // Draw arc
+                    if (isClockwise) {
+                        ctx.arc(cx, cy, r, -state.thetaRad, 0);
+                        // Arrowhead
+                        drawArrow(cx + r, cy - 2, cx + r, cy, 3, COLORS.gold, 8, true);
+                    } else {
+                        // Math to draw counter clockwise arc properly
+                        const endAngle = -state.thetaRad;
+                        ctx.arc(cx, cy, r, 0, endAngle, true);
+                        drawArrow(cx + r*Math.cos(endAngle), cy + r*Math.sin(endAngle) + 2, 
+                                  cx + r*Math.cos(endAngle), cy + r*Math.sin(endAngle), 3, COLORS.forceNeg, 8, true);
+                    }
+                    ctx.stroke();
+
+                    // Cross (Into page) or Dot (Out of page)
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 12, 0, Math.PI*2);
+                    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    ctx.fill();
+                    ctx.strokeStyle = isClockwise ? COLORS.gold : COLORS.forceNeg;
+                    ctx.stroke();
+                    ctx.fillStyle = ctx.strokeStyle;
+                    
+                    if (isClockwise) { // Into page (cross)
+                        ctx.moveTo(cx - 5, cy - 5); ctx.lineTo(cx + 5, cy + 5);
+                        ctx.moveTo(cx + 5, cy - 5); ctx.lineTo(cx - 5, cy + 5);
+                        ctx.stroke();
+                        ctx.fillText("τ ⊗", cx, cy - 25);
+                    } else { // Out of page (dot)
+                        ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+                        ctx.fillText("τ ⊙", cx, cy - 25);
+                    }
+                    ctx.shadowBlur = 0; // reset
+                }
+            }
+        }
+
+        function drawEnergyBar() {
+            if (!state.showEnergy) return;
+            const w = canvas.width / window.devicePixelRatio;
+            const bx = w - 40;
+            const byCenter = cy;
+            const bHeight = 150; // half-height
+            
+            // Background track
+            ctx.fillStyle = 'rgba(255,255,255,0.05)';
+            ctx.fillRect(bx - 10, byCenter - bHeight, 20, bHeight * 2);
+            
+            // Zero line
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.beginPath(); ctx.moveTo(bx - 15, byCenter); ctx.lineTo(bx + 15, byCenter); ctx.stroke();
+            
+            // Value
+            // U = -pE cos(theta)
+            const uNorm = -Math.cos(state.thetaRad); // range -1 to 1
+            const fillHeight = Math.abs(uNorm * bHeight);
+            
+            if (uNorm < 0) {
+                // Stable / Negative energy -> draws downward
+                ctx.fillStyle = COLORS.gold;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = COLORS.gold;
+                ctx.fillRect(bx - 10, byCenter, 20, fillHeight);
+            } else {
+                // Unstable / Positive energy -> draws upward
+                ctx.fillStyle = COLORS.forceNeg;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = COLORS.forceNeg;
+                ctx.fillRect(bx - 10, byCenter - fillHeight, 20, fillHeight);
+            }
+            ctx.shadowBlur = 0; // reset
+            
+            ctx.fillStyle = '#FFF';
+            ctx.font = '12px "JetBrains Mono"';
+            ctx.textAlign = 'center';
+            ctx.fillText("+pE", bx, byCenter - bHeight - 10);
+            ctx.fillText("-pE", bx, byCenter + bHeight + 20);
+            
+            ctx.font = 'bold 14px "JetBrains Mono"';
+            ctx.fillStyle = COLORS.cyan;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = COLORS.cyan;
+            ctx.fillText("U", bx, byCenter - bHeight - 30);
+            ctx.shadowBlur = 0; // reset
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawFieldLines();
+            const coords = drawDipole();
+            drawOverlay(coords);
+            drawEnergyBar();
+        }
+
+        function updatePhysics(time) {
+            if (!state.lastTime) state.lastTime = time;
+            const dt = Math.min((time - state.lastTime) / 1000, 0.05); // cap dt at 50ms
+            state.lastTime = time;
+
+            if (state.isAnimating && !state.draggingNode) {
+                // Torque = -pE sin(theta) -> standard restoring torque
+                // p = q * 2a, but we just use normalized values for smooth animation
+                const restoringForce = state.q * state.a * state.E;
+                const alpha = - (restoringForce / 600) * Math.sin(state.thetaRad); // Scaled for FASTER visuals
+                
+                state.angularVelocity += alpha * dt;
+                state.angularVelocity *= state.damping;
+                state.thetaRad += state.angularVelocity * dt;
+
+                // Stop if almost zero to prevent micro-jitters forever
+                if (Math.abs(Math.sin(state.thetaRad)) < 0.005 && Math.abs(state.angularVelocity) < 0.05) {
+                    state.thetaRad = 0;
+                    state.angularVelocity = 0;
+                    state.isAnimating = false;
+                    document.getElementById('btn-animate').innerText = "▶ Play (Align Dipole)";
+                    const inlineBtn = document.getElementById('btn-play-inline');
+                    if (inlineBtn) inlineBtn.innerText = "▶ Play";
+                    updateUI(); // ensure values reflect exactly 0
+                }
+                
+                syncUIWithState();
+            }
+
+            draw();
+            requestAnimationFrame(updatePhysics);
+        }
+
+        function updateUI() {
+            // Update UI sliders text
+            document.getElementById('val-q').innerText = state.q;
+            document.getElementById('val-a').innerText = (state.a * 2).toFixed(2);
+            document.getElementById('val-E').innerText = state.E;
+            
+            let deg = getDisplayDegrees();
+            document.getElementById('val-theta').innerText = deg.toFixed(1) + '°';
+            document.getElementById('slider-theta').value = deg;
+
+            // Math computations
+            // Dipole moment p = q * 2a.  Units: nC * m = nC.m
+            const p = state.q * (state.a * 2);
+            // Torque = pE sin theta. Units: nC.m * N/C = nN.m. (10^-9). Micro = 10^-6.
+            // So p * E is in nN.m. Divide by 1000 to get micro (µ)
+            const tau_nN = p * state.E * Math.abs(Math.sin(state.thetaRad));
+            const tau_uN = tau_nN / 1000;
+            
+            // Energy U = -pE cos theta
+            const U_nJ = - p * state.E * Math.cos(state.thetaRad);
+            const U_uJ = U_nJ / 1000;
+
+            document.getElementById('out-p').innerText = p.toFixed(2) + " nC·m";
+            document.getElementById('out-E').innerText = state.E + " N/C";
+            document.getElementById('out-theta').innerText = deg.toFixed(1) + "°";
+            document.getElementById('out-tau').innerText = tau_uN.toFixed(1) + " µN·m";
+            document.getElementById('out-U').innerText = U_uJ.toFixed(1) + " µJ";
+
+            // Flashing logic for special angles
+            handleVisualCues(deg, tau_uN);
+        }
+
+        let flashTimeout;
+        function handleVisualCues(deg, tau) {
+            const cellTau = document.getElementById('cell-tau');
+            const cellU = document.getElementById('cell-U');
+            
+            // Reset classes
+            cellTau.className = 'readout-cell';
+            cellU.className = 'readout-cell';
+            
+            const tol = 1.0; // 1 degree tolerance
+            
+            if (Math.abs(deg - 0) < tol || Math.abs(deg - 360) < tol || Math.abs(deg - 180) < tol) {
+                document.getElementById('out-tau').innerText = "0.0 (Zero)";
+                if (state.draggingNode || state.isAnimating) cellTau.classList.add('flash-red');
+                
+                if (Math.abs(deg - 180) < tol && !state.seen180) {
+                    showTooltip("Forces cancel out, but any tiny push will flip it. Unstable Equilibrium!", 180);
+                    state.seen180 = true;
+                }
+            }
+            
+            if (Math.abs(deg - 90) < tol || Math.abs(deg - 270) < tol) {
+                document.getElementById('out-tau').innerText += " (Max)";
+                if (state.draggingNode || state.isAnimating) cellTau.classList.add('flash-gold');
+                
+                if (Math.abs(deg - 90) < tol && !state.seen90) {
+                    showTooltip("Forces are perpendicular to the dipole moment. Torque is at maximum!", 90);
+                    state.seen90 = true;
+                }
+            }
+        }
+
+        function syncUIWithState() {
+            updateUI();
+        }
+
+        // Mouse/Touch Interaction
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function handlePointerDown(e) {
+            const pos = getPointerPos(e);
+            const aPx = state.a * scaleMtoPx;
+            const dx = aPx * Math.cos(state.thetaRad);
+            const dy = -aPx * Math.sin(state.thetaRad);
+            
+            const px = cx + dx, py = cy + dy;
+            const nx = cx - dx, ny = cy - dy;
+            
+            const hitZone = 30; // forgiving hit zone
+            
+            if (Math.hypot(pos.x - px, pos.y - py) < hitZone) {
+                state.draggingNode = 'pos';
+                state.isAnimating = false; // stop animation on grab
+            } else if (Math.hypot(pos.x - nx, pos.y - ny) < hitZone) {
+                state.draggingNode = 'neg';
+                state.isAnimating = false;
+            }
+            
+            if (state.draggingNode) {
+                canvas.style.cursor = 'grabbing';
+                document.getElementById('btn-animate').innerText = "▶ Play (Align Dipole)";
+                const inlineBtn = document.getElementById('btn-play-inline');
+                if (inlineBtn) inlineBtn.innerText = "▶ Play";
+                hideTooltip();
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!state.draggingNode) {
+                // Hover effect
+                const pos = getPointerPos(e);
+                const aPx = state.a * scaleMtoPx;
+                const dx = aPx * Math.cos(state.thetaRad);
+                const dy = -aPx * Math.sin(state.thetaRad);
+                if (Math.hypot(pos.x - (cx+dx), pos.y - (cy+dy)) < 30 || 
+                    Math.hypot(pos.x - (cx-dx), pos.y - (cy-dy)) < 30) {
+                    canvas.style.cursor = 'grab';
+                } else {
+                    canvas.style.cursor = 'default';
+                }
+                return;
+            }
+            
+            const pos = getPointerPos(e);
+            let angle = Math.atan2(-(pos.y - cy), pos.x - cx); // standard math angle
+            
+            if (state.draggingNode === 'neg') {
+                angle += Math.PI; // invert if dragging negative charge
+            }
+            
+            state.thetaRad = angle;
+            state.angularVelocity = 0; // kill momentum
+            syncUIWithState();
+            // Note: drawing happens in updatePhysics loop
+        }
+
+        function handlePointerUp() {
+            state.draggingNode = null;
+            canvas.style.cursor = 'default';
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown);
+        window.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+        
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handlePointerDown(e); }, {passive: false});
+        window.addEventListener('touchmove', handlePointerMove, {passive: false});
+        window.addEventListener('touchend', handlePointerUp);
+
+        // Control Panel Listeners
+        document.getElementById('slider-q').addEventListener('input', e => { state.q = parseFloat(e.target.value); syncUIWithState(); });
+        document.getElementById('slider-a').addEventListener('input', e => { state.a = parseFloat(e.target.value) / 2; syncUIWithState(); });
+        document.getElementById('slider-E').addEventListener('input', e => { state.E = parseFloat(e.target.value); syncUIWithState(); });
+        document.getElementById('slider-theta').addEventListener('input', e => { 
+            state.thetaRad = parseFloat(e.target.value) * Math.PI / 180;
+            if (state.isAnimating) {
+                state.isAnimating = false;
+                document.getElementById('btn-animate').innerText = "▶ Play (Align Dipole)";
+                const inlineBtn = document.getElementById('btn-play-inline');
+                if (inlineBtn) inlineBtn.innerText = "▶ Play";
+            }
+            state.angularVelocity = 0;
+            syncUIWithState(); 
+        });
+
+        // Toggles
+        document.getElementById('t-field').addEventListener('change', e => state.showField = e.target.checked);
+        document.getElementById('t-forces').addEventListener('change', e => state.showForces = e.target.checked);
+        document.getElementById('t-dist').addEventListener('change', e => state.showDist = e.target.checked);
+        document.getElementById('t-torque').addEventListener('change', e => state.showTorque = e.target.checked);
+        document.getElementById('t-energy').addEventListener('change', e => state.showEnergy = e.target.checked);
+
+        // API for buttons
+        window.sim = {
+            snapAngle: (deg) => {
+                state.thetaRad = deg * Math.PI / 180;
+                state.isAnimating = false;
+                state.angularVelocity = 0;
+                
+                const btn = document.getElementById('btn-animate');
+                const inlineBtn = document.getElementById('btn-play-inline');
+                btn.innerText = "▶ Play (Align Dipole)";
+                if (inlineBtn) inlineBtn.innerText = "▶ Play";
+
+                syncUIWithState();
+            },
+            toggleAnimation: () => {
+                state.isAnimating = !state.isAnimating;
+                const btn = document.getElementById('btn-animate');
+                const inlineBtn = document.getElementById('btn-play-inline');
+                if (state.isAnimating) {
+                    btn.innerText = "⏸ Pause Alignment";
+                    if (inlineBtn) inlineBtn.innerText = "⏸ Pause";
+                    if (!state.seenAnim) {
+                        showTooltip("Notice how it oscillates and eventually aligns with the field (0°)!", null, 4000);
+                        state.seenAnim = true;
+                    }
+                } else {
+                    btn.innerText = "▶ Play (Align Dipole)";
+                    if (inlineBtn) inlineBtn.innerText = "▶ Play";
+                }
+            }
+        };
+
+        // Tooltip logic
+        let tooltipTimeout;
+        function showTooltip(msg, angleDeg, duration = 5000) {
+            tooltip.innerText = msg;
+            
+            // Position near canvas center or slightly offset
+            const rect = canvas.getBoundingClientRect();
+            tooltip.style.left = (rect.width / 2 - 125) + 'px';
+            tooltip.style.top = (rect.height / 2 - 120) + 'px';
+            
+            tooltip.classList.add('visible');
+            
+            clearTimeout(tooltipTimeout);
+            tooltipTimeout = setTimeout(hideTooltip, duration);
+        }
+
+        function hideTooltip() {
+            tooltip.classList.remove('visible');
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Initial setup
+        resizeCanvas();
+        updateUI();
+        requestAnimationFrame(updatePhysics);
+
+        // Intro tooltip
+        setTimeout(() => {
+            showTooltip("Drag either charge to rotate the dipole. Notice how the Force vectors always stay horizontal!", null, 6000);
+        }, 1000);
+
+    </script>
+</body>
+</html>

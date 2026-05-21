@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mean, Median and Mode Challenge | Trinity Simulation Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['\\(', '\\)']] },
+            startup: { typeset: false }
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <style>
+        :root {
+            --bg: #EFF2F5;
+            --bg-alt: #E2E7EC;
+            --paper: #F7F8FA;
+            --ink: #0C1115;
+            --ink-soft: #2B333A;
+            --ink-mute: #6B7680;
+            --rule-soft: rgba(12, 17, 21, 0.14);
+            --dark: #0C1115;
+            --dark-ink: #EFF2F5;
+            --dark-mute: #7F8892;
+            --accent: oklch(0.52 0.12 200);
+            --accent-ink: #F7F8FA;
+            --accent-soft: rgba(22, 131, 159, 0.12);
+            --success: #2E8B57;
+            --success-soft: rgba(46, 139, 87, 0.12);
+            --danger: #B94B42;
+            --danger-soft: rgba(185, 75, 66, 0.12);
+            --warm: #B8652C;
+            --warm-soft: rgba(184, 101, 44, 0.14);
+            --sans: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+            --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            background:
+                linear-gradient(rgba(12, 17, 21, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(12, 17, 21, 0.035) 1px, transparent 1px),
+                var(--bg);
+            background-size: 42px 42px;
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            font-family: var(--sans);
+            font-feature-settings: "ss01", "cv11";
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at top left, rgba(22, 131, 159, 0.12), transparent 28%),
+                linear-gradient(180deg, rgba(247, 248, 250, 0.7), rgba(239, 242, 245, 0.9));
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+
+        h1, h2, h3 {
+            color: var(--ink);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(247, 248, 250, 0.96);
+            border: 1px solid var(--ink);
+            border-radius: 8px;
+            box-shadow: 8px 8px 0 rgba(12, 17, 21, 0.12);
+            overflow: hidden;
+            padding: 0;
+            margin-top: 0;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        button {
+            min-height: 44px;
+            border: 1px solid var(--ink);
+            padding: 11px 18px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+            color: var(--bg);
+            margin: 0;
+            letter-spacing: 0;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        button:disabled,
+        input:disabled {
+            opacity: 0.62;
+            cursor: not-allowed;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            background: var(--ink);
+        }
+
+        .btn-primary:hover,
+        .btn-secondary:hover {
+            background: var(--ink-soft);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-ink);
+        }
+
+        .btn-accent:hover {
+            filter: brightness(0.94);
+        }
+
+        .btn-danger {
+            min-height: 34px;
+            background: transparent;
+            color: var(--ink);
+            padding: 7px 12px;
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: var(--paper);
+            border-color: var(--danger);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Menu Styles */
+        #main-menu {
+            display: grid;
+            min-height: 510px;
+            grid-template-rows: auto 1fr;
+            text-align: left;
+        }
+
+        .lab-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border-bottom: 1px solid var(--ink);
+            background: var(--paper);
+            padding: 14px 16px;
+        }
+
+        .brand-lockup {
+            display: inline-flex;
+            min-width: 0;
+            align-items: center;
+            gap: 12px;
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .logo-mark {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            border: 1.5px solid var(--ink);
+            border-radius: 999px;
+        }
+
+        .logo-mark::before,
+        .logo-mark::after {
+            content: "";
+            position: absolute;
+            background: var(--ink);
+        }
+
+        .logo-mark::before {
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 11px;
+            transform: translate(-50%, -100%) rotate(-18deg);
+            transform-origin: bottom center;
+        }
+
+        .logo-mark::after {
+            top: 50%;
+            left: 50%;
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            transform: translate(-2px, 6px);
+        }
+
+        .lab-label,
+        .stat-label,
+        .mode-kicker,
+        .input-group label {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .lab-label {
+            color: var(--ink-mute);
+            white-space: nowrap;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.8fr);
+            gap: 28px;
+            align-items: stretch;
+            padding: 34px;
+        }
+
+        .menu-copy {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .menu-title {
+            max-width: 610px;
+            font-size: clamp(44px, 7vw, 72px);
+            font-weight: 500;
+            line-height: 0.94;
+            letter-spacing: -0.035em;
+        }
+
+        .menu-subtitle {
+            max-width: 520px;
+            color: var(--ink-soft);
+            font-size: 1rem;
+            line-height: 1.7;
+            margin: 22px 0 26px;
+        }
+
+        .menu-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            min-height: 360px;
+            overflow: hidden;
+            border: 1px solid var(--ink);
+            border-radius: 8px;
+            background: var(--dark);
+            color: var(--dark-ink);
+        }
+
+        .stats-head,
+        .stats-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid rgba(239, 242, 245, 0.18);
+            padding: 13px 14px;
+        }
+
+        .stats-foot {
+            border-top: 1px solid rgba(239, 242, 245, 0.18);
+            border-bottom: 0;
+            color: var(--dark-mute);
+        }
+
+        .mini-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 16px 0 0 var(--warm), 32px 0 0 var(--dark-mute);
+        }
+
+        .data-visual {
+            position: relative;
+            display: grid;
+            align-content: center;
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .data-row {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .data-cell {
+            display: flex;
+            aspect-ratio: 1;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(239, 242, 245, 0.38);
+            border-radius: 4px;
+            color: var(--dark-ink);
+            font-family: var(--mono);
+            font-size: clamp(15px, 2.5vw, 22px);
+            font-weight: 700;
+        }
+
+        .data-cell.accent {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-ink);
+        }
+
+        .formula-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            color: var(--dark-mute);
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        /* Game Screen Styles */
+        #game-screen,
+        #end-screen {
+            background: var(--paper);
+        }
+
+        #game-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--ink);
+            padding: 14px 16px;
+        }
+
+        .mode-copy {
+            min-width: min(100%, 250px);
+            flex: 1 1 auto;
+        }
+
+        .mode-kicker {
+            color: var(--ink-mute);
+            margin-bottom: 4px;
+        }
+
+        #mode-title {
+            margin: 0;
+            font-size: clamp(20px, 3vw, 28px);
+            font-weight: 600;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+        }
+
+        .hud-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .score-badge {
+            display: inline-flex;
+            min-height: 34px;
+            align-items: center;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            background: var(--paper);
+            color: var(--ink);
+            padding: 8px 12px;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        #timer-badge {
+            background: var(--ink);
+            color: var(--bg);
+        }
+
+        .game-body,
+        .end-body {
+            padding: 18px;
+        }
+
+        #question-display {
+            background: var(--bg-alt);
+            border-left: 4px solid var(--accent);
+            padding: 18px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: clamp(1.15rem, 3vw, 1.45rem);
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: var(--ink);
+            word-wrap: break-word;
+            line-height: 1.35;
+        }
+
+        /* Table styles for tabulated data */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.98rem;
+            background: var(--paper);
+        }
+
+        th, td {
+            border: 1px solid var(--ink);
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        th {
+            background: var(--ink);
+            color: var(--bg);
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        #input-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex: 1 1 150px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            min-width: 0;
+            border: 1px solid var(--rule-soft);
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .input-group label {
+            color: var(--ink-mute);
+            font-weight: 700;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.16s, background-color 0.16s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent);
+            background: #ffffff;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        #action-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        /* Feedback and Steps Styles */
+        #feedback-banner {
+            text-align: center;
+            padding: 13px 14px;
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 16px 0;
+            line-height: 1.35;
+        }
+
+        .feedback-correct { background: var(--success-soft); color: var(--ink); }
+        .feedback-incorrect { background: var(--danger-soft); color: var(--ink); }
+
+        #steps-area {
+            background: var(--paper);
+            border: 1px solid var(--rule-soft);
+            border-radius: 4px;
+            padding: 18px;
+            margin-top: 20px;
+            font-size: 0.96rem;
+            line-height: 1.6;
+        }
+
+        .step-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--rule-soft);
+        }
+
+        .step-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .step-title {
+            color: var(--ink);
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .correct-ans-highlight {
+            font-weight: 800;
+            color: var(--ink);
+            background: var(--accent-soft);
+            padding: 2px 7px;
+            border: 1px solid rgba(12, 17, 21, 0.16);
+            border-radius: 4px;
+        }
+
+        .raw-data-text {
+            font-family: var(--mono);
+            font-size: clamp(1.45rem, 5vw, 2.35rem);
+            letter-spacing: 0.02em;
+            display: block;
+            word-break: break-word;
+            margin-top: 10px;
+            color: var(--ink);
+        }
+
+        .helper-note {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink-mute);
+            letter-spacing: 0.04em;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        .median-row {
+            background: var(--warm-soft);
+        }
+
+        .total-row {
+            background: var(--bg-alt);
+            font-weight: 800;
+        }
+
+        .table-note {
+            color: var(--ink-mute);
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+
+        .solution-heading {
+            margin-bottom: 16px;
+            font-size: clamp(1.25rem, 3vw, 1.7rem);
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        .step-line {
+            margin: 7px 0;
+        }
+
+        .step-label {
+            display: inline-block;
+            min-width: 112px;
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .worked-data-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 7px;
+            margin-top: 8px;
+            font-family: var(--mono);
+            font-weight: 700;
+        }
+
+        .number-token,
+        .frequency-token {
+            display: inline-flex;
+            min-width: 34px;
+            min-height: 34px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--rule-soft);
+            border-radius: 999px;
+            background: var(--paper);
+            padding: 4px 9px;
+        }
+
+        .circled-value,
+        .mode-frequency {
+            border: 2px solid var(--warm);
+            background: var(--warm-soft);
+            color: var(--ink);
+        }
+
+        .median-number {
+            border: 2px solid var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .median-locator {
+            font-weight: 800;
+        }
+
+        .median-arrow {
+            display: block;
+            color: var(--warm);
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            line-height: 1.25;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .end-body {
+            display: grid;
+            min-height: 420px;
+            place-items: center;
+            text-align: center;
+        }
+
+        .end-card {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .end-card h2 {
+            font-size: clamp(40px, 8vw, 64px);
+            font-weight: 500;
+            line-height: 0.95;
+            letter-spacing: -0.035em;
+        }
+
+        .final-score-line {
+            margin: 22px 0 8px;
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .final-time-line {
+            color: var(--ink-mute);
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            margin-bottom: 28px;
+            text-transform: uppercase;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 720px) {
+            body { padding: 10px; }
+            .container { box-shadow: 5px 5px 0 rgba(12, 17, 21, 0.12); }
+            .lab-topbar { align-items: flex-start; flex-direction: column; gap: 8px; }
+            .menu-grid { grid-template-columns: 1fr; padding: 22px; }
+            .stats-panel { min-height: 280px; }
+            .game-body, .end-body { padding: 14px; }
+            #input-area { flex-direction: column; align-items: stretch; gap: 12px; }
+            .input-group { flex-basis: auto; }
+            .input-group input { width: 100%; font-size: 1.1rem; padding: 10px; }
+            #game-header { align-items: flex-start; }
+            .hud-row { justify-content: flex-start; }
+            #question-display { font-size: 1.2rem; padding: 15px; }
+            .raw-data-text { font-size: 1.55rem; }
+            th, td { padding: 6px; font-size: 0.95rem; }
+            #action-area button { width: 100%; }
+        }
+
+        @media (max-width: 430px) {
+            .menu-title { font-size: 38px; }
+            .data-row { gap: 6px; }
+            .data-cell { font-size: 14px; }
+            #game-header { padding: 12px; }
+            .score-badge, .btn-danger { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-menu">
+        <div class="lab-topbar">
+            <div class="brand-lockup">
+                <span class="logo-mark" aria-hidden="true"></span>
+                <span>Trinity <span class="lab-label">SIM LAB</span></span>
+            </div>
+            <div class="lab-label">Math game · raw and tabulated data</div>
+        </div>
+
+        <div class="menu-grid">
+            <div class="menu-copy">
+                <h1 class="menu-title">Mean, median and mode challenge</h1>
+                <p class="menu-subtitle">Work through four fast questions: raw data with odd and even counts, then tabulated data with odd and even frequencies.</p>
+
+                <div class="menu-actions">
+                    <button class="btn-primary" onclick="startTest()">Start test</button>
+                </div>
+            </div>
+
+            <div class="stats-panel" aria-hidden="true">
+                <div class="stats-head">
+                    <span class="lab-label">Fig. 01 — data set</span>
+                    <span class="mini-dot"></span>
+                </div>
+                <div class="data-visual">
+                    <div class="data-row">
+                        <span class="data-cell">4</span>
+                        <span class="data-cell">8</span>
+                        <span class="data-cell accent">8</span>
+                        <span class="data-cell">12</span>
+                        <span class="data-cell">14</span>
+                        <span class="data-cell">18</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-cell">x</span>
+                        <span class="data-cell">f</span>
+                        <span class="data-cell accent">cf</span>
+                        <span class="data-cell">Σ</span>
+                        <span class="data-cell">÷</span>
+                        <span class="data-cell">=</span>
+                    </div>
+                    <div class="formula-strip">
+                        <span>Mean = Σx / n</span>
+                        <span>Median = center</span>
+                        <span>Mode = repeat</span>
+                    </div>
+                </div>
+                <div class="stats-foot">
+                    <span class="lab-label">4 questions</span>
+                    <span class="lab-label">40 points</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container hidden" id="game-screen">
+        <div id="game-header">
+            <div class="mode-copy">
+                <div class="mode-kicker">Trinity data challenge</div>
+                <h2 id="mode-title">Mode</h2>
+            </div>
+            <div class="hud-row">
+                <div class="score-badge" id="timer-badge">Time: 00:00</div>
+                <div class="score-badge">Score: <span id="score">0</span></div>
+                <button class="btn-danger" onclick="resetToMenu()">Quit</button>
+            </div>
+        </div>
+
+        <div class="game-body">
+            <div id="question-display">
+                <!-- Question will be injected here -->
+            </div>
+
+            <div id="input-area">
+                <div class="input-group">
+                    <label for="mean-input">Mean</label>
+                    <input type="number" id="mean-input" step="0.1" placeholder="e.g. 5.2">
+                </div>
+                <div class="input-group">
+                    <label for="median-input">Median</label>
+                    <input type="number" id="median-input" step="0.1" placeholder="e.g. 6">
+                </div>
+                <div class="input-group">
+                    <label for="mode-input">Mode</label>
+                    <input type="number" id="mode-input" step="0.1" placeholder="e.g. 4">
+                </div>
+            </div>
+
+            <div id="action-area">
+                <button class="btn-secondary" id="submit-btn" onclick="checkAnswers()">Submit answer</button>
+                <button class="btn-accent hidden" id="next-btn" onclick="loadNextQuestion()">Next question</button>
+            </div>
+
+            <div id="feedback-banner" class="hidden"></div>
+
+            <div id="steps-area" class="hidden">
+                <!-- Solution steps will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container hidden" id="end-screen">
+        <div class="lab-topbar">
+            <div class="brand-lockup">
+                <span class="logo-mark" aria-hidden="true"></span>
+                <span>Trinity <span class="lab-label">SIM LAB</span></span>
+            </div>
+            <div class="lab-label">Session complete</div>
+        </div>
+        <div class="end-body">
+            <div class="end-card">
+                <h2>Test complete</h2>
+                <p class="final-score-line">Final score: <span id="final-score">0</span> / 40</p>
+                <p class="final-time-line">Total time: <span id="final-time">00:00</span></p>
+                <button class="btn-primary" onclick="resetToMenu()">Back to menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let currentMode = '';
+        let score = 0;
+        let currentQuestion = null; // Holds data and correct answers
+        let timerInterval = null;
+        let timeElapsed = 0;
+        let totalTestTime = 0;
+        let testSequence = [];
+        let currentQuestionIndex = 0;
+
+        // DOM Elements
+        const mainMenu = document.getElementById('main-menu');
+        const gameScreen = document.getElementById('game-screen');
+        const modeTitle = document.getElementById('mode-title');
+        const scoreDisplay = document.getElementById('score');
+        const questionDisplay = document.getElementById('question-display');
+        const meanInput = document.getElementById('mean-input');
+        const medianInput = document.getElementById('median-input');
+        const modeInput = document.getElementById('mode-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const feedbackBanner = document.getElementById('feedback-banner');
+        const stepsArea = document.getElementById('steps-area');
+        const timerBadge = document.getElementById('timer-badge');
+        const endScreen = document.getElementById('end-screen');
+        const finalScore = document.getElementById('final-score');
+        const finalTime = document.getElementById('final-time');
+
+        function formatNumber(value) {
+            return Number.isInteger(value) ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+        }
+
+        function ordinal(value) {
+            let lastTwo = value % 100;
+            if (lastTwo >= 11 && lastTwo <= 13) return `${value}th`;
+            let last = value % 10;
+            if (last === 1) return `${value}st`;
+            if (last === 2) return `${value}nd`;
+            if (last === 3) return `${value}rd`;
+            return `${value}th`;
+        }
+
+        function renderNumberTokens(values, classForValue) {
+            return `<span class="worked-data-line">${values.map((value, index) => {
+                let extraClass = classForValue ? classForValue(value, index) : '';
+                return `<span class="number-token ${extraClass}">${value}</span>`;
+            }).join('')}</span>`;
+        }
+
+        function getDiscreteValueAtPosition(position) {
+            for (let i = 0; i < currentQuestion.cfVals.length; i++) {
+                if (currentQuestion.cfVals[i] >= position) {
+                    return currentQuestion.xVals[i];
+                }
+            }
+            return currentQuestion.xVals[currentQuestion.xVals.length - 1];
+        }
+
+        function typesetMath(attempt = 0) {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([stepsArea]).catch(() => {});
+            } else if (attempt < 10) {
+                setTimeout(() => typesetMath(attempt + 1), 200);
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeElapsed = 0;
+            timerBadge.innerText = 'Time: 00:00';
+            timerInterval = setInterval(() => {
+                timeElapsed++;
+                let m = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+                let s = (timeElapsed % 60).toString().padStart(2, '0');
+                timerBadge.innerText = `Time: ${m}:${s}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function startTest() {
+            // Setup the 4 required test questions
+            testSequence = [
+                { type: 'raw', isEven: false },
+                { type: 'raw', isEven: true },
+                { type: 'tabulated', isEven: false },
+                { type: 'tabulated', isEven: true }
+            ].sort(() => Math.random() - 0.5); // Shuffle the order
+
+            currentQuestionIndex = 0;
+            score = 0;
+            totalTestTime = 0;
+            updateScoreDisplay();
+            
+            mainMenu.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            
+            loadNextQuestion();
+        }
+
+        function resetToMenu() {
+            stopTimer();
+            gameScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+        }
+
+        function updateScoreDisplay() {
+            scoreDisplay.innerText = score;
+        }
+
+        function loadNextQuestion() {
+            if (currentQuestionIndex >= 4) {
+                showEndScreen();
+                return;
+            }
+
+            // Reset UI
+            meanInput.value = '';
+            medianInput.value = '';
+            modeInput.value = '';
+            
+            meanInput.disabled = false;
+            medianInput.disabled = false;
+            modeInput.disabled = false;
+            
+            feedbackBanner.classList.add('hidden');
+            stepsArea.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
+            nextBtn.classList.add('hidden');
+
+            startTimer();
+
+            let qConfig = testSequence[currentQuestionIndex];
+            
+            // Update Title
+            let typeLabel = qConfig.type === 'raw' ? 'Raw Data' : 'Tabulated Data';
+            modeTitle.innerText = `Question ${currentQuestionIndex + 1} of 4 (${typeLabel})`;
+
+            // Generate New Question
+            if (qConfig.type === 'raw') {
+                generateRawQuestion(qConfig.isEven);
+            } else {
+                generateTabulatedQuestion(qConfig.isEven);
+            }
+        }
+
+        function generateRawQuestion(isEvenCount) {
+            // Use at least 8 values while keeping one odd and one even raw-data question.
+            let count = isEvenCount ? (Math.random() < 0.5 ? 8 : 10) : (Math.random() < 0.5 ? 9 : 11);
+            
+            let distinctNums = [];
+            while(distinctNums.length < count - 2) {
+                let r = Math.floor(Math.random() * 20) + 1;
+                if(!distinctNums.includes(r)) distinctNums.push(r);
+            }
+            
+            let modeVal = Math.floor(Math.random() * 20) + 1;
+            while(distinctNums.includes(modeVal)) {
+                modeVal = Math.floor(Math.random() * 20) + 1;
+            }
+
+            let rawData = [...distinctNums, modeVal, modeVal];
+            rawData.sort(() => Math.random() - 0.5);
+
+            // Calculations
+            let sum = rawData.reduce((a, b) => a + b, 0);
+            let mean = Math.round((sum / count) * 100) / 100; // max 2 decimals
+            
+            let sortedData = [...rawData].sort((a, b) => a - b);
+            let median;
+            let mid = Math.floor(count / 2);
+            if (count % 2 === 0) {
+                median = (sortedData[mid - 1] + sortedData[mid]) / 2;
+            } else {
+                median = sortedData[mid];
+            }
+            median = Math.round(median * 100) / 100; // max 2 decimals
+            
+            let mode = modeVal;
+
+            currentQuestion = {
+                type: 'raw', count: count, data: rawData, sorted: sortedData,
+                sum: sum, mean: mean, median: median, mode: mode
+            };
+
+            questionDisplay.innerHTML = `Data set: <span class="raw-data-text">${rawData.join(', ')}</span><p class="helper-note">Round to 1 or 2 decimal places if needed</p>`;
+        }
+
+        function generateTabulatedQuestion(forceEven) {
+            let startX = Math.floor(Math.random() * 5) + 2;
+            let step = Math.floor(Math.random() * 3) + 1;
+            let valueCount = 8;
+            let xVals = Array.from({ length: valueCount }, (_, index) => startX + (step * index));
+            
+            let fVals = [];
+            for(let i=0; i<valueCount; i++) {
+                fVals.push(Math.floor(Math.random() * 4) + 1); // 1 to 4
+            }
+
+            let maxF = Math.max(...fVals);
+            let maxCount = fVals.filter(f => f === maxF).length;
+            if(maxCount > 1) {
+                let boostIndex = fVals.indexOf(maxF);
+                fVals[boostIndex] += 2; 
+            }
+            
+            let sumF = fVals.reduce((a, b) => a + b, 0);
+            
+            // Force even or odd total frequency based on parameter
+            let mIndex = fVals.indexOf(Math.max(...fVals));
+            if (forceEven && sumF % 2 !== 0) {
+                fVals[mIndex] += 1; sumF += 1;
+            } else if (!forceEven && sumF % 2 === 0) {
+                fVals[mIndex] += 1; sumF += 1;
+            }
+
+            // Calculations
+            let sumFx = 0;
+            let cfVals = [];
+            let currentCf = 0;
+            
+            for(let i=0; i<valueCount; i++) {
+                sumFx += (xVals[i] * fVals[i]);
+                currentCf += fVals[i];
+                cfVals.push(currentCf);
+            }
+
+            let mean = Math.round((sumFx / sumF) * 100) / 100;
+            let mode = xVals[fVals.indexOf(Math.max(...fVals))];
+            
+            let median = 0;
+            let medianPosStr = "";
+            let medianRowIndices = [];
+            let medianPositions = [];
+            
+            if (sumF % 2 !== 0) {
+                let medianPos = (sumF + 1) / 2;
+                medianPositions = [medianPos];
+                medianPosStr = `${ordinal(medianPos)} term`;
+                for(let i=0; i<valueCount; i++) {
+                    if(cfVals[i] >= medianPos) {
+                        median = xVals[i];
+                        medianRowIndices.push(i);
+                        break;
+                    }
+                }
+            } else {
+                let pos1 = sumF / 2;
+                let pos2 = (sumF / 2) + 1;
+                medianPositions = [pos1, pos2];
+                medianPosStr = `average of ${ordinal(pos1)} and ${ordinal(pos2)} terms`;
+                let val1 = null, val2 = null;
+                for(let i=0; i<valueCount; i++) {
+                    if(cfVals[i] >= pos1 && val1 === null) { val1 = xVals[i]; medianRowIndices.push(i); }
+                    if(cfVals[i] >= pos2 && val2 === null) { 
+                        val2 = xVals[i]; 
+                        if (!medianRowIndices.includes(i)) medianRowIndices.push(i);
+                        break; 
+                    }
+                }
+                median = (val1 + val2) / 2;
+            }
+            median = Math.round(median * 100) / 100;
+
+            currentQuestion = {
+                type: 'tabulated', xVals: xVals, fVals: fVals, cfVals: cfVals,
+                sumF: sumF, sumFx: sumFx, mean: mean, median: median,
+                medianPosStr: medianPosStr, medianPositions: medianPositions,
+                mode: mode, medianRowIndices: medianRowIndices
+            };
+
+            // Render Table
+            let tableHTML = `
+                <p style="margin-bottom:10px;">Find mean, median, and mode from the table:</p>
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Value (x)</th>
+                            ${xVals.map(x => `<td>${x}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <th>Frequency (f)</th>
+                            ${fVals.map(f => `<td>${f}</td>`).join('')}
+                        </tr>
+                    </table>
+                </div>
+                <p class="helper-note">Round to 1 or 2 decimal places if needed</p>
+            `;
+            questionDisplay.innerHTML = tableHTML;
+        }
+
+        function checkAnswers() {
+            stopTimer();
+            let timeStr = timerBadge.textContent.replace(/time:\s*/i, '');
+            
+            let uMean = parseFloat(meanInput.value);
+            let uMedian = parseFloat(medianInput.value);
+            let uMode = parseFloat(modeInput.value);
+
+            if (isNaN(uMean) || isNaN(uMedian) || isNaN(uMode)) {
+                alert("Please enter a number in all three boxes!");
+                startTimer(); // Resume if they errored out
+                return;
+            }
+
+            // Tight 0.02 tolerance for exactly 2 decimal places accuracy
+            let isMeanCorrect = Math.abs(uMean - currentQuestion.mean) < 0.02;
+            let isMedianCorrect = Math.abs(uMedian - currentQuestion.median) < 0.02;
+            let isModeCorrect = Math.abs(uMode - currentQuestion.mode) < 0.02;
+
+            let correctCount = [isMeanCorrect, isMedianCorrect, isModeCorrect].filter(Boolean).length;
+
+            // Display Feedback
+            feedbackBanner.classList.remove('hidden');
+            totalTestTime += timeElapsed;
+            let timeMsg = ` (Time taken: ${timeStr})`;
+            
+            if (correctCount === 3) {
+                feedbackBanner.className = 'feedback-correct';
+                feedbackBanner.innerText = "Perfect. All answers are correct." + timeMsg;
+                score += 10;
+            } else if (correctCount > 0) {
+                feedbackBanner.className = 'feedback-incorrect';
+                feedbackBanner.innerText = `Good try. You got ${correctCount} out of 3 correct.` + timeMsg;
+                score += (correctCount * 3);
+            } else {
+                feedbackBanner.className = 'feedback-incorrect';
+                feedbackBanner.innerText = "Not quite. Review the steps below." + timeMsg;
+            }
+
+            updateScoreDisplay();
+
+            // Disable inputs
+            meanInput.disabled = true;
+            medianInput.disabled = true;
+            modeInput.disabled = true;
+
+            // Show UI updates
+            submitBtn.classList.add('hidden');
+            
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= 4) {
+                nextBtn.innerText = "Finish test";
+            } else {
+                nextBtn.innerText = "Next question";
+            }
+            nextBtn.classList.remove('hidden');
+            
+            showSteps();
+        }
+
+        function showEndScreen() {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            finalScore.innerText = score;
+            
+            let m = Math.floor(totalTestTime / 60).toString().padStart(2, '0');
+            let s = (totalTestTime % 60).toString().padStart(2, '0');
+            finalTime.innerText = `${m}:${s}`;
+            parent.postMessage({ type: "score", value: score, timeTaken: totalTestTime }, "*");
+        }
+
+        function showSteps() {
+            stepsArea.classList.remove('hidden');
+            
+            if (currentQuestion.type === 'raw') {
+                let meanExpression = currentQuestion.data.join(' + ');
+                let medianFormula = '';
+                let medianSubstitution = '';
+                let medianSolve = '';
+                let medianIndices = [];
+
+                if (currentQuestion.count % 2 === 0) {
+                    let pos1 = currentQuestion.count / 2;
+                    let pos2 = pos1 + 1;
+                    let mid1 = currentQuestion.sorted[pos1 - 1];
+                    let mid2 = currentQuestion.sorted[pos2 - 1];
+                    medianIndices = [pos1 - 1, pos2 - 1];
+                    medianFormula = `Median = average of the ${ordinal(pos1)} and ${ordinal(pos2)} terms`;
+                    medianSubstitution = `Median = (${mid1} + ${mid2}) ÷ 2`;
+                    medianSolve = `Median = ${formatNumber(currentQuestion.median)}`;
+                } else {
+                    let pos = (currentQuestion.count + 1) / 2;
+                    medianIndices = [pos - 1];
+                    medianFormula = `Median position = (n + 1) ÷ 2`;
+                    medianSubstitution = `Median position = (${currentQuestion.count} + 1) ÷ 2 = ${ordinal(pos)} term`;
+                    medianSolve = `The ${ordinal(pos)} term is ${formatNumber(currentQuestion.median)}, so Median = ${formatNumber(currentQuestion.median)}`;
+                }
+
+                stepsArea.innerHTML = `
+                    <h3 class="solution-heading">Raw Data Answer</h3>
+
+                    <div class="step-section">
+                        <div class="step-title">Mean</div>
+                        <p class="step-line"><span class="step-label">Step 1:</span> Formula: Mean = Σx ÷ n</p>
+                        <p class="step-line"><span class="step-label">Step 2:</span> Substitution: Mean = (${meanExpression}) ÷ ${currentQuestion.count} = ${currentQuestion.sum} ÷ ${currentQuestion.count}</p>
+                        <p class="step-line"><span class="step-label">Step 3:</span> Solve: Mean = <span class="correct-ans-highlight">${formatNumber(currentQuestion.mean)}</span></p>
+                    </div>
+                    
+                    <div class="step-section">
+                        <div class="step-title">Median</div>
+                        <p class="step-line"><span class="step-label">Step 1:</span> Ascending order:</p>
+                        ${renderNumberTokens(currentQuestion.sorted, (value, index) => medianIndices.includes(index) ? 'median-number' : '')}
+                        <p class="step-line"><span class="step-label">Step 2:</span> Formula: ${medianFormula}</p>
+                        <p class="step-line"><span class="step-label">Step 3:</span> Solve: ${medianSubstitution}. ${medianSolve}</p>
+                    </div>
+                    
+                    <div class="step-section">
+                        <div class="step-title">Mode</div>
+                        <p class="step-line"><span class="step-label">Step 1:</span> Find the number repeated the most and circle it:</p>
+                        ${renderNumberTokens(currentQuestion.data, value => value === currentQuestion.mode ? 'circled-value' : '')}
+                        <p class="step-line"><span class="step-label">Step 2:</span> Answer: Mode = <span class="correct-ans-highlight">${currentQuestion.mode}</span></p>
+                    </div>
+                `;
+            } else {
+                let meanRows = '';
+                let medianRows = '';
+                let modeRows = '';
+                let maxFrequency = Math.max(...currentQuestion.fVals);
+                let medianPositionFormula = '';
+                let medianPositionSolve = '';
+
+                if (currentQuestion.sumF % 2 === 0) {
+                    let pos1 = currentQuestion.sumF / 2;
+                    let pos2 = pos1 + 1;
+                    let val1 = getDiscreteValueAtPosition(pos1);
+                    let val2 = getDiscreteValueAtPosition(pos2);
+                    medianPositionFormula = `\\(\\text{Median} = \\frac{\\left(\\frac{N}{2}\\right)^{\\text{th}}\\text{ term} + \\left(\\frac{N}{2}+1\\right)^{\\text{th}}\\text{ term}}{2}\\)`;
+                    medianPositionSolve = `
+                        Substitution: \\(N = ${currentQuestion.sumF}\\), so
+                        \\(\\frac{N}{2} = \\frac{${currentQuestion.sumF}}{2} = ${pos1}\\)
+                        and \\(\\frac{N}{2}+1 = ${pos1}+1 = ${pos2}\\).
+                        The arrows show the ${ordinal(pos1)} term = ${val1} and the ${ordinal(pos2)} term = ${val2}.
+                        \\(\\text{Median} = \\frac{${val1}+${val2}}{2} = \\frac{${val1 + val2}}{2} = ${formatNumber(currentQuestion.median)}\\)
+                    `;
+                } else {
+                    let pos = (currentQuestion.sumF + 1) / 2;
+                    let val = getDiscreteValueAtPosition(pos);
+                    medianPositionFormula = `\\(\\text{Median position} = \\frac{N+1}{2}\\)`;
+                    medianPositionSolve = `
+                        Substitution: \\(N = ${currentQuestion.sumF}\\), so
+                        \\(\\frac{N+1}{2} = \\frac{${currentQuestion.sumF}+1}{2} = ${pos}\\).
+                        The arrow shows the ${ordinal(pos)} term = ${val}.
+                        Therefore, \\(\\text{Median} = ${formatNumber(currentQuestion.median)}\\)
+                    `;
+                }
+
+                for(let i=0; i<currentQuestion.xVals.length; i++) {
+                    let fx = currentQuestion.xVals[i] * currentQuestion.fVals[i];
+                    let isMedian = currentQuestion.medianRowIndices.includes(i);
+                    let rowClass = isMedian ? ' class="median-row"' : '';
+                    let previousCf = i === 0 ? 0 : currentQuestion.cfVals[i - 1];
+                    let positionsHere = currentQuestion.medianPositions.filter(position => position > previousCf && position <= currentQuestion.cfVals[i]);
+                    let medianArrow = positionsHere.length
+                        ? `<span class="median-arrow">↑ ${positionsHere.map(ordinal).join(' & ')}</span>`
+                        : '';
+                    let frequencyCell = currentQuestion.fVals[i] === maxFrequency
+                        ? `<span class="frequency-token mode-frequency">${currentQuestion.fVals[i]}</span>`
+                        : currentQuestion.fVals[i];
+                    
+                    meanRows += `
+                        <tr>
+                            <td>${currentQuestion.xVals[i]}</td>
+                            <td>${currentQuestion.fVals[i]}</td>
+                            <td>${fx}</td>
+                        </tr>
+                    `;
+
+                    medianRows += `
+                        <tr${rowClass}>
+                            <td>${currentQuestion.xVals[i]}</td>
+                            <td>${currentQuestion.fVals[i]}</td>
+                            <td class="${isMedian ? 'median-locator' : ''}">${currentQuestion.cfVals[i]}${medianArrow}</td>
+                        </tr>
+                    `;
+
+                    modeRows += `
+                        <tr>
+                            <td>${currentQuestion.xVals[i]}</td>
+                            <td>${frequencyCell}</td>
+                        </tr>
+                    `;
+                }
+
+                stepsArea.innerHTML = `
+                    <h3 class="solution-heading">Discrete Data Answer</h3>
+
+                    <div class="step-section">
+                        <div class="step-title">Mean</div>
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>x</th>
+                                    <th>f</th>
+                                    <th>f × x</th>
+                                </tr>
+                                ${meanRows}
+                                <tr class="total-row">
+                                    <td>Total</td>
+                                    <td>Σf = ${currentQuestion.sumF}</td>
+                                    <td>Σfx = ${currentQuestion.sumFx}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <p class="step-line"><span class="step-label">Step 1:</span> Formula: Mean = Σfx ÷ Σf</p>
+                        <p class="step-line"><span class="step-label">Step 2:</span> Substitution: Mean = ${currentQuestion.sumFx} ÷ ${currentQuestion.sumF}</p>
+                        <p class="step-line"><span class="step-label">Step 3:</span> Solve: Mean = <span class="correct-ans-highlight">${formatNumber(currentQuestion.mean)}</span></p>
+                    </div>
+                    
+                    <div class="step-section">
+                        <div class="step-title">Median</div>
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>x</th>
+                                    <th>f</th>
+                                    <th>Cumulative Frequency (cf)</th>
+                                </tr>
+                                ${medianRows}
+                                <tr class="total-row">
+                                    <td>Total</td>
+                                    <td>Σf = ${currentQuestion.sumF}</td>
+                                    <td>-</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <p class="table-note">Arrows locate the median position in the cumulative frequency column.</p>
+                        <p class="step-line"><span class="step-label">Step 1:</span> Ascending order: the x-values are already arranged from smallest to largest. Use cumulative frequency to count through the data.</p>
+                        <p class="step-line"><span class="step-label">Step 2:</span> Formula: ${medianPositionFormula}</p>
+                        <p class="step-line"><span class="step-label">Step 3:</span> Solve: ${medianPositionSolve}</p>
+                    </div>
+                    
+                    <div class="step-section">
+                        <div class="step-title">Mode</div>
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>x</th>
+                                    <th>f</th>
+                                </tr>
+                                ${modeRows}
+                            </table>
+                        </div>
+                        <p class="table-note">The circled frequency is the highest frequency.</p>
+                        <p class="step-line"><span class="step-label">Step 1:</span> Find the highest frequency and circle it. Highest f = <span class="correct-ans-highlight">${maxFrequency}</span>.</p>
+                        <p class="step-line"><span class="step-label">Step 2:</span> Answer: this frequency belongs to x = <span class="correct-ans-highlight">${currentQuestion.mode}</span>, so Mode = <span class="correct-ans-highlight">${currentQuestion.mode}</span>.</p>
+                    </div>
+                `;
+            }
+            typesetMath();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]: TCL SimLab
+    - generic [ref=e4]: Torque on an Electric Dipole in a Uniform Electric Field
+    - generic [ref=e5]: Class XII Physics | Electrostatics
+  - main:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - heading "Parameters" [level=3] [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - generic [ref=e12]: Charge |q| (nC)
+            - generic [ref=e13]: "5"
+          - slider [ref=e14]: "5"
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - generic [ref=e17]: Separation 2a (m)
+            - generic [ref=e18]: "0.50"
+          - slider [ref=e19]: "0.5"
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - generic [ref=e22]: E-Field (N/C)
+            - generic [ref=e23]: "500"
+          - slider [ref=e24]: "500"
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]: Angle θ (deg)
+            - generic [ref=e28]: 45.0°
+          - generic [ref=e29]:
+            - slider [ref=e30]: "45"
+            - button "▶ Play" [ref=e31] [cursor=pointer]
+      - generic [ref=e32]:
+        - heading "Display" [level=3] [ref=e33]
+        - generic [ref=e34] [cursor=pointer]:
+          - checkbox "Show Field Lines (E)" [checked] [ref=e35]
+          - text: Show Field Lines (E)
+        - generic [ref=e36] [cursor=pointer]:
+          - checkbox "Show Force Vectors (F)" [checked] [ref=e37]
+          - text: Show Force Vectors (F)
+        - generic [ref=e38] [cursor=pointer]:
+          - checkbox "Show Perp. Distance (d)" [ref=e39]
+          - text: Show Perp. Distance (d)
+        - generic [ref=e40] [cursor=pointer]:
+          - checkbox "Show Torque Direction" [checked] [ref=e41]
+          - text: Show Torque Direction
+        - generic [ref=e42] [cursor=pointer]:
+          - checkbox "Show Energy Bar (U)" [checked] [ref=e43]
+          - text: Show Energy Bar (U)
+      - generic [ref=e44]:
+        - heading "Actions" [level=3] [ref=e45]
+        - generic [ref=e46]:
+          - button "0° (Stable)" [ref=e47] [cursor=pointer]
+          - button "90° (Max τ)" [ref=e48] [cursor=pointer]
+          - button "180° (Unstable)" [ref=e49] [cursor=pointer]
+          - button "270° (Max τ)" [ref=e50] [cursor=pointer]
+        - button "▶ Play (Align Dipole)" [ref=e51] [cursor=pointer]
+  - contentinfo [ref=e52]:
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]: Dipole Moment (p)
+        - generic [ref=e56]: 2.50 nC·m
+      - generic [ref=e57]:
+        - generic [ref=e58]: E-Field (E)
+        - generic [ref=e59]: 500 N/C
+      - generic [ref=e60]:
+        - generic [ref=e61]: Angle (θ)
+        - generic [ref=e62]: 45.0°
+      - generic [ref=e63]:
+        - generic [ref=e64]: Torque (τ)
+        - generic [ref=e65]: 0.9 µN·m
+      - generic [ref=e66]:
+        - generic [ref=e67]: Pot. Energy (U)
+        - generic [ref=e68]: "-0.9 µJ"
+    - generic [ref=e69]: "Vectors: τ⃗ = p⃗ × E⃗ | Magnitude: |τ| = pE sin(θ) | Energy: U = −pE cos(θ)"
+  - generic [ref=e71]:
+    - main [ref=e72]:
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]: Trinity Simulation Lab · Physics
+          - heading "See how a dipole bends space into direction, symmetry, and field strength." [level=1] [ref=e76]
+        - generic [ref=e77]: Future Simulation
+      - region "Dipole preview stage" [ref=e78]:
+        - generic [ref=e80]: Field Preview
+        - img [ref=e81]:
+          - generic [ref=e97]: +
+          - generic [ref=e101]: −
+          - generic [ref=e106]:
+            - generic [ref=e107]: symmetry axis
+            - generic [ref=e108]: midpoint
+            - generic [ref=e109]: +q
+            - generic [ref=e110]: −q
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - strong [ref=e113]: Planned experience
+            - text: Students will rotate the dipole, probe field strength at any point, and compare on-axis versus equatorial behavior without leaving a single visual frame.
+          - generic [ref=e114]:
+            - strong [ref=e115]: Core relation
+            - text: p = q × d
+    - complementary [ref=e116]:
+      - generic [ref=e117]:
+        - generic [ref=e118]: Study Mode
+        - heading "Dipole" [level=2] [ref=e119]
+        - paragraph [ref=e120]: A future Trinity simulation for electric dipoles, field geometry, and directional reasoning in electrostatics.
+        - generic [ref=e121]:
+          - generic [ref=e122]: Physics
+          - generic [ref=e123]: Electrostatics
+          - generic [ref=e124]: Class 12
+      - generic [ref=e125]:
+        - heading "What Students Will Explore" [level=3] [ref=e126]
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - strong [ref=e129]: Field-line shape
+            - text: Watch how lines leave the positive charge, curve through space, and terminate on the negative charge.
+          - generic [ref=e130]:
+            - strong [ref=e131]: Axis comparisons
+            - text: Contrast the field along the dipole axis with the equatorial line and build intuition for symmetry.
+          - generic [ref=e132]:
+            - strong [ref=e133]: Moment versus distance
+            - text: See how charge separation changes dipole moment and how quickly field strength falls away.
+      - generic [ref=e134]:
+        - heading "Planned Controls" [level=3] [ref=e135]
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - generic [ref=e138]: Charge
+            - generic [ref=e139]: Adjust ±q magnitude
+          - generic [ref=e140]:
+            - generic [ref=e141]: Separation
+            - generic [ref=e142]: Stretch or compress dipole length
+          - generic [ref=e143]:
+            - generic [ref=e144]: Probe
+            - generic [ref=e145]: Move a point and read field vector
+          - generic [ref=e146]:
+            - generic [ref=e147]: Mode
+            - generic [ref=e148]: Field lines, vectors, or potential map
+      - generic [ref=e149]:
+        - heading "Legend" [level=3] [ref=e150]
+        - generic [ref=e151]:
+          - generic [ref=e154]: Positive charge
+          - generic [ref=e157]: Negative charge
+          - generic [ref=e160]: Field line preview

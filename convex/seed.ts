@@ -798,3 +798,59 @@ export const seedRadiansDegree = internalMutation({
     return { action: "inserted", id };
   },
 });
+
+export const seedStageIdentification = internalMutation({
+  args: {
+    code: v.string(),
+    svgCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const content = {
+      slug: "stage-identification",
+      type: "game" as const,
+      title: "Mitosis Phase Identifier",
+      subject: "Biology" as const,
+      grade: "Class 10",
+      chapter: "Cell Cycle and Cell Division",
+      level: "Core" as const,
+      minutes: 10,
+      concepts: [
+        "mitosis",
+        "cell division",
+        "phases of mitosis",
+        "prophase",
+        "metaphase",
+        "anaphase",
+        "telophase",
+      ],
+      svgCode: args.svgCode,
+      code: args.code,
+      prompt: "Identify each phase of mitosis. Speed and streaks bump your score.",
+      published: true,
+      featured: false,
+    };
+
+    const existing = await ctx.db
+      .query("content")
+      .withIndex("by_slug", (q) => q.eq("slug", content.slug))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ...content,
+        updatedAt: now,
+      });
+      return { action: "updated", id: existing._id };
+    }
+
+    const id = await ctx.db.insert("content", {
+      ...content,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { action: "inserted", id };
+  },
+});
+

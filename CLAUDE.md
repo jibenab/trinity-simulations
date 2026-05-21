@@ -17,7 +17,7 @@ Tone: precise, calm, textbook-scientific. Never playful-cartoon. Never corporate
 - **Primary viewport:** iPad landscape — **1194 × 834**.
 - Design at iPad-landscape first. Must gracefully reflow to iPad portrait (834 × 1194) and phone (≥ 375 px).
 - Hit targets ≥ **44 px** on touch.
-- Minimum body font size on mobile: **15 px**. Minimum label-mono: **11 px**.
+- **Type must be readable from typical iPad-on-desk distance (~50 cm).** Minimum body on iPad: **17 px**. Minimum body on phone: **16 px**. Minimum label-mono anywhere: **13 px**. Minimum stage readout: **14 px**. If you find yourself leaning in, the type is too small — bump it.
 - In iPad fullscreen/PWA use, do not let the document body become the primary scroll surface. Lock page-level scroll (`html`, `body`, and the app root at `100dvh`, `overflow: hidden`, `overscroll-behavior: none`) and put any necessary vertical scrolling inside an internal content panel with `overflow-y: auto`, `-webkit-overflow-scrolling: touch`, and `overscroll-behavior: contain`. This reduces accidental pull-down minimization / browser chrome reveal gestures.
 
 ---
@@ -64,12 +64,13 @@ All tokens live in `styles.css` under `:root`. Reference via `var(--token)` — 
 | Role | Weight | Size range | Letter-spacing |
 |---|---|---|---|
 | Display headline (`.display`) | 500 | 48–104 px, `clamp()` encouraged | `-0.025em` |
-| Section title | 600 | 26–48 px | `-0.02em` |
-| Card title | 600 | 18–24 px | `-0.01em` |
-| Body | 400 | 14–16 px | 0 |
-| Body small | 400 | 12–13 px | 0 |
-| Eyebrow (`.eyebrow`) | 500 (via mono) | 11 px | `0.14em`, UPPERCASE |
-| Label-mono (`.label-mono`) | 500 | 11 px | `0.08em`, UPPERCASE |
+| Section title | 600 | 28–48 px | `-0.02em` |
+| Card title | 600 | 20–26 px | `-0.01em` |
+| Body | 400 | 17–18 px (16 px on phone) | 0 |
+| Body small | 400 | 15 px | 0 |
+| Eyebrow (`.eyebrow`) | 500 (via mono) | 13 px | `0.14em`, UPPERCASE |
+| Label-mono (`.label-mono`) | 500 | 13 px | `0.08em`, UPPERCASE |
+| Stage readout (mono) | 500 | 14–16 px | `0.04em` |
 
 **Monospace** (`JetBrains Mono`) is allowed for:
 - Section eyebrows ("§ 01 — Featured")
@@ -77,7 +78,7 @@ All tokens live in `styles.css` under `:root`. Reference via `var(--token)` — 
 - Axis labels on graphs
 - Chip labels and status pills
 
-Never set monospace larger than 14 px. Never use it for body copy.
+Never set monospace larger than 18 px. Never use it for body copy. Numeric readouts on the stage should sit at 14–16 px so values are legible across the room.
 
 ---
 
@@ -108,21 +109,23 @@ Every simulation should follow the same 4-zone layout so students build muscle m
 ```
 
 ### Header strip
-- Eyebrow: "SIMULATION · {SUBJECT}" in mono
-- Title: `.display` size 32, weight 600
-- Right side: 42×42 circular outline buttons for **play/pause**, **reset**. Nothing else.
+- Eyebrow: "SIMULATION · {SUBJECT}" in mono, **13 px**
+- Title: `.display` **36–40 px** on iPad, weight 600
+- Right side: 44×44 circular outline buttons for **play/pause**, **reset**. Nothing else.
 
 ### Stage
 - Background `--dark` (white `#FFFFFF`), 1px `var(--stage-rule)` border, `border-radius: 4px`.
 - A faint grid: `stroke="var(--stage-grid)" strokeWidth="0.5"`, every 8–12 divisions.
 - The live moving thing is filled with `--accent`. Everything else is `--dark-ink` or `--dark-mute`.
 - Trails / ghost positions use `--ink` at opacity 0.12.
-- Readouts sit in the top-left, mono, 10px, color `--dark-mute`, format `LABEL  value` with two spaces.
+- Readouts sit in the top-left, mono, **14–16 px**, color `--dark-mute`, format `LABEL  value` with two spaces. Labels in `--dark-mute`, values in `--dark-ink` for emphasis.
+- SVG-embedded axis tick labels: **12–13 px** minimum; if cramped, drop ticks rather than shrink type.
 
 ### Parameters
-- `<input type="range">` with `accent-color: var(--accent)`.
-- Label row: mono 10px, uppercase, `justify-content: space-between`, name on left, current value + unit on right (e.g. `Length / 2.8 m`).
+- `<input type="range">` with `accent-color: var(--accent)`, track height ≥ **4 px**, thumb ≥ **20 px**.
+- Label row: mono **13 px**, uppercase, `justify-content: space-between`, name on left, current value + unit on right (e.g. `LENGTH / 2.8 m`). The numeric value should be **15 px** mono, weight 500, in `--ink` (not muted) so it pops while dragging.
 - 2 parameters per row on iPad landscape, 1 per row on phone.
+- Row vertical rhythm: **≥ 14 px** between label and slider, **≥ 18 px** between parameter rows — give the labels air on iPad.
 - Never more than 4 parameters visible at once. If you need more, collapse into "Advanced".
 
 ### Prompt
@@ -136,7 +139,7 @@ Every simulation should follow the same 4-zone layout so students build muscle m
 Use the existing `.simcard` class. Anatomy:
 
 1. **Thumb** — aspect-ratio 4:5, `--bg-alt` background, 135° diagonal stripes overlay at 8% opacity, abstract geometric glyph centered, subject chip top-left, SIM·NN label top-right.
-2. **Meta** — title (weight 600, letter-spacing -0.01em), concepts row (mono 12px muted), subject·level + minutes row.
+2. **Meta** — title **20–22 px** (weight 600, letter-spacing -0.01em), concepts row (mono **13 px** muted), subject·level + minutes row at **13 px** mono.
 
 Hover: `translateY(-3px)` + `box-shadow: 6px 6px 0 var(--ink)`. Nothing else.
 
@@ -159,7 +162,7 @@ Never use photographic imagery inside the thumb. Never use emoji as a subject ic
 - **Primary:** `.btn` — `--ink` background, `--bg` text, pill radius. Icon on the right, never left.
 - **Ghost:** `.btn.ghost` — transparent, 1px `--ink` border.
 - **Accent (rare):** `.btn.accent` — reserved for the single strongest CTA on a dark section.
-- **Chips:** pill, 1px `--ink` border, mono 11px uppercase. Active state inverts to ink-on-bg.
+- **Chips:** pill, 1px `--ink` border, mono **13 px** uppercase, vertical padding ≥ 6 px so the touch target clears 32 px. Active state inverts to ink-on-bg.
 
 Never stack two accent buttons side-by-side. Never use gradient or "glass" buttons.
 
@@ -218,6 +221,7 @@ When adding a new simulation:
 - [ ] Works at 1194×834 and at 375×667
 - [ ] iPad fullscreen does not rely on body/page scroll; scrollable content is contained inside an internal panel
 - [ ] No hardcoded colors in SVGs or component CSS — all use `var(--token)`
+- [ ] Body type ≥ 17 px on iPad / 16 px on phone; mono labels ≥ 13 px; stage readouts ≥ 14 px (legible at ~50 cm)
 
 <!-- convex-ai-start -->
 This project uses [Convex](https://convex.dev) as its backend.

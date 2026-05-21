@@ -1,0 +1,73 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Trinity Simulation Lab · Mathematics
+        - heading "Differentiate motion by watching slope become speed." [level=1] [ref=e8]
+        - paragraph [ref=e9]: Move between constant velocity, constant acceleration, and a turning-point case to see how position, velocity, and acceleration stay linked.
+      - generic [ref=e10]: Fig. 03 · Derivatives
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - generic: When velocity is constant, the slope of x(t) is the same everywhere — differentiation gives a single constant number.
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - text: x(t) = 5t
+          - text: x(7.7) = 38.29 m
+        - generic [ref=e20]:
+          - text: v(t) = 5
+          - text: v(7.7) = 5.00 m/s
+        - generic [ref=e21]:
+          - text: a(t) = 0
+          - text: a(7.7) = 0.00 m/s²
+  - complementary [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e24]: Study Mode
+      - generic [ref=e25]: Differentiation Foundation
+      - paragraph [ref=e26]: "Treat the graph like a lab bench: play the motion, hover the curve, and compare tangent versus secant slope without leaving the same screen."
+    - generic [ref=e27]:
+      - heading "Scenes" [level=2] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e30] [cursor=pointer]:
+          - radio "1. Constant Velocity Flat derivative, steady motion." [checked] [ref=e31]
+          - generic [ref=e32]:
+            - strong [ref=e33]: 1. Constant Velocity
+            - text: Flat derivative, steady motion.
+        - generic [ref=e34] [cursor=pointer]:
+          - radio "2. Constant Acceleration Parabola in position, line in velocity." [ref=e35]
+          - generic [ref=e36]:
+            - strong [ref=e37]: 2. Constant Acceleration
+            - text: Parabola in position, line in velocity.
+        - generic [ref=e38] [cursor=pointer]:
+          - radio "3. Variable Motion Turning point where velocity reaches zero." [ref=e39]
+          - generic [ref=e40]:
+            - strong [ref=e41]: 3. Variable Motion
+            - text: Turning point where velocity reaches zero.
+    - generic [ref=e42]:
+      - heading "Playback" [level=2] [ref=e43]
+      - generic [ref=e44]:
+        - button "Play" [ref=e45] [cursor=pointer]
+        - button "Reset" [ref=e46] [cursor=pointer]
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]: Speed
+          - generic [ref=e50]: 1.00x
+        - slider [ref=e51]: "1"
+    - generic [ref=e52]:
+      - heading "Tools" [level=2] [ref=e53]
+      - generic [ref=e54]:
+        - generic [ref=e55] [cursor=pointer]:
+          - checkbox "Show tangent line for the instantaneous slope." [checked] [ref=e56]
+          - generic [ref=e57]: Show tangent line for the instantaneous slope.
+        - generic [ref=e58] [cursor=pointer]:
+          - checkbox "Compare it with a secant over a finite time gap." [ref=e59]
+          - generic [ref=e60]: Compare it with a secant over a finite time gap.
+        - generic [ref=e61] [cursor=pointer]:
+          - checkbox "Keep the algebra panel visible while you explore." [checked] [ref=e62]
+          - generic [ref=e63]: Keep the algebra panel visible while you explore.
+    - generic [ref=e64]:
+      - heading "Jump To" [level=2] [ref=e65]
+      - generic [ref=e66]:
+        - button "Start · t=0" [ref=e67] [cursor=pointer]
+        - button "Turning Pt" [ref=e68] [cursor=pointer]
+        - button "Midpoint" [ref=e69] [cursor=pointer]
+        - button "End" [ref=e70] [cursor=pointer]
