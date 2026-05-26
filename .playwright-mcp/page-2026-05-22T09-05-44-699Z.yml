@@ -1,0 +1,87 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Trinity Simulation Lab · Physics
+      - generic [ref=e7]: Torque and force on an electric dipole in uniform and non-uniform fields.
+    - generic [ref=e8]: Class XII · Electrostatics
+  - main [ref=e9]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - heading "Parameters" [level=3] [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - generic [ref=e17]: Charge |q| (nC)
+            - generic [ref=e18]: "5"
+          - slider [ref=e19]: "5"
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - generic [ref=e22]: Separation 2a (m)
+            - generic [ref=e23]: "0.50"
+          - slider [ref=e24]: "0.5"
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]: E-Field (N/C)
+            - generic [ref=e28]: "500"
+          - slider [ref=e29]: "500"
+        - generic [ref=e30] [cursor=pointer]:
+          - checkbox "Non-uniform field" [checked] [ref=e31]
+          - text: Non-uniform field
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]: Field Gradient dE/dx
+            - generic [ref=e35]: 400 N/C/m
+          - slider [ref=e36]: "400"
+          - generic [ref=e37]: Field strength changes left-to-right, so the two charges can feel unequal forces.
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic [ref=e40]: Angle θ (deg)
+            - generic [ref=e41]: 45.0°
+          - generic [ref=e42]:
+            - slider [ref=e43]: "45"
+            - button "▶ Play" [ref=e44] [cursor=pointer]
+      - generic [ref=e45]:
+        - heading "Display" [level=3] [ref=e46]
+        - generic [ref=e47] [cursor=pointer]:
+          - checkbox "Show Field Lines (E)" [checked] [ref=e48]
+          - text: Show Field Lines (E)
+        - generic [ref=e49] [cursor=pointer]:
+          - checkbox "Show Force Vectors (F)" [checked] [ref=e50]
+          - text: Show Force Vectors (F)
+        - generic [ref=e51] [cursor=pointer]:
+          - checkbox "Show Perp. Distance (d)" [ref=e52]
+          - text: Show Perp. Distance (d)
+        - generic [ref=e53] [cursor=pointer]:
+          - checkbox "Show Torque Direction" [checked] [ref=e54]
+          - text: Show Torque Direction
+        - generic [ref=e55] [cursor=pointer]:
+          - checkbox "Show Energy Bar (U)" [checked] [ref=e56]
+          - text: Show Energy Bar (U)
+      - generic [ref=e57]:
+        - heading "Actions" [level=3] [ref=e58]
+        - generic [ref=e59]:
+          - button "0° (Stable)" [ref=e60] [cursor=pointer]
+          - button "90° (Max τ)" [ref=e61] [cursor=pointer]
+          - button "180° (Unstable)" [ref=e62] [cursor=pointer]
+          - button "270° (Max τ)" [ref=e63] [cursor=pointer]
+        - button "▶ Play (Align Dipole)" [ref=e64] [cursor=pointer]
+  - contentinfo [ref=e65]:
+    - generic [ref=e66]:
+      - generic [ref=e67]:
+        - generic [ref=e68]: Dipole Moment (p)
+        - generic [ref=e69]: 2.50 nC·m
+      - generic [ref=e70]:
+        - generic [ref=e71]: E-Field (E)
+        - generic [ref=e72]: E0 500 N/C
+      - generic [ref=e73]:
+        - generic [ref=e74]: Angle (θ)
+        - generic [ref=e75]: 45.0°
+      - generic [ref=e76]:
+        - generic [ref=e77]: Torque (τ)
+        - generic [ref=e78]: 0.9 µN·m
+      - generic [ref=e79]:
+        - generic [ref=e80]: Net Force (ΣF)
+        - generic [ref=e81]: +707.1 nN
+      - generic [ref=e82]:
+        - generic [ref=e83]: Pot. Energy (U)
+        - generic [ref=e84]: "-0.9 µJ"
+    - generic [ref=e85]: "Non-uniform: E(x) = E₀ + (dE/dx)x | ΣF = q(E₊ − E₋) | |τ| ≈ pEavg sin(θ)"

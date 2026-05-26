@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cohesion vs. Adhesion — Trinity Simulation Lab</title>
+    <!-- Google Fonts: Manrope (Sans) and JetBrains Mono (Mono) -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Brand Tokens as defined in CLAUDE.md */
+        :root {
+            --bg: #EFF2F5;
+            --bg-alt: #E2E7EC;
+            --paper: #F7F8FA;
+            --ink: #0C1115;
+            --ink-soft: #2B333A;
+            --ink-mute: #6B7680;
+            --rule-soft: rgba(12, 17, 21, 0.14);
+            --dark: #FFFFFF; /* White stage background */
+            --dark-ink: #0C1115;
+            --dark-mute: #4A5560;
+            --accent: oklch(0.52 0.12 200); /* Scientific teal */
+            --accent-ink: #F7F8FA;
+            --sans: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+            --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100dvw;
+            height: 100dvh;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--sans);
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* iPad Landscape First Viewport (1194 x 834) Outer Shell */
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 24px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 1. HEADER STRIP */
+        .header-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--rule-soft);
+            padding-bottom: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .eyebrow {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-mute);
+        }
+
+        .display-title {
+            font-family: var(--sans);
+            font-weight: 600;
+            font-size: 36px;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Tactile circular playback buttons */
+        .playback-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--ink);
+            background: transparent;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .playback-btn:hover {
+            background: var(--bg-alt);
+        }
+
+        .playback-btn:active {
+            transform: scale(0.95);
+        }
+
+        .playback-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* 2. MAIN SIMULATION AREA */
+        .main-workspace {
+            display: grid;
+            grid-template-columns: 7fr 4fr;
+            gap: 24px;
+            flex: 1;
+            min-height: 0; /* Important for scroll locks */
+        }
+
+        /* LEFT: THE STAGE ZONE */
+        .stage-container {
+            display: flex;
+            flex-direction: column;
+            background: var(--dark);
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            position: relative;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Tab bar inside the stage container */
+        .stage-tab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--ink);
+            background: var(--paper);
+        }
+
+        .stage-tab {
+            flex: 1;
+            padding: 14px 20px;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: var(--ink-mute);
+            cursor: pointer;
+            border-right: 1px solid var(--rule-soft);
+            transition: all 0.15s ease;
+        }
+
+        .stage-tab:last-child {
+            border-right: none;
+        }
+
+        .stage-tab.active {
+            color: var(--ink);
+            background: var(--dark);
+            font-weight: 700;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .stage-tab:hover:not(.active) {
+            background: var(--bg-alt);
+            color: var(--ink);
+        }
+
+        /* HTML5 Physics Canvas */
+        .canvas-wrapper {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        #physics-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: var(--dark);
+        }
+
+        /* Stage HUD Monospace Readouts (Top Left) */
+        .stage-hud {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            pointer-events: none;
+            font-family: var(--mono);
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--dark-mute);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 14px;
+            border: 1px solid var(--rule-soft);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .hud-row {
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        .hud-label {
+            color: var(--ink-mute);
+        }
+
+        .hud-value {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        /* RIGHT: PARAMETER STRIP & INFO ZONE */
+        .control-panel {
+            background: var(--paper);
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-header {
+            border-bottom: 1px solid var(--rule-soft);
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+        }
+
+        .section-title {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-mute);
+            margin: 0;
+        }
+
+        /* Presets: Segmented controls */
+        .preset-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .preset-btn {
+            background: var(--dark);
+            color: var(--ink-soft);
+            border: none;
+            border-right: 1px solid var(--ink);
+            padding: 12px 6px;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-btn:last-child {
+            border-right: none;
+        }
+
+        .preset-btn:hover:not(.active) {
+            background: var(--bg-alt);
+        }
+
+        .preset-btn.active {
+            background: var(--ink);
+            color: var(--paper);
+            font-weight: 600;
+        }
+
+        /* Sliders block */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .slider-name {
+            color: var(--ink-mute);
+            text-transform: uppercase;
+        }
+
+        .slider-readout {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        /* Tactile custom range inputs */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 32px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-alt);
+            border: 1px solid var(--ink);
+            border-radius: 3px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--dark);
+            border: 2px solid var(--ink);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            transition: transform 0.1s ease, background-color 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: var(--bg-alt);
+        }
+
+        /* Make the active parameter's thumb colored */
+        input[type="range"].cohesion-slider::-webkit-slider-thumb {
+            border-color: var(--accent);
+        }
+        input[type="range"].adhesion-slider::-webkit-slider-thumb {
+            border-color: oklch(0.60 0.18 45); /* Coral color for adhesion */
+        }
+
+        /* Toggle Options: tactile pills */
+        .options-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .toggle-chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            background: var(--dark);
+            padding: 10px 14px;
+            font-family: var(--mono);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .toggle-chip:hover {
+            background: var(--bg-alt);
+        }
+
+        .toggle-chip.active {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .toggle-status {
+            font-weight: 600;
+        }
+
+        .toggle-chip.active .toggle-status {
+            color: var(--accent);
+        }
+
+        /* 3. TEACHER TALKING POINTS BOX */
+        .talking-points-box {
+            border: 1px solid var(--rule-soft);
+            background: var(--dark);
+            border-radius: 4px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .talking-points-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .talking-points-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--ink-soft);
+            margin: 0;
+        }
+
+        /* 4. PROMPT STRIP */
+        .prompt-strip {
+            background: var(--paper);
+            border: 1px solid var(--ink);
+            border-radius: 4px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .prompt-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--ink-soft);
+            margin: 0;
+            max-width: 900px;
+        }
+
+        /* RESPONSIVE LAYOUT (iPad Landscape first, reflowing for portrait/mobile) */
+        @media (max-width: 900px) {
+            html, body {
+                overflow: auto;
+                overscroll-behavior: auto;
+            }
+
+            .app-shell {
+                padding: 12px;
+                gap: 12px;
+                height: auto;
+            }
+
+            .display-title {
+                font-size: 28px;
+            }
+
+            .main-workspace {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                height: auto;
+            }
+
+            .stage-container {
+                height: 480px;
+            }
+
+            .control-panel {
+                height: auto;
+                padding: 16px;
+                gap: 16px;
+            }
+
+            .prompt-strip {
+                padding: 12px 16px;
+            }
+
+            .prompt-text {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+        
+        <!-- 1. HEADER STRIP -->
+        <header class="header-strip">
+            <div class="header-left">
+                <span class="eyebrow">Simulation · Matter & Molecules</span>
+                <h1 class="display-title">Cohesion vs. Adhesion</h1>
+            </div>
+            <div class="header-right">
+                <button class="playback-btn" id="play-pause-btn" title="Play/Pause Physics Animation">
+                    <!-- Pause Icon (Default) -->
+                    <svg id="pause-svg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <!-- Play Icon (Toggled via JS) -->
+                    <svg id="play-svg" viewBox="0 0 24 24" style="display: none;"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <button class="playback-btn" id="reset-btn" title="Reset Simulation to Presets">
+                    <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 2. MAIN WORKSPACE -->
+        <main class="main-workspace">
+            
+            <!-- LEFT: THE STAGE -->
+            <section class="stage-container">
+                <nav class="stage-tab-bar">
+                    <button class="stage-tab active" id="tab-droplet" data-tab="droplet">1. Droplet Lab (Surface Tension)</button>
+                    <button class="stage-tab" id="tab-capillary" data-tab="capillary">2. Capillary Lab (Meniscus & Tube)</button>
+                </nav>
+
+                <div class="canvas-wrapper">
+                    <!-- Monospace HUD Overlay (Top-Left) -->
+                    <div class="stage-hud" id="stage-hud">
+                        <div class="hud-row">
+                            <span class="hud-label">Substance</span>
+                            <span class="hud-value" id="hud-substance">Water on Glass</span>
+                        </div>
+                        <div class="hud-row">
+                            <span class="hud-label">Cohesion (Fc)</span>
+                            <span class="hud-value" id="hud-cohesion">5.0 nN</span>
+                        </div>
+                        <div class="hud-row">
+                            <span class="hud-label">Adhesion (Fa)</span>
+                            <span class="hud-value" id="hud-adhesion">5.0 nN</span>
+                        </div>
+                        <div class="hud-row" id="hud-angle-row">
+                            <span class="hud-label">Contact Angle (θ)</span>
+                            <span class="hud-value" id="hud-angle">90.0°</span>
+                        </div>
+                        <div class="hud-row" id="hud-behavior-row">
+                            <span class="hud-label">Fluid Behavior</span>
+                            <span class="hud-value" id="hud-behavior">Neutral (Flat)</span>
+                        </div>
+                    </div>
+
+                    <canvas id="physics-canvas"></canvas>
+                </div>
+            </section>
+
+            <!-- RIGHT: THE CONTROL PANEL -->
+            <aside class="control-panel">
+                
+                <!-- Section 1: Presets -->
+                <div class="panel-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Scenario Presets</h2>
+                    </div>
+                    <div class="preset-group">
+                        <button class="preset-btn active" id="preset-water-glass" data-preset="water-glass">Water / Glass</button>
+                        <button class="preset-btn" id="preset-water-teflon" data-preset="water-teflon">Water / Teflon</button>
+                        <button class="preset-btn" id="preset-mercury-glass" data-preset="mercury-glass">Mercury / Glass</button>
+                    </div>
+                </div>
+
+                <!-- Section 2: Tactile Sliders -->
+                <div class="panel-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Molecular Forces</h2>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-row">
+                            <div class="slider-labels">
+                                <span class="slider-name">Cohesive Force (Fc)</span>
+                                <span class="slider-readout" id="cohesion-val">5.0 nN</span>
+                            </div>
+                            <input type="range" class="cohesion-slider" id="slider-cohesion" min="1.0" max="10.0" step="0.1" value="5.0">
+                        </div>
+                        <div class="slider-row">
+                            <div class="slider-labels">
+                                <span class="slider-name">Adhesive Force (Fa)</span>
+                                <span class="slider-readout" id="adhesion-val">5.0 nN</span>
+                            </div>
+                            <input type="range" class="adhesion-slider" id="slider-adhesion" min="0.0" max="10.0" step="0.1" value="5.0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Visual Options -->
+                <div class="panel-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Visualization Overlays</h2>
+                    </div>
+                    <div class="options-group">
+                        <button class="toggle-chip active" id="toggle-vectors">
+                            <span>Force Vectors</span>
+                            <span class="toggle-status" id="status-vectors">ON</span>
+                        </button>
+                        <button class="toggle-chip active" id="toggle-tangents">
+                            <span>Contact Angle / Tangents</span>
+                            <span class="toggle-status" id="status-tangents">ON</span>
+                        </button>
+                        <button class="toggle-chip active" id="toggle-micro">
+                            <span>Microscope Zoom View</span>
+                            <span class="toggle-status" id="status-micro">ON</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 4: Teacher Guides / Pedagogical Focus -->
+                <div class="talking-points-box">
+                    <div class="talking-points-header">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: inline-block;"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                        <span>Teacher Talking Point</span>
+                    </div>
+                    <p class="talking-points-text" id="talking-point-text">
+                        "Observe how cohesive forces hold the liquid molecules together, while adhesive forces pull them toward the solid wall. Notice how the meniscus curves up because water is attracted to the glass container."
+                    </p>
+                </div>
+
+            </aside>
+        </main>
+
+        <!-- 3. PROMPT STRIP -->
+        <footer class="prompt-strip">
+            <p class="prompt-text" id="prompt-text">
+                Try dragging the cohesion slider above. How does weakening the attraction between fluid molecules affect a droplet's shape?
+            </p>
+        </footer>
+
+    </div>
+
+    <!-- MAIN JAVASCRIPT PHYSICS SIMULATOR -->
+    <script>
+        // --- CONSTANTS ---
+        const PRESETS = {
+            'water-glass': { fc: 4.8, fa: 7.2, name: "Water on Glass" },
+            'water-teflon': { fc: 4.8, fa: 1.2, name: "Water on Teflon" },
+            'mercury-glass': { fc: 9.6, fa: 2.2, name: "Mercury on Glass" }
+        };
+
+        const TALKING_POINTS = {
+            'droplet': {
+                'water-glass': "Notice how strong adhesive forces pull the water molecules outward, spreading the droplet over the glass. This is 'wetting' (contact angle is small).",
+                'water-teflon': "With wax or Teflon, adhesive forces are very weak. The cohesive force dominates, pulling the water molecules into a neat bead to minimize contact.",
+                'mercury-glass': "Mercury has an extremely high cohesive force. Since its cohesion vastly overcomes adhesion to glass, it beads up tightly and avoids wetting completely.",
+                'custom': "Adjusting forces alters the contact angle in real time. Can you make a perfectly flat sheet, or a near-perfect sphere?"
+            },
+            'capillary': {
+                'water-glass': "Because water adheres strongly to glass (Fa > Fc), it crawls up the tube walls. This pulls the center liquid upward, forming a concave meniscus.",
+                'water-teflon': "In a non-wetting environment, the liquid molecules pull away from the tube walls. This cohesive dominance results in a downward, convex meniscus.",
+                'mercury-glass': "Mercury's massive cohesion pulls it inward and downward, depressing the column inside the tube and forming a strong convex meniscus.",
+                'custom': "Look at the resultant force vector (black arrow) inside the zoom circle. The liquid's surface always aligns perpendicular to this net force!"
+            }
+        };
+
+        const PROMPTS = {
+            'droplet': "Compare the shape of the Water on Glass vs. Water on Teflon droplet. What molecular force changes between the two?",
+            'capillary': "What happens to the capillary rise when you increase the tube's adhesive attraction relative to the liquid's cohesion?"
+        };
+
+        // --- GLOBAL STATE ---
+        let currentTab = 'droplet'; // 'droplet' or 'capillary'
+        let selectedPreset = 'water-glass'; // 'water-glass', 'water-teflon', 'mercury-glass', 'custom'
+        
+        let fc = PRESETS['water-glass'].fc; // Cohesive force
+        let fa = PRESETS['water-glass'].fa; // Adhesive force
+        
+        let playing = true;
+        let showVectors = true;
+        let showTangents = true;
+        let showMicro = true;
+
+        let lastTime = performance.now();
+        let animationFrameId = null;
+        let microTime = 0; // Cumulative time for molecule vibration
+
+        // Molecule structure inside Microscopic Zoom Lens
+        const lensRadius = 80;
+        const lensCenter = { x: 520, y: 190 };
+        let molecules = [];
+        let substrateMolecules = [];
+
+        // Canvas Setup
+        const canvas = document.getElementById('physics-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize handler to optimize resolution
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            // Store dimensions
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+
+        // --- INITIALIZE PHYSICS SCENE ---
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            initEvents();
+            initMicroscopeMolecules();
+            tick(performance.now());
+        });
+
+        // --- EVENT BINDING ---
+        function initEvents() {
+            // Tabs switching
+            document.getElementById('tab-droplet').addEventListener('click', (e) => {
+                setActiveTab('droplet');
+            });
+            document.getElementById('tab-capillary').addEventListener('click', (e) => {
+                setActiveTab('capillary');
+            });
+
+            // Play/Pause button
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const pauseSvg = document.getElementById('pause-svg');
+            const playSvg = document.getElementById('play-svg');
+            playPauseBtn.addEventListener('click', () => {
+                playing = !playing;
+                if (playing) {
+                    pauseSvg.style.display = 'block';
+                    playSvg.style.display = 'none';
+                    lastTime = performance.now();
+                } else {
+                    pauseSvg.style.display = 'none';
+                    playSvg.style.display = 'block';
+                }
+            });
+
+            // Reset button
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                applyPreset(selectedPreset === 'custom' ? 'water-glass' : selectedPreset);
+            });
+
+            // Presets
+            const presetButtons = document.querySelectorAll('.preset-btn');
+            presetButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    presetButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    applyPreset(btn.getAttribute('data-preset'));
+                });
+            });
+
+            // Sliders
+            const cohesionSlider = document.getElementById('slider-cohesion');
+            const adhesionSlider = document.getElementById('slider-adhesion');
+
+            cohesionSlider.addEventListener('input', (e) => {
+                fc = parseFloat(e.target.value);
+                document.getElementById('cohesion-val').innerText = `${fc.toFixed(1)} nN`;
+                triggerCustomPreset();
+                updateHUD();
+            });
+
+            adhesionSlider.addEventListener('input', (e) => {
+                fa = parseFloat(e.target.value);
+                document.getElementById('adhesion-val').innerText = `${fa.toFixed(1)} nN`;
+                triggerCustomPreset();
+                updateHUD();
+            });
+
+            // Options toggles
+            setupToggle('toggle-vectors', 'status-vectors', (active) => { showVectors = active; });
+            setupToggle('toggle-tangents', 'status-tangents', (active) => { showTangents = active; });
+            setupToggle('toggle-micro', 'status-micro', (active) => { showMicro = active; });
+        }
+
+        function setupToggle(buttonId, statusId, callback) {
+            const btn = document.getElementById(buttonId);
+            const status = document.getElementById(statusId);
+            btn.addEventListener('click', () => {
+                const isActive = btn.classList.toggle('active');
+                status.innerText = isActive ? 'ON' : 'OFF';
+                callback(isActive);
+            });
+        }
+
+        function setActiveTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-droplet').classList.toggle('active', tab === 'droplet');
+            document.getElementById('tab-capillary').classList.toggle('active', tab === 'capillary');
+            
+            document.getElementById('prompt-text').innerText = PROMPTS[tab];
+            updateHUD();
+            updateTalkingPoint();
+        }
+
+        function applyPreset(presetKey) {
+            selectedPreset = presetKey;
+            
+            // Sync buttons
+            const presetButtons = document.querySelectorAll('.preset-btn');
+            presetButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-preset') === presetKey);
+            });
+
+            fc = PRESETS[presetKey].fc;
+            fa = PRESETS[presetKey].fa;
+
+            // Sync Sliders
+            const cSlider = document.getElementById('slider-cohesion');
+            const aSlider = document.getElementById('slider-adhesion');
+            cSlider.value = fc;
+            aSlider.value = fa;
+            document.getElementById('cohesion-val').innerText = `${fc.toFixed(1)} nN`;
+            document.getElementById('adhesion-val').innerText = `${fa.toFixed(1)} nN`;
+
+            updateHUD();
+            updateTalkingPoint();
+        }
+
+        function triggerCustomPreset() {
+            selectedPreset = 'custom';
+            const presetButtons = document.querySelectorAll('.preset-btn');
+            presetButtons.forEach(btn => btn.classList.remove('active'));
+            updateTalkingPoint();
+        }
+
+        function updateHUD() {
+            // Substance Label
+            let substanceName = "Custom Fluid";
+            if (selectedPreset === 'water-glass') substanceName = "Water on Glass";
+            else if (selectedPreset === 'water-teflon') substanceName = "Water on Teflon (Wax)";
+            else if (selectedPreset === 'mercury-glass') substanceName = "Mercury on Glass";
+            document.getElementById('hud-substance').innerText = substanceName;
+
+            // Cohesion/Adhesion
+            document.getElementById('hud-cohesion').innerText = `${fc.toFixed(1)} nN`;
+            document.getElementById('hud-adhesion').innerText = `${fa.toFixed(1)} nN`;
+
+            // Contact Angle (theta)
+            // Cos(theta) = (Fa - 0.6 * Fc) / (0.6 * Fc + 0.1)
+            const cosTheta = Math.max(-0.98, Math.min(0.98, (fa - 0.6 * fc) / (0.6 * fc + 0.1)));
+            const theta = Math.acos(cosTheta);
+            const thetaDeg = theta * 180 / Math.PI;
+            document.getElementById('hud-angle').innerText = `${thetaDeg.toFixed(1)}°`;
+
+            // Fluid Behavior Label
+            const behaviorCell = document.getElementById('hud-behavior');
+            const angleRow = document.getElementById('hud-angle-row');
+            const behaviorRow = document.getElementById('hud-behavior-row');
+
+            if (currentTab === 'droplet') {
+                angleRow.style.display = 'flex';
+                behaviorRow.style.display = 'flex';
+                if (thetaDeg < 85) {
+                    behaviorCell.innerText = "Wetting (Hydrophilic)";
+                    behaviorCell.style.color = "var(--accent)";
+                } else if (thetaDeg > 95) {
+                    behaviorCell.innerText = "Non-Wetting (Hydrophobic)";
+                    behaviorCell.style.color = "oklch(0.60 0.18 45)";
+                } else {
+                    behaviorCell.innerText = "Neutral (Intermediate)";
+                    behaviorCell.style.color = "var(--ink)";
+                }
+            } else {
+                angleRow.style.display = 'flex';
+                behaviorRow.style.display = 'flex';
+                if (thetaDeg < 85) {
+                    behaviorCell.innerText = "Capillary Rise (Concave)";
+                    behaviorCell.style.color = "var(--accent)";
+                } else if (thetaDeg > 95) {
+                    behaviorCell.innerText = "Capillary Depression (Convex)";
+                    behaviorCell.style.color = "oklch(0.60 0.18 45)";
+                } else {
+                    behaviorCell.innerText = "Neutral (Flat Meniscus)";
+                    behaviorCell.style.color = "var(--ink)";
+                }
+            }
+        }
+
+        function updateTalkingPoint() {
+            const tpText = document.getElementById('talking-point-text');
+            const key = selectedPreset === 'custom' ? 'custom' : selectedPreset;
+            tpText.innerText = TALKING_POINTS[currentTab][key];
+            
+            // Re-trigger visual fade-in animation
+            tpText.style.animation = 'none';
+            void tpText.offsetWidth; // trigger reflow
+            tpText.style.animation = 'fadeIn 0.25s ease-out forwards';
+        }
+
+
+        // --- MICROSCOPIC ZOOMS INITIAL MOLECULE SCENE ---
+        function initMicroscopeMolecules() {
+            molecules = [];
+            substrateMolecules = [];
+
+            // Define substrate molecules (grey grid on the right side of the zoom lens)
+            // Lens goes from -lensRadius to +lensRadius.
+            // Let's model a vertical substrate border at x = 20 inside the lens coordinates.
+            const totalRows = 9;
+            const totalCols = 3;
+            
+            // Solid molecules (grey circles) - placed on the right side
+            for (let r = 0; r < totalRows; r++) {
+                for (let c = 0; c < totalCols; c++) {
+                    substrateMolecules.push({
+                        x0: 10 + c * 18,
+                        y0: -60 + r * 15 + (c % 2 === 0 ? 0 : 7.5),
+                        color: "#94a3b8" // Grey solid
+                    });
+                }
+            }
+
+            // Liquid molecules (teal circles) - floating/bonding to the left
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 4; c++) {
+                    molecules.push({
+                        x0: -65 + c * 16 + (r % 2 === 0 ? 0 : 8),
+                        y0: -50 + r * 15,
+                        // Cache initial parameters for spring rendering
+                        neighbors: [], 
+                        color: "var(--accent)"
+                    });
+                }
+            }
+        }
+
+
+        // --- PHYSICAL PHYSICS ENGINE & LOOP ---
+        function tick(now) {
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            if (playing) {
+                microTime += dt;
+            }
+
+            render();
+            animationFrameId = requestAnimationFrame(tick);
+        }
+
+        function render() {
+            // Read container sizes
+            const W = canvas.width / window.devicePixelRatio;
+            const H = canvas.height / window.devicePixelRatio;
+            
+            ctx.clearRect(0, 0, W, H);
+
+            // 1. Draw Background Grid (Faint coordinates for measurement)
+            ctx.strokeStyle = "rgba(12, 17, 21, 0.04)";
+            ctx.lineWidth = 0.5;
+            const step = 40;
+            for (let x = 0; x < W; x += step) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+            }
+            for (let y = 0; y < H; y += step) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            }
+
+            // 2. Physics & Curves calculations
+            // Young force model:
+            const cosTheta = Math.max(-0.98, Math.min(0.98, (fa - 0.6 * fc) / (0.6 * fc + 0.1)));
+            const theta = Math.acos(cosTheta);
+
+            // Center positions on canvas
+            const xC = W * 0.38; // Left-shifted to leave room for Microscope
+            
+            if (currentTab === 'droplet') {
+                drawDropletStage(ctx, xC, H, theta);
+            } else {
+                drawCapillaryStage(ctx, xC, H, theta);
+            }
+
+            // 3. Render Microscope zoom lens (Static coordinates in right zone)
+            if (showMicro) {
+                drawMicroscope(ctx, W * 0.76, H * 0.46, theta);
+            }
+        }
+
+        // --- DRAW TAB 1: DROPLET STAGE ---
+        function drawDropletStage(ctx, xC, H, theta) {
+            const yPlate = H - 120;
+            const V = 18000; // Droplet volume in square pixels (conserved)
+            
+            // Plate line
+            ctx.strokeStyle = "var(--ink)";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(xC - 220, yPlate);
+            ctx.lineTo(xC + 220, yPlate);
+            ctx.stroke();
+
+            // Plate thickness
+            ctx.fillStyle = "var(--bg-alt)";
+            ctx.fillRect(xC - 220, yPlate, 440, 24);
+
+            // Calculate droplet radius for conserved volume
+            // V = R^2 * (theta - sin(theta) * cos(theta))
+            const denom = theta - Math.sin(theta) * Math.cos(theta);
+            const R = Math.sqrt(V / denom);
+            const yCenter = yPlate + R * Math.cos(theta);
+
+            // Draw droplet body
+            ctx.fillStyle = "rgba(0, 242, 254, 0.12)";
+            ctx.strokeStyle = "var(--accent)";
+            ctx.lineWidth = 2.5;
+            
+            ctx.beginPath();
+            // Arc coordinates (Left point to right point)
+            ctx.arc(xC, yCenter, R, 1.5 * Math.PI - theta, 1.5 * Math.PI + theta, false);
+            ctx.lineTo(xC - R * Math.sin(theta), yPlate);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Contact Points (Triple Junctions)
+            const xL = xC - R * Math.sin(theta);
+            const xR = xC + R * Math.sin(theta);
+
+            // 1. Draw Tangents & Angles
+            if (showTangents) {
+                ctx.strokeStyle = "oklch(0.60 0.18 45)"; // Coral tangent lines
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+
+                // Tangent vector components at Right junction
+                // Directed at angle (theta) relative to horizontal:
+                const tx = -Math.cos(theta);
+                const ty = -Math.sin(theta);
+                
+                // Right tangent line
+                ctx.beginPath();
+                ctx.moveTo(xR, yPlate);
+                ctx.lineTo(xR + tx * 80, yPlate + ty * 80);
+                ctx.stroke();
+
+                // Left tangent line
+                ctx.beginPath();
+                ctx.moveTo(xL, yPlate);
+                ctx.lineTo(xL - tx * 80, yPlate + ty * 80);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw Angle arcs
+                ctx.strokeStyle = "var(--ink)";
+                ctx.lineWidth = 1;
+                ctx.fillStyle = "rgba(12, 11, 21, 0.06)";
+                
+                // Right angle sector
+                ctx.beginPath();
+                ctx.moveTo(xR, yPlate);
+                ctx.arc(xR, yPlate, 28, Math.PI, Math.PI + theta, false);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Text labels for angles
+                ctx.font = "500 13px var(--mono)";
+                ctx.fillStyle = "var(--ink)";
+                ctx.textAlign = "right";
+                const thetaDeg = theta * 180 / Math.PI;
+                ctx.fillText(`θ = ${thetaDeg.toFixed(0)}°`, xR - 35, yPlate - 8);
+            }
+
+            // 2. Draw Force Vectors at the Right Triple Point
+            if (showVectors) {
+                // Vector starts at xR, yPlate
+                const originX = xR;
+                const originY = yPlate;
+
+                // Scaled force lengths for rendering
+                const scale = 8;
+                const adhesiveLength = fa * scale;
+                const cohesiveLength = fc * scale;
+
+                // Adhesive force: strictly horizontal (inward towards droplet center for wetting? No, adhesion pulls the liquid OUTWARD along the solid surface, trying to expand contact area).
+                // Thus, Fa vector points outwards (to the right, away from the liquid center).
+                const fax = adhesiveLength;
+                const fay = 0;
+
+                // Cohesive force: pulls the liquid INWARD into the liquid bulk (at angle theta relative to the surface vector, going up/left).
+                const fcx = -cohesiveLength * Math.cos(theta);
+                const fcy = -cohesiveLength * Math.sin(theta);
+
+                // Draw adhesive arrow
+                drawArrow(ctx, originX, originY, originX + fax, originY + fay, "oklch(0.60 0.18 45)", 2, "Fa");
+
+                // Draw cohesive arrow
+                drawArrow(ctx, originX, originY, originX + fcx, originY + fcy, "var(--accent)", 2, "Fc");
+
+                // Resultant force (net surface vector)
+                const rx = fax + fcx;
+                const ry = fay + fcy;
+                drawArrow(ctx, originX, originY, originX + rx, originY + ry, "var(--ink)", 2.5, "Fnet");
+            }
+        }
+
+        // --- DRAW TAB 2: CAPILLARY STAGE ---
+        function drawCapillaryStage(ctx, xC, H, theta) {
+            const yReservoir = H - 160;
+            const tubeHalfWidth = 26;
+            const xL = xC - tubeHalfWidth;
+            const xR = xC + tubeHalfWidth;
+            
+            // Calculate Capillary height rise/depression (Jurin's relation)
+            // h = k * Fc * cos(theta)
+            const h = 8.5 * fc * Math.cos(theta); 
+            const yTubeLevel = yReservoir - h;
+
+            // Height delta of meniscus at walls:
+            // dy = w * cos(theta) / (1 + sin(theta))
+            const dy = tubeHalfWidth * Math.cos(theta) / (1 + Math.sin(theta));
+            const yWall = yTubeLevel - dy;
+
+            // 1. Draw Liquid Body
+            ctx.fillStyle = "rgba(0, 242, 254, 0.12)";
+            ctx.beginPath();
+            ctx.moveTo(0, H);
+            ctx.lineTo(0, yReservoir);
+            ctx.lineTo(xL, yReservoir); // Along the reservoir to tube wall
+            ctx.lineTo(xL, yWall);      // Up/Down tube wall
+
+            // Draw meniscus inside the tube as quadratic bezier
+            // Control point height is adjusted to form a circular-like arc
+            const controlY = yTubeLevel + dy;
+            ctx.quadraticCurveTo(xC, controlY, xR, yWall);
+
+            ctx.lineTo(xR, yReservoir); // Back to right wall reservoir
+            ctx.lineTo(canvas.width, yReservoir);
+            ctx.lineTo(canvas.width, H);
+            ctx.closePath();
+            ctx.fill();
+
+            // Outline of the liquid surface (Only top interface)
+            ctx.strokeStyle = "var(--accent)";
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, yReservoir);
+            ctx.lineTo(xL, yReservoir);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(xL, yWall);
+            ctx.quadraticCurveTo(xC, controlY, xR, yWall);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(xR, yReservoir);
+            ctx.lineTo(canvas.width, yReservoir);
+            ctx.stroke();
+
+            // 2. Draw Glass Capillary Tube (Vertical walls)
+            ctx.strokeStyle = "var(--ink)";
+            ctx.lineWidth = 3.5;
+            
+            // Left Wall
+            ctx.beginPath();
+            ctx.moveTo(xL, H - 280);
+            ctx.lineTo(xL, yReservoir + 60);
+            ctx.stroke();
+
+            // Right Wall
+            ctx.beginPath();
+            ctx.moveTo(xR, H - 280);
+            ctx.lineTo(xR, yReservoir + 60);
+            ctx.stroke();
+
+            // Transparent glass fill inside tube walls for visual volume
+            ctx.fillStyle = "rgba(12, 17, 21, 0.02)";
+            ctx.fillRect(xL, H - 280, tubeHalfWidth * 2, yReservoir + 60 - (H - 280));
+
+            // Axis level/reference lines
+            ctx.strokeStyle = "var(--rule-soft)";
+            ctx.lineWidth = 0.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(xC - 100, yReservoir);
+            ctx.lineTo(xC + 100, yReservoir);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Height measurement dimension line
+            if (Math.abs(h) > 5) {
+                ctx.strokeStyle = "var(--ink)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(xC, yReservoir);
+                ctx.lineTo(xC, yTubeLevel);
+                ctx.stroke();
+
+                // Dimension tick marks
+                ctx.beginPath();
+                ctx.moveTo(xC - 4, yReservoir); ctx.lineTo(xC + 4, yReservoir);
+                ctx.moveTo(xC - 4, yTubeLevel); ctx.lineTo(xC + 4, yTubeLevel);
+                ctx.stroke();
+
+                // Label for rise/depression
+                ctx.font = "600 12px var(--mono)";
+                ctx.fillStyle = "var(--ink-soft)";
+                ctx.textAlign = "center";
+                const directionStr = h > 0 ? "Rise" : "Depression";
+                ctx.fillText(`h = ${(h/10).toFixed(2)} mm (${directionStr})`, xC, yTubeLevel - (h > 0 ? 8 : -16));
+            }
+
+            // 3. Draw Force Vectors at the Right wall boundary
+            if (showVectors) {
+                const originX = xR;
+                const originY = yWall;
+
+                const scale = 8;
+                const adhesiveLength = fa * scale;
+                const cohesiveLength = fc * scale;
+
+                // Adhesive force: pulls vertically UPwards along the tube wall (for wetting).
+                const fax = 0;
+                const fay = -adhesiveLength;
+
+                // Cohesive force: pulls INWARD and DOWNWARD towards the liquid bulk (at angle theta relative to vertical wall).
+                // The vector points leftward and downward:
+                const fcx = -cohesiveLength * Math.sin(theta);
+                const fcy = cohesiveLength * Math.cos(theta);
+
+                // Draw adhesive arrow (Fa)
+                drawArrow(ctx, originX, originY, originX + fax, originY + fay, "oklch(0.60 0.18 45)", 2, "Fa");
+
+                // Draw cohesive arrow (Fc)
+                drawArrow(ctx, originX, originY, originX + fcx, originY + fcy, "var(--accent)", 2, "Fc");
+
+                // Net Force (Fnet)
+                const rx = fax + fcx;
+                const ry = fay + fcy;
+                drawArrow(ctx, originX, originY, originX + rx, originY + ry, "var(--ink)", 2.5, "Fnet");
+            }
+        }
+
+        // --- DRAW MICROSCOPIC ZOOMS LENS PANEL ---
+        function drawMicroscope(ctx, ox, oy, theta) {
+            // Draw zoom visual background bubble
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(ox, oy, lensRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = "var(--dark)";
+            ctx.fill();
+            ctx.strokeStyle = "var(--ink)";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.clip(); // Mask molecules inside lens bubble
+
+            // Substrate interface position inside lens coordinates:
+            // We set the vertical/horizontal interface plane inside the lens:
+            const interfaceX = 10; 
+
+            // Dynamic thermal noise amplitude (stopped if playing === false)
+            const vibrationAmp = playing ? 1.0 : 0.0;
+            const speed = 12;
+
+            // Render Substrate Molecules (Grey, highly organized vertical block)
+            substrateMolecules.forEach(mol => {
+                const dx = vibrationAmp * 0.4 * Math.sin(microTime * speed + mol.y0);
+                const dy = vibrationAmp * 0.4 * Math.cos(microTime * speed + mol.x0);
+                ctx.beginPath();
+                ctx.arc(ox + mol.x0 + dx, oy + mol.y0 + dy, 7, 0, 2 * Math.PI);
+                ctx.fillStyle = mol.color;
+                ctx.fill();
+                ctx.strokeStyle = "rgba(12, 17, 21, 0.4)";
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            });
+
+            // Calculate current coordinates of fluid molecules
+            // As theta increases, liquid molecules creep away from substrate (x = interfaceX)
+            const cosT = Math.max(-0.98, Math.min(0.98, (fa - 0.6 * fc) / (0.6 * fc + 0.1)));
+            const sinT = Math.sqrt(1 - cosT * cosT);
+
+            // Shift fluid molecules dynamically based on contact angle (spreading vs beading)
+            // Wetting (Fa is strong): fluid pushes rightward, filling contact gap
+            // Non-wetting (Fc is strong): fluid pulls leftward, leaving gap
+            const gapOffset = (cosT - 0.5) * -16;
+
+            const fluidPositions = molecules.map((mol, idx) => {
+                // Micro vibration
+                const phase = idx * 1.5;
+                const vx = vibrationAmp * 0.9 * Math.sin(microTime * speed + phase);
+                const vy = vibrationAmp * 0.9 * Math.cos(microTime * speed + phase + 1.0);
+
+                // Add structural shifting based on contact angle
+                // Outer columns are more affected by pull
+                const columnFactor = (mol.x0 + 65) / 48; // 0 to 1
+                const xShift = gapOffset * columnFactor;
+
+                return {
+                    x: ox + mol.x0 + vx + xShift,
+                    y: oy + mol.y0 + vy,
+                    ref: mol
+                };
+            });
+
+            // 1. Draw Bonding Springs/Lines BEFORE drawing molecule bodies
+            fluidPositions.forEach((fp, i) => {
+                // Cohesion: Fluid-Fluid Bonds (draw to nearby fluid molecules)
+                fluidPositions.forEach((other, j) => {
+                    if (i >= j) return; // Avoid duplicate lines
+                    const distSq = (fp.x - other.x)**2 + (fp.y - other.y)**2;
+                    
+                    if (distSq < 22 * 22) { // Neighbor bond range
+                        ctx.strokeStyle = "rgba(0, 242, 254, 0.45)";
+                        // Bond thickness scales with Cohesive Force parameter
+                        ctx.lineWidth = 0.6 + fc * 0.25; 
+                        ctx.beginPath();
+                        ctx.moveTo(fp.x, fp.y);
+                        ctx.lineTo(other.x, other.y);
+                        ctx.stroke();
+                    }
+                });
+
+                // Adhesion: Fluid-Solid Bonds (draw to substrate grey molecules)
+                substrateMolecules.forEach((sub, j) => {
+                    const subX = ox + sub.x0;
+                    const subY = oy + sub.y0;
+                    const distSq = (fp.x - subX)**2 + (fp.y - subY)**2;
+
+                    if (distSq < 32 * 32) { // Adhesion range
+                        ctx.strokeStyle = "rgba(212, 175, 55, 0.5)"; // Gold dashed lines
+                        ctx.lineWidth = 0.5 + fa * 0.3;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(fp.x, fp.y);
+                        ctx.lineTo(subX, subY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                });
+            });
+
+            // 2. Draw Fluid Molecules (Teal circles)
+            fluidPositions.forEach(fp => {
+                ctx.beginPath();
+                ctx.arc(fp.x, fp.y, 6.5, 0, 2 * Math.PI);
+                ctx.fillStyle = "var(--accent)";
+                ctx.fill();
+                ctx.strokeStyle = "rgba(12, 17, 21, 0.6)";
+                ctx.lineWidth = 0.75;
+                ctx.stroke();
+            });
+
+            ctx.restore(); // Stop clipping
+
+            // Draw Lens magnification border decoration
+            ctx.strokeStyle = "var(--ink)";
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.arc(ox, oy, lensRadius, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            // Zoom Magnifying Glass Handle
+            ctx.strokeStyle = "var(--ink)";
+            ctx.lineWidth = 7;
+            ctx.beginPath();
+            ctx.moveTo(ox - lensRadius * 0.707, oy + lensRadius * 0.707);
+            ctx.lineTo(ox - lensRadius * 1.25, oy + lensRadius * 1.25);
+            ctx.stroke();
+
+            // Lens Monospace label
+            ctx.font = "600 11px var(--mono)";
+            ctx.fillStyle = "var(--ink-mute)";
+            ctx.textAlign = "center";
+            ctx.fillText("MICRO VIEW", ox, oy - lensRadius - 8);
+        }
+
+        // --- CORE GEOMETRIC VECTOR ARROW DRAWING UTILITY ---
+        function drawArrow(ctx, fromx, fromy, tox, toy, color, width, label) {
+            const headlen = 8; // length of head in pixels
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            
+            // Draw shaft
+            ctx.beginPath();
+            ctx.moveTo(fromx, fromy);
+            ctx.lineTo(tox, toy);
+            ctx.stroke();
+
+            // Draw arrowhead
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+
+            // Text Label at arrow tips
+            if (label) {
+                ctx.save();
+                ctx.font = "600 12px var(--mono)";
+                ctx.fillStyle = color;
+                
+                // Offset label slightly beyond arrow head
+                const labelX = tox + 14 * Math.cos(angle);
+                const labelY = toy + 14 * Math.sin(angle) + 4;
+                ctx.textAlign = "center";
+                ctx.fillText(label, labelX, labelY);
+                ctx.restore();
+            }
+        }
+    </script>
+</body>
+</html>

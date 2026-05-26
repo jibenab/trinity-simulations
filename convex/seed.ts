@@ -854,3 +854,82 @@ export const seedStageIdentification = internalMutation({
   },
 });
 
+export const seedCohesionAdhesion = internalMutation({
+  args: {
+    code: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const content = {
+      slug: "cohesion-adhesion",
+      type: "simulation" as const,
+      title: "Cohesion vs. Adhesion",
+      subject: "Physics" as const,
+      grade: "Class 8",
+      chapter: "Matter",
+      level: "Core" as const,
+      minutes: 10,
+      concepts: [
+        "cohesion",
+        "adhesion",
+        "surface tension",
+        "capillary action",
+        "meniscus",
+        "contact angle",
+      ],
+      svgCode: `<svg viewBox="0 0 200 140" width="100%" style="max-height:120px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <line x1="20" y1="12" x2="20" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="60" y1="12" x2="60" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="100" y1="12" x2="100" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="140" y1="12" x2="140" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="180" y1="12" x2="180" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="12" x2="188" y2="12" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="41" x2="188" y2="41" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="70" x2="188" y2="70" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="99" x2="188" y2="99" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="128" x2="188" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+
+  <rect x="35" y="32" width="26" height="88" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
+  <path d="M 15 90 L 35 90" stroke="var(--accent)" stroke-width="2"/>
+  <path d="M 61 90 L 85 90" stroke="var(--accent)" stroke-width="2"/>
+  <rect x="15" y="91" width="20" height="30" fill="var(--accent)" opacity="0.12"/>
+  <rect x="61" y="91" width="24" height="30" fill="var(--accent)" opacity="0.12"/>
+  <path d="M 35 60 Q 48 72 61 60" fill="none" stroke="var(--accent)" stroke-width="2"/>
+  <path d="M 35 60 L 35 120 L 61 120 L 61 60 Z" fill="var(--accent)" opacity="0.12"/>
+  
+  <line x1="105" y1="105" x2="185" y2="105" stroke="var(--ink)" stroke-width="2"/>
+  <path d="M 115 105 A 35 35 0 0 1 175 105 Z" fill="var(--accent)" opacity="0.15" stroke="var(--accent)" stroke-width="1.8"/>
+
+  <text x="48" y="24" font-family="var(--mono)" font-size="9" fill="var(--ink-mute)" text-anchor="middle" letter-spacing="0.06em">TUBE</text>
+  <text x="145" y="24" font-family="var(--mono)" font-size="9" fill="var(--ink-mute)" text-anchor="middle" letter-spacing="0.06em">DROPLET</text>
+</svg>`,
+      code: args.code,
+      prompt:
+        "What happens to the meniscus shape when the liquid's cohesive force is stronger than its adhesive force?",
+      published: true,
+      featured: false,
+    };
+
+    const existing = await ctx.db
+      .query("content")
+      .withIndex("by_slug", (q) => q.eq("slug", content.slug))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ...content,
+        updatedAt: now,
+      });
+      return { action: "updated", id: existing._id };
+    }
+
+    const id = await ctx.db.insert("content", {
+      ...content,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { action: "inserted", id };
+  },
+});
+
