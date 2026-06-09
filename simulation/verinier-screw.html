@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trinity Simulation Lab - Precision Measurement</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f4f4f5;
+      --border: #e4e4e7;
+      --text: #18181b;
+      --text-muted: #71717a;
+      --accent: #0d9488;
+      --accent-light: #ccfbf1;
+      --grid: #e4e4e7;
+    }
+    
+    html,
+    body,
+    #root {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Manrope', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stage-bg {
+      background-color: var(--surface);
+      background-image: 
+        linear-gradient(var(--grid) 0.5px, transparent 0.5px),
+        linear-gradient(90deg, var(--grid) 0.5px, transparent 0.5px);
+      background-size: 20px 20px;
+      background-position: center center;
+    }
+
+    .loupe-shadow {
+      box-shadow: 4px 4px 0px var(--border);
+    }
+
+    .sim-root {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .loupe-panel {
+      top: 1rem;
+      right: 1rem;
+      transform: translate(var(--loupe-x), var(--loupe-y));
+    }
+
+    .instrument-svg {
+      width: min(1000px, 100%);
+      height: min(400px, 100%);
+    }
+    
+    /* Hide scrollbar for select dropdowns */
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.5rem center;
+      background-size: 1em;
+      padding-right: 2rem;
+    }
+
+    @media (max-width: 767px) {
+      body {
+        overflow: auto;
+      }
+
+      .sim-root {
+        min-height: 100vh;
+        min-height: 100svh;
+        height: auto;
+        overflow: visible;
+      }
+
+      .loupe-panel {
+        top: auto;
+        right: auto;
+        transform: none;
+      }
+
+      .loupe-shadow {
+        box-shadow: 3px 3px 0px var(--border);
+      }
+
+      .instrument-svg {
+        width: 100%;
+        height: 260px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- Icons ---
+    const RotateCcw = ({ size = 24, ...props }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+    );
+
+    const Activity = ({ size = 24, ...props }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+      </svg>
+    );
+
+    const Move = ({ size = 24, ...props }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <polyline points="5 9 2 12 5 15"></polyline>
+        <polyline points="9 5 12 2 15 5"></polyline>
+        <polyline points="19 9 22 12 19 15"></polyline>
+        <polyline points="9 19 12 22 15 19"></polyline>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <line x1="12" y1="2" x2="12" y2="22"></line>
+      </svg>
+    );
+
+    // --- Data Models ---
+    const objects = [
+      { id: 'none', name: 'None (Free Move)', width: 0, color: 'transparent' },
+      { id: 'wire', name: 'Copper Wire', width: 1.24, color: '#b87333', shape: 'circle' },
+      { id: 'glass', name: 'Glass Slide', width: 1.05, color: '#e0f2fe', shape: 'rect' },
+      { id: 'coin', name: '10₹ Coin', width: 1.85, color: '#fbbf24', shape: 'ellipse' },
+      { id: 'ball', name: 'Steel Ball', width: 8.40, color: '#94a3b8', shape: 'circle' },
+      { id: 'cylinder', name: 'Steel Cylinder', width: 12.50, color: '#64748b', shape: 'rect' },
+      { id: 'block', name: 'Wooden Block', width: 18.25, color: '#d97706', shape: 'rect' },
+    ];
+
+    // --- Main App ---
+    function App() {
+      // Core State
+      const [instrument, setInstrument] = useState('vernier');
+      const [objectId, setObjectId] = useState('none');
+      const [manualPos, setManualPos] = useState(0); // in mm
+      const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+      
+      // Configuration State
+      const [vernierDivs, setVernierDivs] = useState(10);
+      const [screwPitch, setScrewPitch] = useState(0.5);
+      const [screwDivs, setScrewDivs] = useState(50);
+      
+      // Zero Error State
+      const [zeType, setZeType] = useState('none'); // 'none', 'positive', 'negative'
+      const [zeMag, setZeMag] = useState(2); // 1 to 5 divisions
+      
+      // Interaction State
+      const [isDragging, setIsDragging] = useState(false);
+      const [dragStart, setDragStart] = useState({ x: 0, pos: 0 });
+      const [showAnswers, setShowAnswers] = useState(false);
+
+      // Pan & Window Drag State
+      const [loupePanX, setLoupePanX] = useState(0);
+      const [loupePanY, setLoupePanY] = useState(0);
+      const [loupeWinPos, setLoupeWinPos] = useState({ x: 0, y: 0 });
+      const [isDraggingWin, setIsDraggingWin] = useState(false);
+      const [winDragStart, setWinDragStart] = useState({ x: 0, y: 0, startX: 0, startY: 0 });
+
+      // Reset handler
+      const handleReset = () => {
+        setObjectId('none');
+        setManualPos(0);
+        setZeType('none');
+        setZeMag(2);
+        setShowAnswers(false);
+        setLoupePanX(0);
+        setLoupePanY(0);
+        setLoupeWinPos({ x: 0, y: 0 });
+      };
+
+      const handleInstrumentChange = (inst) => {
+        setInstrument(inst);
+        handleReset();
+      };
+
+      useEffect(() => {
+        const mq = window.matchMedia('(max-width: 767px)');
+        const handleViewportChange = () => setIsMobile(mq.matches);
+        handleViewportChange();
+        if (mq.addEventListener) {
+          mq.addEventListener('change', handleViewportChange);
+          return () => mq.removeEventListener('change', handleViewportChange);
+        }
+        mq.addListener(handleViewportChange);
+        return () => mq.removeListener(handleViewportChange);
+      }, []);
+
+      // --- Math & Derived State ---
+      const LC = instrument === 'vernier' ? 1 / vernierDivs : screwPitch / screwDivs;
+      
+      // Calculate cm precision dynamically based on the Least Count to ensure correct trailing zeros
+      const LC_cm = Number((LC / 10).toFixed(6));
+      const decCm = Math.max(2, LC_cm.toString().split('.')[1]?.length || 2);
+      const fmtCm = (v_mm) => (v_mm / 10).toFixed(decCm);
+
+      const ZE_mm = zeType === 'none' ? 0 : (zeType === 'positive' ? zeMag * LC : -zeMag * LC);
+      const TW = objectId === 'none' ? manualPos : objects.find(o => o.id === objectId).width;
+      const OW = TW + ZE_mm;
+
+      let MSR = 0, VSR = 0, CSR = 0;
+      
+      if (instrument === 'vernier') {
+        MSR = Math.floor(OW + 1e-9);
+        VSR = Math.round((OW - MSR) / LC);
+        if (VSR === vernierDivs) {
+          MSR += 1;
+          VSR = 0;
+        }
+      } else {
+        MSR = Math.floor((OW + 1e-9) / screwPitch) * screwPitch;
+        CSR = Math.round((OW - MSR) / LC);
+        if (CSR === screwDivs) {
+          MSR += screwPitch;
+          CSR = 0;
+        }
+      }
+
+      const observed = MSR + (instrument === 'vernier' ? VSR : CSR) * LC;
+      const corrected = observed - ZE_mm;
+
+      // Auto-pan to answers when shown
+      useEffect(() => {
+        if (showAnswers) {
+          if (instrument === 'vernier') {
+            const VSD_px = ((vernierDivs - 1) / vernierDivs) * 20;
+            setLoupePanX(VSR * VSD_px);
+            setLoupePanY(0);
+          } else {
+            setLoupePanX(0);
+            setLoupePanY(0);
+          }
+        }
+      }, [showAnswers, instrument, VSR, vernierDivs]);
+
+      // --- Drag Logic ---
+      useEffect(() => {
+        const handleGlobalMove = (e) => {
+          if (isDragging) {
+            const dx = e.clientX - dragStart.x;
+            // 1px mouse move = 0.02 mm model move for fine control
+            let newPos = dragStart.pos + dx * 0.02;
+            newPos = Math.max(0, Math.min(25, newPos)); // clamp to 0-25mm capacity
+            setManualPos(newPos);
+          }
+          if (isDraggingWin) {
+            setLoupeWinPos({
+              x: winDragStart.startX + (e.clientX - winDragStart.x),
+              y: winDragStart.startY + (e.clientY - winDragStart.y)
+            });
+          }
+        };
+        const handleGlobalUp = () => {
+          setIsDragging(false);
+          setIsDraggingWin(false);
+        };
+
+        if (isDragging || isDraggingWin) {
+          window.addEventListener('pointermove', handleGlobalMove);
+          window.addEventListener('pointerup', handleGlobalUp);
+        }
+        return () => {
+          window.removeEventListener('pointermove', handleGlobalMove);
+          window.removeEventListener('pointerup', handleGlobalUp);
+        };
+      }, [isDragging, dragStart, isDraggingWin, winDragStart]);
+
+      const startDrag = (e) => {
+        if (objectId !== 'none') return;
+        setIsDragging(true);
+        setShowAnswers(false);
+        setDragStart({ x: e.clientX, pos: manualPos });
+        e.target.setPointerCapture(e.pointerId);
+      };
+
+      // --- Render Helpers ---
+      const renderObject = (w, yCenter) => {
+        const obj = objects.find(o => o.id === objectId);
+        if (!obj || obj.id === 'none') return null;
+
+        const r = Math.min(w/2, 45); // Limit max radius to fit inside the jaws
+
+        if (obj.shape === 'rect') {
+          return <rect x="0" y={yCenter - r} width={w} height={r*2} fill={obj.color} stroke="var(--text-muted)" strokeWidth="1" />;
+        } else if (obj.shape === 'ellipse') {
+          return <ellipse cx={w/2} cy={yCenter} rx={w/2} ry={r} fill={obj.color} stroke="var(--text-muted)" strokeWidth="1" />;
+        } else {
+          // Pill shape for balls to ensure they touch both jaws without overflowing vertically
+          return <rect x="0" y={yCenter - r} width={w} height={r*2} rx={r} fill={obj.color} stroke="var(--text-muted)" strokeWidth="1" />;
+        }
+      };
+
+      const renderInstrumentSvg = (isZoom = false) => {
+        if (instrument === 'vernier') {
+          const VSD_px = ((vernierDivs - 1) / vernierDivs) * 20;
+          return (
+            <g>
+              {/* Main Scale / Fixed Part */}
+              <rect x="-100" y="-40" width="800" height="40" fill="var(--surface)" stroke="var(--border)" strokeWidth="2" />
+              <path d="M 0 0 L 0 140 L -40 140 L -40 0 Z" fill="var(--surface)" stroke="var(--border)" strokeWidth="2" strokeLinejoin="round" />
+              
+              {/* Main Scale Ticks (from -10mm to 150mm) */}
+              {Array.from({ length: 161 }).map((_, i) => {
+                const mm = i - 10;
+                const x = mm * 20;
+                const isLong = mm % 10 === 0;
+                const isMed = mm % 5 === 0 && !isLong;
+                const h = isLong ? 15 : isMed ? 10 : 6;
+                return (
+                  <g key={`m-${mm}`} transform={`translate(${x}, 0)`}>
+                    <line y1="0" y2={-h} stroke="var(--text)" strokeWidth="1.5" />
+                    {isLong && mm >= 0 && <text y="-20" textAnchor="middle" fontSize="10" fill="var(--text-muted)">{mm / 10}</text>}
+                  </g>
+                );
+              })}
+
+              {/* Sliding Group */}
+              <g 
+                transform={`translate(${TW * 20}, 0)`}
+                className={objectId === 'none' && !isZoom ? 'cursor-ew-resize' : ''}
+                onPointerDown={!isZoom ? startDrag : undefined}
+              >
+                <rect x="0" y="0" width="300" height="40" fill="var(--bg)" stroke="var(--border)" strokeWidth="2" />
+                <path d="M 0 40 L 0 140 L 40 140 L 40 0 Z" fill="var(--bg)" stroke="var(--border)" strokeWidth="2" strokeLinejoin="round" />
+                
+                {/* Vernier Scale Ticks (offset by Zero Error) */}
+                <g transform={`translate(${ZE_mm * 20}, 0)`}>
+                  {Array.from({ length: vernierDivs + 1 }).map((_, i) => {
+                    const x = i * VSD_px;
+                    const isLong = i === 0 || i === vernierDivs || (vernierDivs >= 20 && i % 10 === 0);
+                    const isMed = i % 5 === 0 && !isLong;
+                    const h = isLong ? 15 : isMed ? 10 : 6;
+                    const isCoinciding = showAnswers && i === VSR;
+                    return (
+                      <g key={`v-${i}`} transform={`translate(${x}, 0)`}>
+                        <line y1="0" y2={h} stroke={isCoinciding ? "var(--accent)" : "var(--text)"} strokeWidth={isCoinciding ? "2.5" : "1.5"} />
+                        {isLong && <text y={h + 12} textAnchor="middle" fontSize="10" fontWeight={isCoinciding ? "bold" : "normal"} fill={isCoinciding ? "var(--accent)" : "var(--text-muted)"}>{i}</text>}
+                      </g>
+                    );
+                  })}
+                </g>
+                
+                {/* Drag Handle Indicator */}
+                {objectId === 'none' && !isZoom && (
+                  <rect x="15" y="60" width="10" height="40" rx="3" fill="var(--border)" />
+                )}
+              </g>
+
+              {/* Object */}
+              {objectId !== 'none' && TW > 0 && renderObject(TW * 20, 80)}
+            </g>
+          );
+        } else {
+          // --- Screw Gauge ---
+          const MM = 30; // 30px per mm
+          return (
+            <g>
+              {/* U-Frame */}
+              <path 
+                d="M -20 30 
+                   L -20 130 A 40 40 0 0 1 -60 170 
+                   L -740 170 A 40 40 0 0 1 -780 130 
+                   L -780 30 L -740 30 
+                   L -740 130 A 10 10 0 0 0 -730 140 
+                   L -60 140 A 10 10 0 0 0 -50 130 
+                   L -50 30 Z" 
+                fill="var(--surface)" stroke="var(--border)" strokeWidth="2" 
+              />
+              
+              {/* Anvil */}
+              <rect x="-780" y="-15" width="40" height="30" fill="var(--surface)" stroke="var(--border)" strokeWidth="2" />
+              <line x1="-740" y1="-15" x2="-740" y2="15" stroke="var(--text)" strokeWidth="2" />
+              
+              {/* Spindle Body */}
+              <rect x={-740 + TW * MM} y="-12" width={740 + ZE_mm * MM} height="24" fill="#e4e4e7" stroke="var(--text-muted)" strokeWidth="1" />
+              {/* Spindle Face */}
+              <line x1={-740 + TW * MM} y1="-15" x2={-740 + TW * MM} y2="15" stroke="var(--text)" strokeWidth="2" />
+
+              {/* Barrel */}
+              <rect x="-20" y="-24" width={27 * MM + 20} height="48" fill="var(--surface)" stroke="var(--border)" strokeWidth="2" />
+              <line x1="-20" y1="0" x2={27 * MM} y2="0" stroke="var(--text-muted)" strokeWidth={isZoom ? "0.75" : "1.5"} />
+              
+              {/* Barrel Ticks (from -2mm to 25mm) */}
+              {Array.from({ length: Math.ceil(27 / screwPitch) + 1 }).map((_, i) => {
+                const mm = (i - 4) * screwPitch; // start from -2mm
+                const x = mm * MM;
+                if (x < -20) return null; // hide inside U-frame
+                
+                const isHalf = screwPitch === 0.5 && i % 2 !== 0;
+                if (isHalf) {
+                  return <line key={`b-${i}`} x1={x} y1="0" x2={x} y2="14" stroke="var(--text)" strokeWidth={isZoom ? "0.75" : "1.5"} />;
+                } else {
+                  return (
+                    <g key={`b-${i}`} transform={`translate(${x}, 0)`}>
+                      <line y1="0" y2="-14" stroke="var(--text)" strokeWidth={isZoom ? "0.75" : "1.5"} />
+                      {/* Only label every 5mm to avoid horizontal cramping */}
+                      {mm >= 0 && mm % 5 === 0 && <text y="-20" textAnchor="middle" fontSize={isZoom ? "7" : "12"} fill="var(--text-muted)" fontWeight="bold">{mm}</text>}
+                    </g>
+                  );
+                }
+              })}
+
+              {/* Thimble */}
+              <g 
+                transform={`translate(${(TW + ZE_mm) * MM}, 0)`}
+                className={objectId === 'none' && !isZoom ? 'cursor-ew-resize' : ''}
+                onPointerDown={!isZoom ? startDrag : undefined}
+              >
+                <rect x="0" y="-46" width="220" height="92" fill="var(--bg)" stroke="var(--border)" strokeWidth="2" />
+                <line x1="0" y1="-46" x2="0" y2="46" stroke="var(--accent)" strokeWidth={isZoom ? "1" : "2"} />
+                
+                {/* Thimble Ticks */}
+                {Array.from({ length: screwDivs }).map((_, i) => {
+                  const angle = (i * 360 / screwDivs - ((TW + ZE_mm) / screwPitch) * 360) % 360;
+                  let normAngle = angle > 180 ? angle - 360 : angle < -180 ? angle + 360 : angle;
+                  
+                  if (Math.abs(normAngle) <= 85) {
+                    const y = 46 * Math.sin(normAngle * Math.PI / 180);
+                    const isCoinciding = showAnswers && i === CSR;
+                    
+                    // In zoom mode, label every tick (or every 2nd for 100 div) and shrink font to fit the tighter viewbox
+                    const zInterval = screwDivs >= 100 ? 2 : 1;
+                    const finalInterval = isZoom ? zInterval : (screwDivs >= 100 ? 10 : 5);
+                    const fSize = isZoom ? (screwDivs >= 100 ? "3.5" : "4.5") : "12";
+                    const yOff = isZoom ? 1.5 : 4;
+                    const sWidth = isZoom ? (isCoinciding ? "1.5" : "0.75") : (isCoinciding ? "2.5" : "1.5");
+                    
+                    return (
+                      <g key={`t-${i}`}>
+                        <line x1="0" y1={y} x2="16" y2={y} stroke={isCoinciding ? "var(--accent)" : "var(--text)"} strokeWidth={sWidth} />
+                        {i % finalInterval === 0 && <text x="20" y={y + yOff} fontSize={fSize} fontWeight={isCoinciding ? "bold" : "normal"} fill={isCoinciding ? "var(--accent)" : "var(--text-muted)"}>{i}</text>}
+                      </g>
+                    );
+                  }
+                  return null;
+                })}
+
+                {/* Grips */}
+                {Array.from({length: 8}).map((_, i) => (
+                  <rect key={`g-${i}`} x={60 + i*18} y="-36" width="8" height="72" rx="2" fill="var(--border)" fillOpacity="0.6" />
+                ))}
+              </g>
+
+              {/* Object */}
+              {objectId !== 'none' && TW > 0 && (
+                <g transform="translate(-740, 0)">
+                  {renderObject(TW * MM, 0)}
+                </g>
+              )}
+            </g>
+          );
+        }
+      };
+
+      // Zoom Configuration
+      let zoomX = 0, zoomY = 0, zoomW = 120, zoomH = 120;
+      if (instrument === 'vernier') {
+        zoomX = (TW + ZE_mm) * 20 + loupePanX; 
+        zoomY = loupePanY;
+        zoomW = vernierDivs >= 50 ? 120 : 160;
+        zoomH = 120;
+      } else {
+        zoomX = (TW + ZE_mm) * 30 + loupePanX;
+        zoomY = loupePanY;
+        zoomW = 85;
+        zoomH = 60;
+      }
+
+      const stageViewBox = (() => {
+        if (instrument === 'vernier') {
+          if (isMobile) {
+            const mobileCenterX = -150 + TW * 10;
+            return `${mobileCenterX - 310} -150 620 320`;
+          }
+          return "-500 -200 1000 400";
+        }
+
+        return "-850 -250 1400 500";
+      })();
+
+      return (
+        <div className="sim-root flex flex-col font-sans text-[var(--text)]">
+          {/* Zone 1: Header Strip */}
+          <header className="flex flex-wrap items-center gap-3 px-4 py-3 md:px-6 md:py-4 border-b border-[var(--border)] bg-white z-20 shrink-0">
+            <div className="flex min-w-0 items-center gap-2 text-[var(--accent)]">
+              <Activity size={24} />
+              <span className="truncate font-bold text-base md:text-lg tracking-tight text-[var(--text)]">Trinity Simulation Lab</span>
+            </div>
+            <div className="ml-0 md:ml-auto text-xs md:text-sm font-semibold text-[var(--text-muted)] bg-[var(--surface)] px-3 py-1 rounded-full">
+              Precision Measurement
+            </div>
+          </header>
+
+          {/* Zone 2: Stage */}
+          <main className="flex-none md:flex-1 relative stage-bg overflow-visible md:overflow-hidden flex flex-col items-stretch md:items-center justify-start md:justify-center gap-4 px-3 py-4 md:p-0 md:gap-0">
+            
+            {/* Readout Panel (Top Left) */}
+            <div className="relative md:absolute order-2 md:order-none md:top-4 md:left-4 w-full md:w-[280px] bg-white/95 border border-[var(--border)] rounded-xl p-4 md:p-5 shadow-sm backdrop-blur z-10 font-mono text-[12px] md:text-[13px] leading-relaxed">
+              
+              {/* Formula Block */}
+              <div className="flex flex-col gap-1 text-[11px] text-[var(--text-muted)] bg-[var(--surface)] p-3 rounded-lg mb-4 font-sans">
+                {instrument === 'vernier' ? (
+                  <>
+                    <div className="flex justify-between"><span>Least Count (LC)</span> <span className="font-mono">0.1 cm / {vernierDivs} = {fmtCm(LC)} cm</span></div>
+                    <div className="flex justify-between mt-1"><span>Reading Formula</span> <span className="font-mono">MSR + (VSR × LC)</span></div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between"><span>Least Count (LC)</span> <span className="font-mono">{screwPitch/10} cm / {screwDivs} = {fmtCm(LC)} cm</span></div>
+                    <div className="flex justify-between mt-1"><span>Reading Formula</span> <span className="font-mono">MSR + (CSR × LC)</span></div>
+                  </>
+                )}
+              </div>
+
+              {/* Data Table */}
+              <div className="flex justify-between mb-1">
+                <span className="text-[var(--text-muted)]">LC</span>
+                <span>{fmtCm(LC)} cm</span>
+              </div>
+              <div className="flex justify-between mb-1">
+                <span className="text-[var(--text-muted)]">MSR</span>
+                <span>{showAnswers ? `${fmtCm(MSR)} cm` : '?.?? cm'}</span>
+              </div>
+              <div className="flex justify-between mb-3">
+                <span className="text-[var(--text-muted)]">{instrument === 'vernier' ? 'VSR' : 'CSR'} × LC</span>
+                <span>{showAnswers ? `${instrument==='vernier'?VSR:CSR} × ${fmtCm(LC)} = ${fmtCm((instrument==='vernier'?VSR:CSR)*LC)} cm` : '? × ?.?? = ?.?? cm'}</span>
+              </div>
+
+              <div className="h-px bg-[var(--border)] w-full my-2"></div>
+
+              <div className="flex justify-between mb-1">
+                <span className="text-[var(--text-muted)]">OBSERVED</span>
+                <span>{showAnswers ? `${fmtCm(observed)} cm` : '?.?? cm'}</span>
+              </div>
+              <div className="flex justify-between mb-3">
+                <span className="text-[var(--text-muted)]">ZERO ERR</span>
+                <span>{showAnswers ? `${ZE_mm > 0 ? '+' : ''}${fmtCm(ZE_mm)} cm` : '?.?? cm'}</span>
+              </div>
+
+              <div className="h-px bg-[var(--border)] w-full my-2"></div>
+
+              <div className="flex justify-between font-bold text-[var(--accent)] text-sm">
+                <span>CORRECTED</span>
+                <span>{showAnswers ? `${fmtCm(corrected)} cm` : '?.?? cm'}</span>
+              </div>
+
+              {objectId !== 'none' && (
+                <div className="flex justify-between text-[var(--text-muted)] mt-3">
+                  <span>TRUE WIDTH</span>
+                  <span>{showAnswers ? `${fmtCm(TW)} cm` : '?.?? cm'}</span>
+                </div>
+              )}
+
+              <button 
+                onClick={() => setShowAnswers(!showAnswers)}
+                className="mt-4 w-full py-1.5 rounded bg-[var(--surface)] hover:bg-[var(--border)] text-[var(--text)] text-xs font-bold uppercase tracking-wider transition-colors"
+              >
+                {showAnswers ? 'Hide Answers' : 'Show Answers'}
+              </button>
+            </div>
+
+            {/* Zoom Loupe (Floating Panel) */}
+            <div 
+              className="loupe-panel relative md:absolute order-3 md:order-none w-full md:w-[280px] flex flex-col gap-2 z-20 bg-white/95 border border-[var(--border)] rounded-xl shadow-sm backdrop-blur p-3"
+              style={{ '--loupe-x': `${loupeWinPos.x}px`, '--loupe-y': `${loupeWinPos.y}px` }}
+            >
+              <div 
+                className="flex justify-between items-center md:cursor-move pb-2 border-b border-[var(--border)] select-none md:hover:bg-[var(--surface)] -mx-3 px-3 -mt-3 pt-3 rounded-t-xl transition-colors"
+                onPointerDown={(e) => {
+                  if (!window.matchMedia('(min-width: 768px)').matches) return;
+                  setIsDraggingWin(true);
+                  setWinDragStart({ x: e.clientX, y: e.clientY, startX: loupeWinPos.x, startY: loupeWinPos.y });
+                  e.target.setPointerCapture(e.pointerId);
+                }}
+              >
+                <span className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider flex items-center gap-1.5 pointer-events-none">
+                  <Move size={14} /> Magnified Scale
+                </span>
+              </div>
+
+              <div className="w-full h-[180px] bg-white border border-[var(--border)] rounded-lg overflow-hidden relative loupe-shadow shrink-0">
+                 <svg viewBox={`${zoomX - zoomW/2} ${zoomY - zoomH/2} ${zoomW} ${zoomH}`} width="100%" height="100%" className="select-none">
+                   {renderInstrumentSvg(true)}
+                 </svg>
+                 {/* Crosshair / Indicator */}
+                 <div className="absolute top-0 bottom-0 left-1/2 w-px bg-[var(--accent)]/30 border-r-2 border-dashed border-[var(--accent)] pointer-events-none" />
+              </div>
+
+              {/* Pan Tools */}
+              <div className="flex flex-col gap-2 mt-1 bg-[var(--surface)] p-2.5 rounded-lg border border-[var(--border)]">
+                 <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider mb-0.5">Pan View Tool</span>
+                 <div className="flex items-center gap-2">
+                   <span className="text-[10px] font-bold text-[var(--text-muted)] w-2">X</span>
+                   <input 
+                     type="range" 
+                     min={instrument === 'vernier' ? -40 : -60} 
+                     max={instrument === 'vernier' ? vernierDivs * 20 + 40 : 60} 
+                     value={loupePanX} 
+                     onChange={e => { setLoupePanX(Number(e.target.value)); setShowAnswers(false); }} 
+                     className="flex-1 h-1.5 bg-[#d4d4d8] rounded-lg appearance-none cursor-pointer accent-[var(--accent)]" 
+                   />
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <span className="text-[10px] font-bold text-[var(--text-muted)] w-2">Y</span>
+                   <input 
+                     type="range" 
+                     min="-60" 
+                     max="60" 
+                     value={loupePanY} 
+                     onChange={e => { setLoupePanY(Number(e.target.value)); setShowAnswers(false); }} 
+                     className="flex-1 h-1.5 bg-[#d4d4d8] rounded-lg appearance-none cursor-pointer accent-[var(--accent)]" 
+                   />
+                 </div>
+              </div>
+            </div>
+
+            {/* Main Instrument Stage SVG */}
+            <div className="order-1 md:order-none w-full min-h-[300px] md:h-full flex items-center justify-center overflow-hidden rounded-xl md:rounded-none bg-white/35 md:bg-transparent border border-[var(--border)] md:border-0 p-2 md:p-0 md:pt-20">
+              <svg viewBox={stageViewBox} className="instrument-svg overflow-visible select-none drop-shadow-sm">
+                <g transform={instrument === 'vernier' ? `translate(-150, 0)` : `translate(-350, -20) scale(2.6)`}>
+                  {renderInstrumentSvg(false)}
+                </g>
+              </svg>
+            </div>
+          </main>
+
+          {/* Zone 3: Parameter Strip */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 xl:flex gap-4 xl:gap-x-8 items-stretch xl:items-center xl:justify-between px-4 py-4 md:px-6 md:py-5 bg-white border-t border-[var(--border)] z-20 shrink-0">
+            
+            {/* Instrument Toggle */}
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <span className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider">Instrument</span>
+              <div className="grid grid-cols-2 bg-[var(--surface)] border border-[var(--border)] rounded-md p-1">
+                <button 
+                  onClick={() => handleInstrumentChange('vernier')} 
+                  className={`px-3 md:px-4 py-1.5 rounded text-sm font-semibold transition-all ${instrument === 'vernier' ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+                >
+                  Vernier Caliper
+                </button>
+                <button 
+                  onClick={() => handleInstrumentChange('screw')} 
+                  className={`px-3 md:px-4 py-1.5 rounded text-sm font-semibold transition-all ${instrument === 'screw' ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+                >
+                  Screw Gauge
+                </button>
+              </div>
+            </div>
+
+            {/* Object Picker */}
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <span className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider">Test Object</span>
+              <select 
+                value={objectId} 
+                onChange={(e) => { setObjectId(e.target.value); setManualPos(0); setShowAnswers(false); }} 
+                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-md px-4 py-2 text-sm font-medium outline-none focus:border-[var(--accent)] text-[var(--text)] md:min-w-[160px] cursor-pointer"
+              >
+                {objects.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+            </div>
+
+            {/* Zero Error Control */}
+            <div className="flex flex-col gap-1.5 min-w-0 md:min-w-[240px]">
+              <span className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider flex justify-between">
+                <span>Zero Error</span>
+                <span className="font-mono lowercase text-[var(--accent)] font-semibold">{ZE_mm > 0 ? '+' : ''}{fmtCm(ZE_mm)} cm</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <select 
+                  value={zeType} 
+                  onChange={e => {
+                    setZeType(e.target.value);
+                    if (e.target.value !== 'none' && zeMag === 0) setZeMag(2);
+                  }} 
+                  className="bg-[var(--surface)] border border-[var(--border)] rounded-md px-3 py-2 text-sm font-medium outline-none focus:border-[var(--accent)] text-[var(--text)] flex-1 cursor-pointer"
+                >
+                  <option value="none">None (0)</option>
+                  <option value="positive">Positive (+)</option>
+                  <option value="negative">Negative (-)</option>
+                </select>
+                {zeType !== 'none' && (
+                  <select 
+                    value={zeMag} 
+                    onChange={e => setZeMag(Number(e.target.value))} 
+                    className="bg-[var(--surface)] border border-[var(--border)] rounded-md px-2 py-2 text-sm font-medium outline-none focus:border-[var(--accent)] text-[var(--text)] w-24 cursor-pointer"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(v => <option key={v} value={v}>{v} div</option>)}
+                  </select>
+                )}
+              </div>
+            </div>
+
+            {/* Scale Divisions */}
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <span className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider">Scale Config</span>
+              {instrument === 'vernier' ? (
+                <select 
+                  value={vernierDivs} 
+                  onChange={e => setVernierDivs(Number(e.target.value))} 
+                  className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-md px-4 py-2 text-sm font-medium outline-none focus:border-[var(--accent)] text-[var(--text)] cursor-pointer"
+                >
+                  <option value="10">10 divisions (LC 0.01 cm)</option>
+                  <option value="20">20 divisions (LC 0.005 cm)</option>
+                  <option value="50">50 divisions (LC 0.002 cm)</option>
+                </select>
+              ) : (
+                <select 
+                  value={`${screwPitch}_${screwDivs}`} 
+                  onChange={e => {
+                    const [p, d] = e.target.value.split('_').map(Number);
+                    setScrewPitch(p); setScrewDivs(d);
+                  }} 
+                  className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-md px-4 py-2 text-sm font-medium outline-none focus:border-[var(--accent)] text-[var(--text)] cursor-pointer"
+                >
+                  <option value="0.5_50">Pitch 0.05 cm, 50 div (LC 0.001 cm)</option>
+                  <option value="1_100">Pitch 0.1 cm, 100 div (LC 0.001 cm)</option>
+                  <option value="0.5_100">Pitch 0.05 cm, 100 div (LC 0.0005 cm)</option>
+                </select>
+              )}
+            </div>
+
+            {/* Reset Button */}
+            <button 
+              onClick={handleReset} 
+              className="w-full xl:w-auto p-2.5 rounded-md bg-[var(--surface)] xl:bg-transparent hover:bg-[var(--surface)] border border-[var(--border)] xl:border-transparent hover:border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors xl:ml-auto flex items-center justify-center" 
+              title="Reset Position & Zero Error"
+            >
+              <RotateCcw size={20} />
+            </button>
+          </section>
+
+          {/* Zone 4: Prompt Strip */}
+          <footer className="px-4 py-3 md:px-6 md:py-3.5 bg-[var(--surface)] border-t border-[var(--border)] text-xs md:text-sm font-semibold text-[var(--text)] flex justify-center text-center tracking-wide shrink-0">
+            Place the object, then read the coinciding {instrument === 'vernier' ? 'vernier' : 'circular'} line — does the corrected value match the true width?
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

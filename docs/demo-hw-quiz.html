@@ -1,0 +1,69 @@
+<!-- Demo Trinity homework quiz. Paste this whole fragment into the sim admin
+     "code" field. Score is out of 3 — set the parent app's Max Score to 3.
+     It posts {type:"score", value} to the runner, which reports it to Trinity. -->
+<main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:560px;">
+    <div style="font-family:var(--mono);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--dark-mute);">Quiz · 3 questions</div>
+    <h1 style="font-size:28px;font-weight:600;letter-spacing:-0.01em;margin:10px 0 20px;color:var(--dark-ink);">Quick check</h1>
+
+    <form id="quiz" style="display:grid;gap:20px;"></form>
+
+    <button id="submit" type="button"
+      style="margin-top:22px;width:100%;min-height:48px;border:none;border-radius:999px;background:var(--dark-ink);color:var(--dark);font-size:16px;font-weight:600;cursor:pointer;">
+      Submit answers
+    </button>
+
+    <div id="result" style="margin-top:18px;font-size:17px;color:var(--dark-ink);"></div>
+  </div>
+</main>
+
+<script>
+  // question: prompt, options, index of correct answer
+  var QUESTIONS = [
+    { q: "What is the SI unit of force?", opts: ["Joule", "Newton", "Watt"], a: 1 },
+    { q: "Speed is distance divided by …", opts: ["time", "mass", "force"], a: 0 },
+    { q: "A body at rest stays at rest unless acted on by a …", opts: ["colour", "force", "shadow"], a: 1 },
+  ];
+
+  var picked = {};
+  var form = document.getElementById("quiz");
+
+  QUESTIONS.forEach(function (item, qi) {
+    var block = document.createElement("div");
+    block.innerHTML =
+      '<div style="font-size:17px;color:var(--dark-ink);margin-bottom:10px;">' +
+      (qi + 1) + ". " + item.q + "</div>";
+    item.opts.forEach(function (opt, oi) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = opt;
+      btn.style.cssText =
+        "display:block;width:100%;text-align:left;margin:6px 0;min-height:44px;padding:10px 14px;" +
+        "border:1px solid #2A2A2A;border-radius:6px;background:transparent;color:var(--dark-ink);" +
+        "font-size:16px;cursor:pointer;";
+      btn.onclick = function () {
+        picked[qi] = oi;
+        Array.prototype.forEach.call(block.querySelectorAll("button"), function (b) {
+          b.style.borderColor = "#2A2A2A";
+          b.style.color = "var(--dark-ink)";
+        });
+        // accent marks the live/selected choice
+        btn.style.borderColor = "var(--accent)";
+        btn.style.color = "var(--accent)";
+      };
+      block.appendChild(btn);
+    });
+    form.appendChild(block);
+  });
+
+  document.getElementById("submit").onclick = function () {
+    var score = 0;
+    QUESTIONS.forEach(function (item, qi) {
+      if (picked[qi] === item.a) score++;
+    });
+    document.getElementById("result").textContent =
+      "You scored " + score + " out of " + QUESTIONS.length + ". Sending to Trinity…";
+    // This is the line that reports the score back to the app:
+    parent.postMessage({ type: "score", value: score }, "*");
+  };
+</script>

@@ -18,6 +18,8 @@ const Icon = ({ name, size = 18, stroke = 1.5 }) => {
     case 'settings': return <svg {...common}><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>;
     case 'sparkle': return <svg {...common}><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>;
     case 'book': return <svg {...common}><path d="M4 4v16a2 2 0 0 1 2-2h14V4H6a2 2 0 0 0-2 2z"/><path d="M8 4v14"/></svg>;
+    case 'clipboard-list': return <svg {...common}><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>;
+    case 'puzzle': return <svg {...common}><path d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>;
     default: return null;
   }
 };

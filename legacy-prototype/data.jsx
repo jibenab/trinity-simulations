@@ -13,6 +13,8 @@ const SIMS = [
   { id: 'functions', title: 'Graphing Functions', subject: 'Math', grade: 'Class 10', chapter: 'Coordinate Geometry', level: 'Intro', minutes: 10, concepts: ['Linear', 'Quadratic', 'Trig'], featured: false, new: false },
   { id: 'calculus', title: 'Derivatives Visualised', subject: 'Math', grade: 'Class 12', chapter: 'Continuity & Differentiability', level: 'Advanced', minutes: 14, concepts: ['Slope', 'Tangents'], featured: true, new: false },
   { id: 'vectors', title: 'Vector Addition', subject: 'Math', grade: 'Class 11', chapter: 'Vector Algebra', level: 'Core', minutes: 9, concepts: ['Head-to-tail', 'Components'], featured: false, new: false },
+  { id: 'precision', title: 'Precision Measurement', subject: 'Physics', grade: 'Class 11', chapter: 'Units & Measurements', level: 'Core', minutes: 15, concepts: ['Least Count', 'Zero Error', 'Vernier', 'Screw Gauge'], featured: true, new: true },
+  { id: 'evaporation', title: 'Evaporation', subject: 'Chemistry', grade: 'Class 8', chapter: 'States of Matter', level: 'Intro', minutes: 12, concepts: ['Evaporation', 'Kinetic Theory', 'Surface Area', 'Humidity'], featured: true, new: true },
 ];
 
 window.SIMS = SIMS;

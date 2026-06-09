@@ -86,6 +86,8 @@ Never set monospace larger than 18 px. Never use it for body copy. Numeric reado
 
 Every simulation should follow the same 4-zone layout so students build muscle memory.
 
+Standalone files under `simulation/*.html` are embedded inside the app shell. They must not include site-level chrome: no `TopNav`, no `<nav>`, no Home/Simulations/Subjects links, no Student login/Admin buttons, and no duplicated app footer. The simulation header strip below is the only top area inside those files.
+
 ```
 ┌──────────────────────────────────────────┐
 │ 1. HEADER STRIP  (subject · title · controls)
@@ -197,14 +199,14 @@ Never stack two accent buttons side-by-side. Never use gradient or "glass" butto
 /pendulum.jsx            reference implementation of a simulation stage
 /home.html               landing page
 /catalog.html            browse page
-/<sim-id>.html           one file per simulation; mirror pendulum.jsx's structure
+/simulation/<sim-id>.html one file per embedded simulation; mirror the 4-zone simulation anatomy, without app nav/footer chrome
 ```
 
 When adding a new simulation:
 1. Add an entry to `SIMS` in `data.jsx`.
 2. Add a case to `SimGlyph` in `components.jsx` if the subject glyph needs variation.
-3. Create `<sim-id>.html` using `pendulum.jsx` as the skeleton.
-4. Reuse `TopNav`, `Footer`, `Icon` — don't duplicate.
+3. Create `simulation/<sim-id>.html` using the 4-zone simulation anatomy as the skeleton.
+4. Reuse small primitives like `Icon`, but do not include `TopNav`, `Footer`, or any app-level navigation in embedded simulation files.
 
 ---
 
@@ -217,6 +219,7 @@ When adding a new simulation:
 - [ ] Accent used only once per screen, and only on the live element
 - [ ] All text passes WCAG AA contrast on both light and dark surfaces
 - [ ] Simulation has play/pause/reset and at most 4 parameters
+- [ ] No site-level nav/footer chrome inside `simulation/*.html`
 - [ ] Stage has a faint grid and mono readouts
 - [ ] Works at 1194×834 and at 375×667
 - [ ] iPad fullscreen does not rely on body/page scroll; scrollable content is contained inside an internal panel

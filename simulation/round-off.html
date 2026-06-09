@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Rounding Lab — Trinity Simulation Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #EFF2F5;
+  --bg-alt: #E2E7EC;
+  --ink: #0C1115;
+  --ink-soft: #2B333A;
+  --ink-mute: #6B7680;
+  --rule-soft: rgba(12,17,21,0.14);
+  --paper: #F7F8FA;
+  --dark: #0C1115;
+  --dark-ink: #EFF2F5;
+  --dark-mute: #7F8892;
+  --stage-grid: rgba(239,242,245,0.07);
+  --stage-rule: #2A2A2A;
+  --accent: oklch(0.52 0.12 200);
+  --accent-ink: #F7F8FA;
+  --sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+.shell { max-width: 1194px; height: 100dvh; margin: 0 auto; padding: 0 32px; display: flex; flex-direction: column; }
+.scroll-panel { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.content { max-width: 880px; margin: 0 auto; padding: 32px 24px 56px; }
+.display { font-weight: 600; line-height: 0.96; letter-spacing: -0.025em; }
+.eyebrow, .label-mono { font-family: var(--mono); text-transform: uppercase; }
+.eyebrow { font-size: 13px; letter-spacing: 0.14em; color: var(--ink-mute); }
+.label-mono { font-size: 13px; letter-spacing: 0.08em; }
+
+.btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; border: 1px solid var(--ink); border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 500; transition: transform 0.15s ease, background 0.15s ease; }
+.btn:hover { transform: translateY(-1px); }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.ghost:hover, .chip.active { background: var(--ink); color: var(--bg); }
+.icon-btn { width: 44px; height: 44px; border: 1px solid var(--ink); border-radius: 50%; background: transparent; display: inline-flex; align-items: center; justify-content: center; }
+
+.sim-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.stage { position: relative; height: 400px; overflow: hidden; border: 1px solid var(--stage-rule); border-radius: 4px; background: var(--dark); color: var(--dark-ink); }
+.stage-grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.stage-content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 22px 24px; }
+.readouts { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; color: var(--dark-mute); }
+.readouts span span { color: var(--dark-ink); margin-left: 8px; }
+.question-panel { flex: 1; display: grid; place-items: center; text-align: center; padding: 12px 0; }
+.question-text { max-width: 680px; font-size: clamp(25px, 4vw, 42px); line-height: 1.08; letter-spacing: -0.025em; }
+.question-hint { margin-top: 18px; color: var(--dark-mute); font-size: 17px; line-height: 1.45; }
+.timer-track { height: 5px; border: 1px solid var(--stage-rule); border-radius: 999px; overflow: hidden; background: transparent; }
+.timer-fill { height: 100%; background: var(--accent); transition: width 1s linear; }
+
+.chip-row, .options-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.chip { min-height: 38px; padding: 7px 14px; border: 1px solid var(--ink); border-radius: 999px; background: transparent; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.options-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.option-btn { min-height: 56px; padding: 14px 16px; border: 1px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); font-size: 18px; font-weight: 600; transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease; }
+.option-btn:not(:disabled):hover { transform: translateY(-1px); background: var(--bg-alt); }
+.option-btn:disabled { cursor: default; }
+.option-btn.correct { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.option-btn.selected-wrong { background: var(--ink); color: var(--bg); }
+.option-btn.dimmed { opacity: 0.42; }
+
+.result-layout { height: 100%; display: grid; grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.4fr); gap: 1px; background: var(--stage-rule); }
+.result-summary, .review-panel { background: var(--dark); padding: 26px; min-height: 0; }
+.score-number { font-size: 58px; line-height: 0.95; letter-spacing: -0.04em; margin-top: 20px; }
+.review-panel { overflow-y: auto; }
+.review-item { padding: 14px 0; border-top: 1px solid var(--stage-rule); }
+.review-q { margin: 0 0 8px; font-size: 15px; line-height: 1.35; }
+.review-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--dark-mute); font-size: 13px; }
+.leaderboard-note { margin-top: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--rule-soft); color: var(--ink-mute); font-family: var(--mono); font-size: 13px; line-height: 1.5; letter-spacing: 0.08em; text-transform: uppercase; }
+
+@media (max-width: 720px) {
+  .shell { padding: 0 16px; }
+  .content { padding: 24px 0 44px; }
+  .stage { height: 430px; }
+  .stage-content { padding: 18px; }
+  .options-grid { grid-template-columns: 1fr 1fr; }
+  .result-layout { grid-template-columns: 1fr; overflow-y: auto; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useEffect, useRef, useState } = React;
+
+const Icon = ({ name, size = 18, stroke = 1.5 }) => {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: stroke, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  if (name === 'reset') return <svg {...common}><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>;
+  return <svg {...common}><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>;
+};
+
+const allQuestions = [
+  { type: 'dp', q: 'Round 7.486 correct to 2 decimal places.', ans: '7.49', wrong: ['7.48', '7.50', '7.486'] },
+  { type: 'dp', q: 'Round 12.835 correct to 2 decimal places.', ans: '12.84', wrong: ['12.83', '12.85', '12.8'] },
+  { type: 'dp', q: 'Round 0.7654 correct to 2 decimal places.', ans: '0.77', wrong: ['0.76', '0.765', '0.80'] },
+  { type: 'dp', q: 'Round 49.995 correct to 2 decimal places.', ans: '50.00', wrong: ['49.99', '49.95', '50.05'] },
+  { type: 'dp', q: 'Round 3.14159 correct to 1 decimal place.', ans: '3.1', wrong: ['3.2', '3.14', '3.0'] },
+  { type: 'dp', q: 'Round 3.14159 correct to 3 decimal places.', ans: '3.142', wrong: ['3.141', '3.14', '3.1415'] },
+  { type: 'dp', q: 'Round 0.048 correct to 1 decimal place.', ans: '0.0', wrong: ['0.1', '0.04', '0.05'] },
+  { type: 'dp', q: 'Round 9.95 correct to 1 decimal place.', ans: '10.0', wrong: ['9.9', '9.95', '10.1'] },
+  { type: 'dp', q: 'Round 23.678 correct to 1 decimal place.', ans: '23.7', wrong: ['23.6', '23.68', '24.0'] },
+  { type: 'dp', q: 'Round 105.045 correct to 2 decimal places.', ans: '105.05', wrong: ['105.04', '105.00', '105.045'] },
+  { type: 'sf', q: 'Write down the number of significant figures in 0.00420.', ans: '3', wrong: ['2', '4', '5'] },
+  { type: 'sf', q: 'Write down the number of significant figures in 6.030.', ans: '4', wrong: ['2', '3', '5'] },
+  { type: 'sf', q: 'Write down the number of significant figures in 12000.', ans: '2', wrong: ['5', '3', '4'] },
+  { type: 'sf', q: 'Write down the number of significant figures in 4.50.', ans: '3', wrong: ['2', '1', '4'] },
+  { type: 'sf', q: 'Round 0.048571 correct to two significant figures.', ans: '0.049', wrong: ['0.048', '0.050', '0.0486'] },
+  { type: 'sf', q: 'Round 0.048571 correct to three significant figures.', ans: '0.0486', wrong: ['0.0485', '0.049', '0.048'] },
+  { type: 'sf', q: 'Round 56723 correct to two significant figures.', ans: '57000', wrong: ['56000', '56700', '56'] },
+  { type: 'sf', q: 'Round 56723 correct to three significant figures.', ans: '56700', wrong: ['56800', '567', '57000'] },
+  { type: 'sf', q: 'Round 2.70480 correct to three significant figures.', ans: '2.70', wrong: ['2.705', '2.7', '2.71'] },
+  { type: 'sf', q: 'Round 2.70480 correct to four significant figures.', ans: '2.705', wrong: ['2.704', '2.70', '2.710'] },
+  { type: 'sf', q: 'Round 0.0030982 correct to three significant figures.', ans: '0.00310', wrong: ['0.00309', '0.0031', '0.003'] }
+];
+
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function submitLeaderboardScore(score, timeTaken) {
+  parent.postMessage({ type: 'score', value: score, timeTaken }, '*');
+}
+
+const Grid = () => (
+  <svg className="stage-grid" viewBox="0 0 800 400" preserveAspectRatio="none" aria-hidden="true">
+    {Array.from({ length: 11 }).map((_, i) => <line key={'h' + i} x1="0" y1={i * 40} x2="800" y2={i * 40} stroke="var(--stage-grid)" strokeWidth="0.5"/>)}
+    {Array.from({ length: 21 }).map((_, i) => <line key={'v' + i} x1={i * 40} y1="0" x2={i * 40} y2="400" stroke="var(--stage-grid)" strokeWidth="0.5"/>)}
+  </svg>
+);
+
+const RoundingLab = () => {
+  const [gameState, setGameState] = useState('menu');
+  const [mode, setMode] = useState('mixed');
+  const [questions, setQuestions] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [score, setScore] = useState(0);
+  const [xp, setXp] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(15);
+  const [options, setOptions] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [locked, setLocked] = useState(false);
+  const startedAtRef = useRef(Date.now());
+  const reportedRef = useRef(false);
+  const TIME_LIMIT = 15;
+
+  useEffect(() => {
+    if (gameState !== 'playing' || locked) return;
+    if (timeLeft <= 0) {
+      answerQuestion(null);
+      return;
+    }
+    const interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [gameState, locked, timeLeft]);
+
+  useEffect(() => {
+    if (gameState !== 'result' || reportedRef.current) return;
+    reportedRef.current = true;
+    const timeTaken = Math.round((Date.now() - startedAtRef.current) / 1000);
+    submitLeaderboardScore(score, timeTaken);
+  }, [gameState, score]);
+
+  const prepareQuestion = (questionSet, index) => {
+    const qData = questionSet[index];
+    setOptions(shuffleArray([{ text: qData.ans, isCorrect: true }, ...qData.wrong.map(text => ({ text, isCorrect: false }))]));
+    setTimeLeft(TIME_LIMIT);
+    setSelected(null);
+    setLocked(false);
+  };
+
+  const startGame = (selectedMode) => {
+    const pool = selectedMode === 'mixed' ? allQuestions : allQuestions.filter(q => q.type === selectedMode);
+    const selectedQuestions = shuffleArray(pool).slice(0, 10);
+    setMode(selectedMode);
+    setQuestions(selectedQuestions);
+    setCurrent(0);
+    setScore(0);
+    setXp(0);
+    setAnswers([]);
+    setGameState('playing');
+    reportedRef.current = false;
+    startedAtRef.current = Date.now();
+    prepareQuestion(selectedQuestions, 0);
+  };
+
+  const answerQuestion = (option) => {
+    if (locked || gameState !== 'playing') return;
+    const qData = questions[current];
+    const isCorrect = Boolean(option?.isCorrect);
+    const nextScore = score + (isCorrect ? 1 : 0);
+    const nextXp = xp + (isCorrect ? 100 + timeLeft * 10 : 0);
+    setLocked(true);
+    setSelected(option?.text ?? 'Time out');
+    setScore(nextScore);
+    setXp(nextXp);
+    setAnswers(prev => [...prev, {
+      q: qData.q,
+      userAns: option?.text ?? 'Time out',
+      correctAns: qData.ans,
+      isCorrect,
+      time: TIME_LIMIT - timeLeft
+    }]);
+    setTimeout(() => {
+      const next = current + 1;
+      if (next >= questions.length) {
+        setGameState('result');
+        return;
+      }
+      setCurrent(next);
+      prepareQuestion(questions, next);
+    }, 1100);
+  };
+
+  const currentQuestion = questions[current];
+  const modeLabel = mode === 'dp' ? 'Decimal places' : mode === 'sf' ? 'Significant figures' : 'Mixed practice';
+
+  return (
+    <div>
+      <div className="sim-header">
+        <div>
+          <div className="eyebrow">Simulation · Math</div>
+          <div className="display" style={{ fontSize: 38, marginTop: 6 }}>Rounding Lab</div>
+        </div>
+        <button className="icon-btn" onClick={() => setGameState('menu')} aria-label="Reset"><Icon name="reset" size={20}/></button>
+      </div>
+
+      <section className="stage" aria-live="polite">
+        <Grid/>
+        {gameState === 'menu' && (
+          <div className="stage-content">
+            <div className="readouts">
+              <span className="label-mono">Mode <span>choose below</span></span>
+              <span className="label-mono">Questions <span>10</span></span>
+              <span className="label-mono">Timer <span>15s each</span></span>
+            </div>
+            <div className="question-panel">
+              <div>
+                <div className="question-text display">Choose the level of rounding practice.</div>
+                <div className="question-hint">Read the instruction carefully. Zeros can be significant.</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'playing' && currentQuestion && (
+          <div className="stage-content">
+            <div className="readouts">
+              <span className="label-mono">Question <span>{current + 1}/10</span></span>
+              <span className="label-mono">Mode <span>{modeLabel}</span></span>
+              <span className="label-mono">Score <span>{score}</span></span>
+              <span className="label-mono">XP <span>{xp}</span></span>
+              <span className="label-mono">Time <span>{timeLeft}s</span></span>
+            </div>
+            <div className="question-panel">
+              <div>
+                <div className="question-text display" dangerouslySetInnerHTML={{ __html: currentQuestion.q }}></div>
+                <div className="question-hint">Select the correctly rounded value.</div>
+              </div>
+            </div>
+            <div className="timer-track"><div className="timer-fill" style={{ width: `${(timeLeft / TIME_LIMIT) * 100}%` }}></div></div>
+          </div>
+        )}
+
+        {gameState === 'result' && (
+          <div className="result-layout">
+            <div className="result-summary">
+              <div className="label-mono" style={{ color: 'var(--dark-mute)' }}>Practice complete</div>
+              <div className="score-number display">{score}/10</div>
+              <p style={{ color: 'var(--dark-mute)', fontSize: 17, lineHeight: 1.45 }}>XP {xp}. Score sent to the leaderboard.</p>
+              <button className="btn" onClick={() => startGame(mode)}>Retry mode</button>
+            </div>
+            <div className="review-panel">
+              <div className="label-mono" style={{ color: 'var(--dark-mute)', marginBottom: 10 }}>Answer review</div>
+              {answers.map((answer, index) => (
+                <div className="review-item" key={index}>
+                  <p className="review-q" dangerouslySetInnerHTML={{ __html: `${index + 1}. ${answer.q}` }}></p>
+                  <div className="review-meta">
+                    <span>Your answer: <span style={{ color: 'var(--dark-ink)' }}>{answer.userAns}</span></span>
+                    <span>Correct: <span style={{ color: 'var(--dark-ink)' }}>{answer.correctAns}</span></span>
+                    <span>{answer.time}s</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {gameState === 'menu' && (
+        <div className="chip-row">
+          <button className="chip" onClick={() => startGame('dp')}>Decimal places</button>
+          <button className="chip" onClick={() => startGame('sf')}>Significant figures</button>
+          <button className="chip active" onClick={() => startGame('mixed')}>Mixed practice</button>
+        </div>
+      )}
+
+      {gameState === 'playing' && (
+        <div className="options-grid">
+          {options.map(option => {
+            const classNames = ['option-btn'];
+            if (locked && option.isCorrect) classNames.push('correct');
+            if (locked && selected === option.text && !option.isCorrect) classNames.push('selected-wrong');
+            if (locked && !option.isCorrect && selected !== option.text) classNames.push('dimmed');
+            return <button key={option.text} className={classNames.join(' ')} disabled={locked} onClick={() => answerQuestion(option)}>{option.text}</button>;
+          })}
+        </div>
+      )}
+
+      <div className="leaderboard-note">Finish all 10 questions to submit your score.</div>
+    </div>
+  );
+};
+
+const App = () => (
+  <div className="shell">
+    <div className="scroll-panel">
+      <main className="content"><RoundingLab/></main>
+    </div>
+  </div>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

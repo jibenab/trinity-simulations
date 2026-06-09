@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "check:simulation-chrome": "node scripts/check-simulation-chrome.js",
     "dev:convex": "convex dev"
   },
   "dependencies": {
