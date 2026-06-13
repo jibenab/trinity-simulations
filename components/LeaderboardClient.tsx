@@ -24,16 +24,19 @@ export function LeaderboardClient({ slug }: { slug: string }) {
     return <div className="shell py-20 text-sm text-ink-mute">Loading…</div>;
   }
 
-  if (!content || content.type !== "game") {
+  if (!content || !content.published) {
     return (
       <div className="shell py-20">
         <h1 className="display text-[48px]">No leaderboard yet</h1>
         <p className="mt-4 text-ink-soft">
-          This route only works for published games.
+          This route only works for published activities.
         </p>
       </div>
     );
   }
+
+  const playHref = content.type === "game" ? `/game/${slug}` : `/sim/${slug}`;
+  const activityLabel = content.type === "game" ? "game" : "simulation";
 
   return (
     <div className="shell">
@@ -43,13 +46,13 @@ export function LeaderboardClient({ slug }: { slug: string }) {
         <div className="eyebrow">§ Leaderboard</div>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="display text-[clamp(48px,8vw,86px)]">{content.title}</h1>
+            <h1 className="display text-[48px] sm:text-[86px]">{content.title}</h1>
             <p className="mt-4 max-w-[420px] text-sm leading-6 text-ink-soft">
-              Live top scores update as students play in another tab.
+              Live top scores update as students finish the {activityLabel}.
             </p>
           </div>
-          <Link href={`/game/${slug}`} className="btn">
-            Open game <Icon name="arrow-right" size={16} />
+          <Link href={playHref} className="btn">
+            Open {activityLabel} <Icon name="arrow-right" size={16} />
           </Link>
         </div>
       </section>
@@ -79,7 +82,7 @@ export function LeaderboardClient({ slug }: { slug: string }) {
           ))
         ) : (
           <div className="px-5 py-12 text-sm text-ink-mute">
-            No scores yet. Play the game to seed the board.
+            No scores yet. Finish the activity to seed the board.
           </div>
         )}
       </section>

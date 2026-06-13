@@ -1,0 +1,69 @@
+<svg viewBox="0 0 200 140" width="100%" style="max-height:120px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @media (prefers-reduced-motion: reduce) {
+      .anim { animation: none; }
+      .anim * { animateTransform { } }
+    }
+  </style>
+
+  <!-- Background grid -->
+  <line x1="20"  y1="12" x2="20"  y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="60"  y1="12" x2="60"  y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="100" y1="12" x2="100" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="140" y1="12" x2="140" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="180" y1="12" x2="180" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="12"  x2="188" y2="12"  stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="41"  x2="188" y2="41"  stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="70"  x2="188" y2="70"  stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="99"  x2="188" y2="99"  stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+  <line x1="12" y1="128" x2="188" y2="128" stroke="var(--ink)" stroke-width="0.5" opacity="0.15"/>
+
+  <!-- Decimal place readout -->
+  <g>
+    <rect x="45" y="21" width="110" height="24" rx="2" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
+    <text x="55" y="37" font-family="var(--mono)" font-size="11" fill="var(--ink-mute)">7.486</text>
+    <text x="121" y="37" font-family="var(--mono)" font-size="11" fill="var(--ink)">7.49</text>
+    <path d="M 96 33 h 14 M 105 29 l 5 4 l -5 4" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
+  </g>
+
+  <!-- Number line -->
+  <g>
+    <line x1="31" y1="91" x2="169" y2="91" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M 169 91 l -6 -4 M 169 91 l -6 4" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
+    <line x1="60" y1="83" x2="60" y2="99" stroke="var(--ink)" stroke-width="1.2"/>
+    <line x1="100" y1="83" x2="100" y2="99" stroke="var(--ink)" stroke-width="1.2"/>
+    <line x1="140" y1="83" x2="140" y2="99" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M 100 62 v 42" stroke="var(--ink)" stroke-width="1.0" stroke-dasharray="3 4" opacity="0.32"/>
+    <text x="49" y="116" font-family="var(--mono)" font-size="9" fill="var(--ink-mute)">7.48</text>
+    <text x="88" y="116" font-family="var(--mono)" font-size="9" fill="var(--ink-mute)">7.485</text>
+    <text x="129" y="116" font-family="var(--mono)" font-size="9" fill="var(--ink-mute)">7.49</text>
+  </g>
+
+  <!-- Rounding decision path -->
+  <g>
+    <circle cx="104" cy="91" r="4" fill="none" stroke="var(--ink)" stroke-width="1.0" opacity="0.22"/>
+    <circle cx="140" cy="91" r="4" fill="none" stroke="var(--ink)" stroke-width="1.0" opacity="0.22"/>
+    <path d="M 104 85 C 113 60 131 60 140 85" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M 140 85 l -6 -1 M 140 85 l -3 -5" fill="none" stroke="var(--ink)" stroke-width="1.2"/>
+  </g>
+
+  <!-- Live value marker -->
+  <g class="anim">
+    <circle cx="0" cy="0" r="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.5">
+      <animateTransform
+        attributeName="transform"
+        type="translate"
+        values="104 91; 140 91; 104 91"
+        dur="3.2s"
+        repeatCount="indefinite"
+        calcMode="spline"
+        keyTimes="0;0.5;1"
+        keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
+      />
+    </circle>
+  </g>
+
+  <!-- Annotation -->
+  <text x="77" y="74" font-family="var(--mono)" font-size="9" fill="var(--ink-mute)">midpoint</text>
+  <text x="126" y="74" font-family="var(--mono)" font-size="9" fill="var(--ink)">round up</text>
+</svg>

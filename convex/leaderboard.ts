@@ -15,7 +15,7 @@ export const topScores = query({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
 
-    if (!content || content.type !== "game") {
+    if (!content || !content.published) {
       return [];
     }
 
@@ -58,8 +58,8 @@ export const submitScore = mutation({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
 
-    if (!content || content.type !== "game") {
-      throw new Error("Game not found");
+    if (!content || !content.published) {
+      throw new Error("Content not found");
     }
 
     const userId = await ensureViewerRecord(ctx, identity);

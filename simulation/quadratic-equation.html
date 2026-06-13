@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Quadratic Equation — Trinity Simulation Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #EFF2F5;
+  --bg-alt: #E2E7EC;
+  --ink: #0C1115;
+  --ink-soft: #2B333A;
+  --ink-mute: #6B7680;
+  --rule-soft: rgba(12,17,21,0.14);
+  --paper: #F7F8FA;
+  --panel: #FFFFFF;
+  --dark: #0C1115;
+  --dark-ink: #EFF2F5;
+  --dark-mute: #9AA6B2;
+  --stage-grid: rgba(239,242,245,0.07);
+  --stage-rule: #27313A;
+  --accent: #0E7490;
+  --accent-soft: #D7F0F5;
+  --success: #0F8A5F;
+  --danger: #C2413D;
+  --accent-ink: #F7F8FA;
+  --shadow: 0 18px 48px rgba(12, 17, 21, 0.12);
+  --sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100dvh;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(14,116,144,0.12), transparent 34%),
+    linear-gradient(180deg, #F8FAFC 0%, var(--bg) 100%);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+input { font: inherit; color: inherit; }
+
+.shell { width: 100%; max-width: 1194px; height: 100dvh; margin: 0 auto; padding: 0 32px; display: flex; flex-direction: column; }
+.scroll-panel { flex: 1; min-height: 0; overflow: hidden; overscroll-behavior: contain; }
+.content { width: 100%; height: 100%; max-width: 920px; margin: 0 auto; padding: 18px 20px; display: flex; flex-direction: column; min-height: 0; }
+.lab-shell { width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.display { font-weight: 700; line-height: 1; letter-spacing: 0; }
+.eyebrow, .label-mono { font-family: var(--mono); text-transform: uppercase; }
+.eyebrow { font-size: 12px; letter-spacing: 0.12em; color: var(--ink-mute); }
+.label-mono { font-size: 12px; letter-spacing: 0.08em; }
+.title-text { font-size: 34px; margin-top: 5px; }
+
+.btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 22px; border: 1px solid var(--ink); border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 700; transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease; }
+.btn:not(:disabled):hover { transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: transparent; }
+.btn.ghost:hover { background: var(--bg-alt); }
+.btn.outline { background: transparent; color: var(--ink); border-color: var(--ink); }
+.btn.outline:hover { background: var(--ink); color: var(--bg); }
+.icon-btn { width: 42px; height: 42px; border: 1px solid var(--rule-soft); border-radius: 50%; background: var(--panel); display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s ease, border-color 0.15s ease; }
+.icon-btn:hover { background: var(--accent-soft); border-color: rgba(14,116,144,0.35); }
+
+.sim-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; flex-shrink: 0; padding: 12px 14px; border: 1px solid var(--rule-soft); border-radius: 8px; background: rgba(255,255,255,0.82); box-shadow: 0 8px 22px rgba(12,17,21,0.06); }
+.stage { position: relative; width: 100%; flex: 1; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--stage-rule); border-radius: 8px; background: linear-gradient(145deg, #101820 0%, #090D12 100%); color: var(--dark-ink); box-shadow: var(--shadow); }
+.stage-grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.stage-content { position: relative; z-index: 1; width: 100%; height: 100%; min-width: 0; display: flex; flex-direction: column; padding: 20px 22px; }
+.readouts { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; color: var(--dark-mute); }
+.readouts > span { min-width: 0; }
+.readouts span span { color: var(--dark-ink); margin-left: 8px; }
+.question-panel { flex: 1; min-width: 0; display: grid; place-items: center; text-align: center; padding: 12px 0; }
+.question-panel > div { width: 100%; min-width: 0; }
+.question-text { max-width: 680px; font-size: 36px; line-height: 1.08; letter-spacing: 0; margin: 0 auto 16px; white-space: normal; }
+.equation-chip { display: inline-flex; align-items: center; justify-content: center; min-width: min(100%, 360px); padding: 18px 24px; border: 1px solid rgba(239,242,245,0.14); border-radius: 8px; background: rgba(255,255,255,0.055); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
+.question-hint { margin-top: 16px; color: var(--dark-mute); font-size: 16px; line-height: 1.45; }
+
+/* In-stage Input Styles */
+.input-group { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 24px; flex-wrap: wrap; }
+.number-input { background: rgba(255,255,255,0.06); border: 1px solid var(--stage-rule); border-radius: 6px; color: var(--dark-ink); padding: 12px 14px; font-size: 19px; font-family: var(--mono); width: 132px; text-align: center; }
+.number-input:focus { outline: none; border-color: var(--accent); background: rgba(255,255,255,0.1); }
+.input-label { color: var(--dark-mute); font-size: 18px; font-family: var(--sans); }
+.select-input { width: 220px; text-align: left; padding: 12px 14px; }
+
+/* Parameter/Actions Area */
+.actions-strip { margin-top: 12px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
+.stage-actions { margin-top: 0; padding-top: 12px; }
+.actions-inner { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 600px) { .options-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.option-btn { min-height: 52px; padding: 12px 14px; border: 1px solid rgba(12,17,21,0.18); border-radius: 8px; background: var(--panel); color: var(--ink); font-size: 15px; font-weight: 700; font-family: var(--mono); box-shadow: 0 8px 20px rgba(12,17,21,0.06); transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease; }
+.option-btn:not(:disabled):hover { transform: translateY(-1px); background: var(--bg-alt); }
+.option-btn:disabled { cursor: default; }
+.option-btn.correct { background: var(--success); border-color: var(--success); color: var(--accent-ink); }
+.option-btn.selected-wrong { background: var(--ink); color: var(--bg); }
+.option-btn.dimmed { opacity: 0.42; }
+.stage .btn { border-color: var(--dark-ink); background: var(--dark-ink); color: var(--dark); }
+.stage .btn:not(:disabled):hover { background: var(--paper); }
+.stage .btn.outline { border-color: rgba(239,242,245,0.72); background: transparent; color: var(--dark-ink); }
+.stage .btn.outline:not(:disabled):hover { background: var(--dark-ink); color: var(--dark); }
+.stage .option-btn { background: rgba(255,255,255,0.06); color: var(--dark-ink); border-color: rgba(239,242,245,0.18); box-shadow: none; }
+.stage .option-btn:not(:disabled):hover { background: rgba(255,255,255,0.12); border-color: rgba(239,242,245,0.34); }
+.stage .option-btn.selected-wrong { background: var(--dark-ink); color: var(--dark); border-color: var(--dark-ink); }
+.status-strip { margin-top: 10px; min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 13px; border: 1px solid var(--rule-soft); border-radius: 8px; background: rgba(255,255,255,0.78); color: var(--ink-soft); font-size: 14px; line-height: 1.35; }
+.status-strip > span:first-child { min-width: 0; flex: 1 1 auto; }
+.status-strip > span:first-child span:last-child { overflow-wrap: anywhere; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
+.status-strip strong { color: var(--ink); }
+
+/* Calculator UI */
+.calc-panel { position: absolute; top: 58px; right: 22px; background: rgba(0,0,0,0.54); border: 1px solid var(--stage-rule); border-radius: 8px; padding: 10px; backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 8px; width: 162px; z-index: 10; }
+.calc-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dark-mute); font-family: var(--mono); }
+.calc-input { width: 100%; background: #020405; border: 1px solid var(--stage-rule); color: #7EE7C3; font-family: var(--mono); padding: 8px; border-radius: 5px; text-align: right; }
+.calc-btn { background: var(--dark-mute); color: var(--dark); border: none; border-radius: 5px; padding: 7px; font-weight: 700; cursor: pointer; }
+.calc-btn:hover { background: var(--dark-ink); }
+
+/* Results */
+.result-layout { height: 100%; display: grid; grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.4fr); gap: 1px; background: var(--stage-rule); }
+.result-summary, .review-panel { background: var(--dark); padding: 26px; min-height: 0; }
+.score-number { font-size: 58px; line-height: 0.95; letter-spacing: 0; margin-top: 20px; }
+.review-panel { overflow-y: auto; }
+.review-item { padding: 18px 0; border-top: 1px solid var(--stage-rule); }
+.review-q { margin: 0 0 12px; font-size: 16px; line-height: 1.35; color: var(--dark-ink); }
+.review-math { font-family: var(--mono); font-size: 14px; line-height: 1.6; color: var(--dark-mute); background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+.review-math strong { color: var(--dark-ink); font-weight: normal; }
+.review-meta { display: flex; flex-direction: column; gap: 6px; color: var(--dark-mute); font-size: 14px; }
+
+/* Layout adjustments */
+@media (max-width: 720px) {
+  .shell { padding: 0 12px; }
+  .scroll-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .content { height: auto; min-height: 100%; padding: 12px 0 28px; }
+  .lab-shell { height: auto; min-height: 100%; }
+  .sim-header { padding: 10px 12px; margin-bottom: 10px; }
+  .title-text { font-size: 28px; }
+  .stage { height: auto; min-height: 350px; display: flex; flex-direction: column; }
+  .stage.result-stage { height: auto; min-height: 430px; overflow: visible; }
+  .stage-content { padding: 15px; }
+  .readouts { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .readouts span span { display: block; margin: 3px 0 0; overflow-wrap: anywhere; }
+  .label-mono { font-size: 11px; }
+  .question-panel { padding: 8px 0; }
+  .question-text { width: 100%; font-size: 27px; line-height: 1.12; overflow-wrap: anywhere; }
+  .equation-chip { min-width: 0; width: 100%; padding: 15px 12px; }
+  .question-hint { font-size: 15px; margin-top: 12px; }
+  .input-group { margin-top: 18px; gap: 10px; }
+  .number-input { width: 118px; font-size: 17px; }
+  .select-input { width: min(100%, 220px); }
+  .calc-panel { position: static; width: 100%; margin: 10px 0 0; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+  .calc-title { grid-column: 1 / -1; }
+  .calc-input { min-width: 0; }
+  .options-grid { gap: 10px; }
+  .option-btn { min-height: 50px; padding: 11px 10px; font-size: 13px; }
+  .result-layout { grid-template-columns: 1fr; }
+  .result-stage .result-layout { min-height: 430px; }
+  .result-stage .review-panel { overflow: visible; }
+  .result-summary, .review-panel { padding: 20px; }
+  .score-number { font-size: 50px; }
+  .status-strip { align-items: flex-start; }
+}
+
+@media (max-width: 420px) {
+  .sim-header { align-items: flex-start; }
+  .title-text { font-size: 25px; }
+  .stage { min-height: 340px; }
+  .options-grid { grid-template-columns: 1fr; }
+  .input-group { flex-direction: column; }
+  .number-input { width: 100%; max-width: 220px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useEffect, useRef, useState } = React;
+
+const Icon = ({ name, size = 18, stroke = 1.5 }) => {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: stroke, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  if (name === 'reset') return <svg {...common}><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>;
+  return <svg {...common}><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>;
+};
+
+// Utilities
+function formatEq(a, b, c) {
+  let str = '';
+  if (a === 1) str += 'x²';
+  else if (a === -1) str += '-x²';
+  else str += `${a}x²`;
+
+  if (b > 0) str += ` + ${b === 1 ? 'x' : b + 'x'}`;
+  else if (b < 0) str += ` - ${Math.abs(b) === 1 ? 'x' : Math.abs(b) + 'x'}`;
+
+  if (c > 0) str += ` + ${c}`;
+  else if (c < 0) str += ` - ${Math.abs(c)}`;
+  
+  if (str === '') str = '0';
+  return str + ' = 0';
+}
+
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function submitActivityScore(score, timeTaken) {
+  parent.postMessage({ type: 'score', value: score, maxScore: 6, timeTaken }, '*');
+}
+
+const icseQuestions = [
+  // Decimal Places
+  { eq: 'x² - 10x + 6 = 0', a: 1, b: -10, c: 6, mode: 'dp', places: 2 },
+  { eq: 'x² - 3x - 9 = 0', a: 1, b: -3, c: -9, mode: 'dp', places: 1 },
+  { eq: '5x² - 10x - 3 = 0', a: 5, b: -10, c: -3, mode: 'dp', places: 2 },
+  { eq: '3x² + 5x - 9 = 0', a: 3, b: 5, c: -9, mode: 'dp', places: 1 },
+  { eq: '5x² + 10x - 3 = 0', a: 5, b: 10, c: -3, mode: 'dp', places: 2 },
+  { eq: 'x² - 5x - 10 = 0', a: 1, b: -5, c: -10, mode: 'dp', places: 2 },
+  { eq: '4x² - 5x - 3 = 0', a: 4, b: -5, c: -3, mode: 'dp', places: 2 },
+  { eq: 'x² + 7x - 7 = 0', a: 1, b: 7, c: -7, mode: 'dp', places: 2 },
+  { eq: 'x² - 7x + 3 = 0', a: 1, b: -7, c: 3, mode: 'dp', places: 2 },
+  { eq: 'x² + 4x - 8 = 0', a: 1, b: 4, c: -8, mode: 'dp', places: 1 },
+  { eq: 'x² - 4x - 2 = 0', a: 1, b: -4, c: -2, mode: 'dp', places: 2 },
+  { eq: '3x² + 6x - 4 = 0', a: 3, b: 6, c: -4, mode: 'dp', places: 2 },
+  // Significant Figures
+  { eq: 'x² + 4x - 8 = 0', a: 1, b: 4, c: -8, mode: 'sf', places: 3 },
+  { eq: 'x² - 6x - 18 = 0', a: 1, b: -6, c: -18, mode: 'sf', places: 2 },
+  { eq: 'x² - 3x - 9 = 0', a: 1, b: -3, c: -9, mode: 'sf', places: 2 },
+  { eq: '2x² - 10x + 5 = 0', a: 2, b: -10, c: 5, mode: 'sf', places: 3 },
+  { eq: '2x² - 5x - 4 = 0', a: 2, b: -5, c: -4, mode: 'sf', places: 3 }
+];
+
+function generateQuiz() {
+  const qList = [];
+  
+  // Q1, Q2: Find a, b, c
+  for (let i = 0; i < 2; i++) {
+    const a = (Math.floor(Math.random() * 10) + 1) * (Math.random() > 0.5 ? 1 : -1);
+    const b = Math.floor(Math.random() * 21) - 10;
+    const c = Math.floor(Math.random() * 21) - 10;
+    const eq = formatEq(a, b, c);
+    
+    const opts = [{a, b, c, isCorrect: true}];
+    while(opts.length < 4) {
+      const oa = Math.random() < 0.5 ? a : -a;
+      const ob = Math.random() < 0.5 ? b : -b;
+      const oc = Math.random() < 0.5 ? c : -c;
+      const off = Math.floor(Math.random() * 3) - 1;
+      let f_oa = oa, f_ob = ob, f_oc = oc;
+      if (Math.random() < 0.3) f_oa += off || 1;
+      else if (Math.random() < 0.6) f_ob += off || 1;
+      else f_oc += off || 1;
+      if (f_oa === 0) f_oa = 1;
+      
+      if (!opts.find(o => o.a === f_oa && o.b === f_ob && o.c === f_oc)) {
+        opts.push({a: f_oa, b: f_ob, c: f_oc, isCorrect: false});
+      }
+    }
+    
+    qList.push({
+      id: `q${i+1}`,
+      type: 'abc',
+      text: 'Find the coefficients a, b, and c for the equation:',
+      eq, a, b, c,
+      options: shuffleArray(opts).map(o => ({ text: `a=${o.a}, b=${o.b}, c=${o.c}`, isCorrect: o.isCorrect, data: o }))
+    });
+  }
+
+  // Q3, Q4: Discriminant
+  for (let i = 0; i < 2; i++) {
+    const a = (Math.floor(Math.random() * 6) + 1) * (Math.random() > 0.5 ? 1 : -1);
+    const b = Math.floor(Math.random() * 15) - 7 || 1;
+    const c = Math.floor(Math.random() * 15) - 7 || 1;
+    const eq = formatEq(a, b, c);
+    const disc = (b * b) - (4 * a * c);
+    let natureAns = '';
+    if (disc > 0) natureAns = 'Real and distinct';
+    else if (disc === 0) natureAns = 'Real and equal';
+    else natureAns = 'No real roots';
+    
+    qList.push({
+      id: `q${i+3}`,
+      type: 'disc',
+      text: 'Find the discriminant (Δ = b² - 4ac) and nature of roots:',
+      eq, a, b, c,
+      ans: disc.toString(),
+      natureAns
+    });
+  }
+
+  // Q5, Q6: Roots
+  const dpPool = icseQuestions.filter(q => q.mode === 'dp');
+  const sfPool = icseQuestions.filter(q => q.mode === 'sf');
+  
+  const q5Data = dpPool[Math.floor(Math.random() * dpPool.length)];
+  const q6Data = sfPool[Math.floor(Math.random() * sfPool.length)];
+  
+  [q5Data, q6Data].forEach((qData, i) => {
+    const { a, b, c, eq, mode, places } = qData;
+    const disc = b * b - 4 * a * c;
+    const root1 = (-b + Math.sqrt(disc)) / (2 * a);
+    const root2 = (-b - Math.sqrt(disc)) / (2 * a);
+    
+    const ans1 = mode === 'dp' ? root1.toFixed(places) : Number(root1).toPrecision(places);
+    const ans2 = mode === 'dp' ? root2.toFixed(places) : Number(root2).toPrecision(places);
+    
+    const hint = mode === 'dp' ? `correct to ${places} decimal place(s)` : `correct to ${places} significant figure(s)`;
+    
+    qList.push({
+      id: `q${i+5}`,
+      type: 'roots',
+      text: `Solve for x, ${hint}:`,
+      eq, a, b, c, mode, places,
+      ans1, ans2
+    });
+  });
+
+  return qList;
+}
+
+const Grid = () => (
+  <svg className="stage-grid" viewBox="0 0 800 400" preserveAspectRatio="none" aria-hidden="true">
+    {Array.from({ length: 11 }).map((_, i) => <line key={'h' + i} x1="0" y1={i * 40} x2="800" y2={i * 40} stroke="var(--stage-grid)" strokeWidth="0.5"/>)}
+    {Array.from({ length: 21 }).map((_, i) => <line key={'v' + i} x1={i * 40} y1="0" x2={i * 40} y2="400" stroke="var(--stage-grid)" strokeWidth="0.5"/>)}
+  </svg>
+);
+
+const Calculator = () => {
+  const [val, setVal] = useState('');
+  const [res, setRes] = useState('');
+
+  const handleCalc = () => {
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      setRes(Math.sqrt(num).toFixed(4));
+    } else {
+      setRes('Error');
+    }
+  };
+
+  return (
+    <div className="calc-panel">
+      <div className="calc-title">Calculator (√x)</div>
+      <input className="calc-input" type="number" placeholder="Number" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCalc()}/>
+      <button className="calc-btn" onClick={handleCalc}>Calculate √</button>
+      {res && <div className="calc-input" style={{ color: '#0cc' }}>= {res}</div>}
+    </div>
+  );
+};
+
+const QuadraticLab = () => {
+  const [gameState, setGameState] = useState('menu');
+  const [questions, setQuestions] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [statusText, setStatusText] = useState('Start when ready. Your final score reports through Trinity.');
+  
+  // Input states
+  const [locked, setLocked] = useState(false);
+  const [input1, setInput1] = useState('');
+  const [input2, setInput2] = useState('');
+  const [selectedOption, setSelectedOption] = useState(null);
+
+  const startedAtRef = useRef(Date.now());
+  const reportedRef = useRef(false);
+  const finalScoreRef = useRef(0);
+
+  useEffect(() => {
+    if (gameState !== 'result' || reportedRef.current) return;
+    reportedRef.current = true;
+    const timeTaken = Math.round((Date.now() - startedAtRef.current) / 1000);
+    submitActivityScore(finalScoreRef.current, timeTaken);
+    setStatusText('Score sent to Trinity for leaderboard and homework reporting.');
+  }, [gameState]);
+
+  const startGame = () => {
+    setQuestions(generateQuiz());
+    setCurrent(0);
+    setScore(0);
+    setAnswers([]);
+    setGameState('playing');
+    setStatusText('Solve each step carefully. The order of roots does not matter.');
+    finalScoreRef.current = 0;
+    reportedRef.current = false;
+    startedAtRef.current = Date.now();
+    resetInputs();
+  };
+
+  const resetInputs = () => {
+    setLocked(false);
+    setInput1('');
+    setInput2('');
+    setSelectedOption(null);
+  };
+
+  const answerABC = (option) => {
+    if (locked) return;
+    const isCorrect = option.isCorrect;
+    setLocked(true);
+    setSelectedOption(option.text);
+    finalizeAnswer(isCorrect, option.text);
+  };
+
+  const answerFill = () => {
+    if (locked) return;
+    const qData = questions[current];
+    let isCorrect = false;
+    let userAnsStr = '';
+
+    if (qData.type === 'disc') {
+      const userVal = input1.trim();
+      const userNature = input2.trim();
+      const isDiscCorrect = userVal === qData.ans;
+      const isNatureCorrect = userNature === qData.natureAns;
+      isCorrect = isDiscCorrect && isNatureCorrect;
+      userAnsStr = `Δ = ${userVal || '(empty)'}, ${userNature || '(not selected)'}`;
+    } else if (qData.type === 'roots') {
+      const u1 = input1.trim();
+      const u2 = input2.trim();
+      const match1 = (u1 === qData.ans1 && u2 === qData.ans2);
+      const match2 = (u1 === qData.ans2 && u2 === qData.ans1);
+      isCorrect = match1 || match2;
+      userAnsStr = `x = ${u1}, ${u2}`;
+    }
+
+    setLocked(true);
+    finalizeAnswer(isCorrect, userAnsStr);
+  };
+
+  const finalizeAnswer = (isCorrect, userAnsStr) => {
+    const nextScore = score + (isCorrect ? 1 : 0);
+    setScore(nextScore);
+    finalScoreRef.current = nextScore;
+    setStatusText(isCorrect ? 'Correct. Loading the next step...' : 'Not quite. The review will show the working.');
+    
+    setAnswers(prev => [...prev, {
+      ...questions[current],
+      userAnsStr,
+      isCorrect
+    }]);
+
+    setTimeout(() => {
+      const next = current + 1;
+      if (next >= questions.length) {
+        setGameState('result');
+      } else {
+        setCurrent(next);
+        setStatusText(`Question ${next + 1} is ready.`);
+        resetInputs();
+      }
+    }, 1200);
+  };
+
+  const currentQuestion = questions[current];
+
+  return (
+    <div className="lab-shell">
+      <div className="sim-header">
+        <div>
+          <div className="eyebrow">Simulation · Math</div>
+          <div className="display title-text">Quadratic Equation</div>
+        </div>
+        <button className="icon-btn" onClick={() => { setGameState('menu'); setStatusText('Start when ready. Your final score reports through Trinity.'); }} aria-label="Reset"><Icon name="reset" size={20}/></button>
+      </div>
+
+      <section className={`stage ${gameState === 'result' ? 'result-stage' : ''}`} aria-live="polite">
+        <Grid/>
+        {gameState === 'menu' && (
+          <div className="stage-content">
+            <div className="readouts">
+              <span className="label-mono">Topics <span>Coefficients, Discriminant, Roots</span></span>
+              <span className="label-mono">Questions <span>6</span></span>
+            </div>
+            <div className="question-panel">
+              <div>
+                <div className="question-text display">Master the Quadratic Formula</div>
+                <div className="question-hint">Identify coefficients, calculate the discriminant, and find the roots.</div>
+              </div>
+            </div>
+            <div className="actions-strip stage-actions">
+              <div className="actions-inner">
+                <button className="btn" onClick={startGame}>Start Quiz</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'playing' && currentQuestion && (
+          <div className="stage-content">
+            <div className="readouts">
+              <span className="label-mono">Question <span>{current + 1}/6</span></span>
+              <span className="label-mono">Score <span>{score}</span></span>
+            </div>
+
+            {currentQuestion.type === 'roots' && <Calculator />}
+            
+            <div className="question-panel">
+              <div>
+                <div className="question-hint" style={{ marginTop: 0, marginBottom: 12 }}>{currentQuestion.text}</div>
+                <div className="question-text display equation-chip">{currentQuestion.eq}</div>
+
+                {currentQuestion.type === 'disc' && (
+                  <div className="input-group" style={{ flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <span className="input-label">Δ =</span>
+                      <input type="number" className="number-input" value={input1} onChange={e => setInput1(e.target.value)} disabled={locked} autoFocus />
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <span className="input-label" style={{ minWidth: '40px' }}>Nature:</span>
+                      <select className="number-input select-input" value={input2} onChange={e => setInput2(e.target.value)} disabled={locked}>
+                        <option value="" disabled>Select nature...</option>
+                        <option value="Real and distinct">Real and distinct</option>
+                        <option value="Real and equal">Real and equal</option>
+                        <option value="No real roots">No real roots</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {currentQuestion.type === 'roots' && (
+                  <div className="input-group">
+                    <span className="input-label">x =</span>
+                    <input type="number" step="any" className="number-input" value={input1} onChange={e => setInput1(e.target.value)} disabled={locked} placeholder="x₁" />
+                    <span className="input-label">,</span>
+                    <input type="number" step="any" className="number-input" value={input2} onChange={e => setInput2(e.target.value)} disabled={locked} placeholder="x₂" onKeyDown={e => e.key === 'Enter' && answerFill()}/>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="actions-strip stage-actions">
+              {currentQuestion.type === 'abc' && (
+                <div className="options-grid">
+                  {currentQuestion.options.map((option, i) => {
+                    const classNames = ['option-btn'];
+                    if (locked && option.isCorrect) classNames.push('correct');
+                    if (locked && selectedOption === option.text && !option.isCorrect) classNames.push('selected-wrong');
+                    if (locked && !option.isCorrect && selectedOption !== option.text) classNames.push('dimmed');
+                    return <button key={i} className={classNames.join(' ')} disabled={locked} onClick={() => answerABC(option)}>{option.text}</button>;
+                  })}
+                </div>
+              )}
+
+              {(currentQuestion.type === 'disc' || currentQuestion.type === 'roots') && (
+                <div className="actions-inner">
+                  <button className="btn" onClick={answerFill} disabled={locked || !input1 || !input2}>
+                    {locked ? 'Submitted' : 'Submit Answer'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {gameState === 'result' && (
+          <div className="result-layout">
+            <div className="result-summary">
+              <div className="label-mono" style={{ color: 'var(--dark-mute)' }}>Practice complete</div>
+              <div className="score-number display">{score}/6</div>
+              <p style={{ color: 'var(--dark-mute)', fontSize: 17, lineHeight: 1.45 }}>Your score has been sent to Trinity for leaderboard and homework reporting.</p>
+              <button className="btn outline" style={{ marginTop: 12 }} onClick={startGame}>Practice again</button>
+            </div>
+            <div className="review-panel">
+              <div className="label-mono" style={{ color: 'var(--dark-mute)', marginBottom: 16 }}>Step-by-step Review</div>
+              {answers.map((ans, idx) => (
+                <div className="review-item" key={idx}>
+                  <p className="review-q">{idx + 1}. {ans.eq}</p>
+                  
+                  {ans.type === 'abc' && (
+                    <div className="review-math">
+                      Standard form: ax² + bx + c = 0<br/>
+                      <strong>a = {ans.a}, b = {ans.b}, c = {ans.c}</strong>
+                    </div>
+                  )}
+
+                  {ans.type === 'disc' && (
+                    <div className="review-math">
+                      a = {ans.a}, b = {ans.b}, c = {ans.c}<br/>
+                      Δ = b² - 4ac<br/>
+                      Δ = ({ans.b})² - 4({ans.a})({ans.c})<br/>
+                      Δ = {ans.b * ans.b} - ({4 * ans.a * ans.c})<br/>
+                      <strong>Δ = {ans.ans} ({ans.natureAns})</strong>
+                    </div>
+                  )}
+
+                  {ans.type === 'roots' && (
+                    <div className="review-math">
+                      a = {ans.a}, b = {ans.b}, c = {ans.c}<br/>
+                      Δ = b² - 4ac = {ans.b * ans.b - 4 * ans.a * ans.c}<br/>
+                      x = (-b ± √Δ) / 2a<br/>
+                      x = (-({ans.b}) ± √{ans.b * ans.b - 4 * ans.a * ans.c}) / {2 * ans.a}<br/>
+                      <strong>x = {ans.ans1}, {ans.ans2}</strong> (rounded to {ans.places} {ans.mode === 'dp' ? 'decimal places' : 'significant figures'})
+                    </div>
+                  )}
+
+                  <div className="review-meta">
+                    <span>Your answer: <span style={{ color: ans.isCorrect ? 'var(--dark-ink)' : '#ff5555' }}>{ans.userAnsStr}</span></span>
+                    {!ans.isCorrect && (
+                      <span>Correct answer: <span style={{ color: 'var(--dark-ink)' }}>
+                        {ans.type === 'abc' ? `a=${ans.a}, b=${ans.b}, c=${ans.c}` :
+                         ans.type === 'disc' ? `Δ = ${ans.ans}, ${ans.natureAns}` :
+                         `x = ${ans.ans1}, ${ans.ans2}`}
+                      </span></span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <div className="status-strip">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+          <span className="status-dot" aria-hidden="true"></span>
+          <span>{statusText}</span>
+        </span>
+        <strong>{gameState === 'result' ? `${score}/6` : gameState === 'playing' ? `${current + 1}/6` : 'Ready'}</strong>
+      </div>
+    </div>
+  );
+};
+
+const App = () => (
+  <div className="shell">
+    <div className="scroll-panel">
+      <main className="content"><QuadraticLab/></main>
+    </div>
+  </div>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

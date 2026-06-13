@@ -42,8 +42,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
 .shell { max-width: 1194px; height: 100dvh; margin: 0 auto; padding: 0 32px; display: flex; flex-direction: column; }
-.scroll-panel { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
-.content { max-width: 880px; margin: 0 auto; padding: 32px 24px 56px; }
+.scroll-panel { flex: 1; min-height: 0; overflow: hidden; overscroll-behavior: contain; }
+.content { width: 100%; height: 100%; max-width: 880px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; min-height: 0; }
+.lab-shell { height: 100%; min-height: 0; display: flex; flex-direction: column; }
 .display { font-weight: 600; line-height: 0.96; letter-spacing: -0.025em; }
 .eyebrow, .label-mono { font-family: var(--mono); text-transform: uppercase; }
 .eyebrow { font-size: 13px; letter-spacing: 0.14em; color: var(--ink-mute); }
@@ -55,19 +56,19 @@ a { color: inherit; text-decoration: none; }
 .btn.ghost:hover, .chip.active { background: var(--ink); color: var(--bg); }
 .icon-btn { width: 44px; height: 44px; border: 1px solid var(--ink); border-radius: 50%; background: transparent; display: inline-flex; align-items: center; justify-content: center; }
 
-.sim-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.stage { position: relative; height: 400px; overflow: hidden; border: 1px solid var(--stage-rule); border-radius: 4px; background: var(--dark); color: var(--dark-ink); }
+.sim-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; flex-shrink: 0; }
+.stage { position: relative; flex: 1; min-height: 0; overflow: hidden; border: 1px solid var(--stage-rule); border-radius: 4px; background: var(--dark); color: var(--dark-ink); }
 .stage-grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .stage-content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 22px 24px; }
 .readouts { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; color: var(--dark-mute); }
 .readouts span span { color: var(--dark-ink); margin-left: 8px; }
 .question-panel { flex: 1; display: grid; place-items: center; text-align: center; padding: 12px 0; }
-.question-text { max-width: 680px; font-size: clamp(25px, 4vw, 42px); line-height: 1.08; letter-spacing: -0.025em; }
+.question-text { max-width: 680px; font-size: clamp(25px, 3.4vw, 38px); line-height: 1.08; letter-spacing: -0.025em; }
 .question-hint { margin-top: 18px; color: var(--dark-mute); font-size: 17px; line-height: 1.45; }
 .timer-track { height: 5px; border: 1px solid var(--stage-rule); border-radius: 999px; overflow: hidden; background: transparent; }
 .timer-fill { height: 100%; background: var(--accent); transition: width 1s linear; }
 
-.chip-row, .options-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.chip-row, .options-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; flex-shrink: 0; }
 .chip { min-height: 38px; padding: 7px 14px; border: 1px solid var(--ink); border-radius: 999px; background: transparent; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
 .options-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .option-btn { min-height: 56px; padding: 14px 16px; border: 1px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); font-size: 18px; font-weight: 600; transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease; }
@@ -84,15 +85,20 @@ a { color: inherit; text-decoration: none; }
 .review-item { padding: 14px 0; border-top: 1px solid var(--stage-rule); }
 .review-q { margin: 0 0 8px; font-size: 15px; line-height: 1.35; }
 .review-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--dark-mute); font-size: 13px; }
-.leaderboard-note { margin-top: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--rule-soft); color: var(--ink-mute); font-family: var(--mono); font-size: 13px; line-height: 1.5; letter-spacing: 0.08em; text-transform: uppercase; }
+.leaderboard-note { margin-top: 12px; color: var(--ink-mute); font-family: var(--mono); font-size: 12px; line-height: 1.4; letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0; }
 
 @media (max-width: 720px) {
   .shell { padding: 0 16px; }
-  .content { padding: 24px 0 44px; }
+  .scroll-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .content { height: auto; min-height: 100%; padding: 24px 0 44px; }
+  .lab-shell { height: auto; min-height: 100%; }
   .stage { height: 430px; }
+  .stage.result-stage { height: auto; min-height: 430px; overflow: visible; }
   .stage-content { padding: 18px; }
   .options-grid { grid-template-columns: 1fr 1fr; }
-  .result-layout { grid-template-columns: 1fr; overflow-y: auto; }
+  .result-layout { grid-template-columns: 1fr; }
+  .result-stage .result-layout { min-height: 430px; }
+  .result-stage .review-panel { overflow: visible; }
 }
 </style>
 </head>
@@ -185,9 +191,10 @@ const RoundingLab = () => {
   useEffect(() => {
     if (gameState !== 'result' || reportedRef.current) return;
     reportedRef.current = true;
+    if (mode !== 'mixed') return;
     const timeTaken = Math.round((Date.now() - startedAtRef.current) / 1000);
     submitLeaderboardScore(score, timeTaken);
-  }, [gameState, score]);
+  }, [gameState, mode, score]);
 
   const prepareQuestion = (questionSet, index) => {
     const qData = questionSet[index];
@@ -242,9 +249,12 @@ const RoundingLab = () => {
 
   const currentQuestion = questions[current];
   const modeLabel = mode === 'dp' ? 'Decimal places' : mode === 'sf' ? 'Significant figures' : 'Mixed practice';
+  const leaderboardMessage = mode === 'mixed'
+    ? 'Score sent to the leaderboard.'
+    : 'Leaderboard scoring is only for mixed practice.';
 
   return (
-    <div>
+    <div className="lab-shell">
       <div className="sim-header">
         <div>
           <div className="eyebrow">Simulation · Math</div>
@@ -253,7 +263,7 @@ const RoundingLab = () => {
         <button className="icon-btn" onClick={() => setGameState('menu')} aria-label="Reset"><Icon name="reset" size={20}/></button>
       </div>
 
-      <section className="stage" aria-live="polite">
+      <section className={`stage ${gameState === 'result' ? 'result-stage' : ''}`} aria-live="polite">
         <Grid/>
         {gameState === 'menu' && (
           <div className="stage-content">
@@ -295,7 +305,7 @@ const RoundingLab = () => {
             <div className="result-summary">
               <div className="label-mono" style={{ color: 'var(--dark-mute)' }}>Practice complete</div>
               <div className="score-number display">{score}/10</div>
-              <p style={{ color: 'var(--dark-mute)', fontSize: 17, lineHeight: 1.45 }}>XP {xp}. Score sent to the leaderboard.</p>
+              <p style={{ color: 'var(--dark-mute)', fontSize: 17, lineHeight: 1.45 }}>XP {xp}. {leaderboardMessage}</p>
               <button className="btn" onClick={() => startGame(mode)}>Retry mode</button>
             </div>
             <div className="review-panel">
@@ -335,7 +345,7 @@ const RoundingLab = () => {
         </div>
       )}
 
-      <div className="leaderboard-note">Finish all 10 questions to submit your score.</div>
+      <div className="leaderboard-note">Only mixed practice submits leaderboard scores.</div>
     </div>
   );
 };

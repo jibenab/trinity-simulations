@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Conservation of Energy - Trinity Simulation Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #EFF2F5;
+  --bg-alt: #E2E7EC;
+  --ink: #0C1115;
+  --ink-soft: #2B333A;
+  --ink-mute: #6B7680;
+  --rule-soft: rgba(12,17,21,0.14);
+  --paper: #F7F8FA;
+  --panel: #FFFFFF;
+  --dark: #0C1115;
+  --dark-ink: #EFF2F5;
+  --dark-mute: #9AA6B2;
+  --stage-grid: rgba(239,242,245,0.07);
+  --stage-rule: #27313A;
+  --accent: #0E7490;
+  --accent-soft: #D7F0F5;
+  --success: #0F8A5F;
+  --warning: #D59116;
+  --danger: #C2413D;
+  --accent-ink: #F7F8FA;
+  --shadow: 0 18px 48px rgba(12, 17, 21, 0.12);
+  --sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  width: 100%;
+  max-width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(14,116,144,0.12), transparent 34%),
+    linear-gradient(180deg, #F8FAFC 0%, var(--bg) 100%);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+.shell { width: 100%; max-width: 1194px; height: 100dvh; margin: 0 auto; padding: 0 32px; display: flex; flex-direction: column; }
+.scroll-panel { flex: 1; min-height: 0; overflow: hidden; overscroll-behavior: contain; }
+.content { width: 100%; height: 100%; max-width: 1080px; margin: 0 auto; padding: 14px 20px; display: flex; flex-direction: column; min-height: 0; }
+.lab-shell { width: 100%; height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.display { font-weight: 700; line-height: 1; letter-spacing: 0; }
+.eyebrow, .label-mono { font-family: var(--mono); text-transform: uppercase; }
+.eyebrow { font-size: 12px; letter-spacing: 0.12em; color: var(--ink-mute); }
+.label-mono { font-size: 11px; letter-spacing: 0.08em; }
+.title-text { font-size: 29px; margin-top: 4px; }
+
+.sim-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.82);
+  box-shadow: 0 8px 22px rgba(12,17,21,0.06);
+}
+.mode-tabs { min-width: 0; display: flex; gap: 6px; padding: 4px; border-radius: 999px; border: 1px solid var(--rule-soft); background: var(--paper); }
+.mode-tab {
+  min-width: 0;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 8px 13px;
+  color: var(--ink-mute);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.mode-tab:hover { color: var(--ink); }
+.mode-tab.active { background: var(--ink); color: var(--bg); }
+
+.stage {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--stage-rule);
+  border-radius: 8px;
+  background: linear-gradient(145deg, #101820 0%, #090D12 100%);
+  color: var(--dark-ink);
+  box-shadow: var(--shadow);
+}
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--stage-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+.stage-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 238px;
+  gap: 14px;
+  padding: 16px;
+}
+.canvas-wrap {
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(239,242,245,0.14);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.035);
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.hint-chip {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+  padding: 7px 10px;
+  border: 1px solid rgba(239,242,245,0.13);
+  border-radius: 999px;
+  background: rgba(12,17,21,0.64);
+  color: var(--dark-mute);
+  backdrop-filter: blur(8px);
+}
+.hint-chip strong { color: var(--dark-ink); font-weight: 700; }
+.metric-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.metric-card {
+  border: 1px solid rgba(239,242,245,0.14);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.055);
+  padding: 9px;
+}
+.metric-card h3 {
+  margin: 0 0 6px;
+  color: var(--dark-ink);
+  font-size: 13px;
+  line-height: 1.2;
+}
+.metric-panel .metric-card:last-child { display: none; }
+.readout-grid { display: grid; gap: 2px; }
+.readout {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(239,242,245,0.1);
+  color: var(--dark-mute);
+  font-size: 11px;
+}
+.readout:first-child { border-top: 0; }
+.readout strong { color: var(--dark-ink); font-family: var(--mono); font-weight: 500; text-align: right; }
+.bar-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; height: 92px; align-items: end; padding: 4px 0 2px; }
+.bar-track {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  border: 1px solid rgba(239,242,245,0.1);
+  border-radius: 6px;
+  background: rgba(0,0,0,0.28);
+  overflow: hidden;
+}
+.bar-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0%;
+  background: var(--accent);
+  transition: height 0.08s linear;
+}
+.bar-fill.ke { background: var(--success); }
+.bar-fill.heat { background: var(--danger); }
+.bar-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7px;
+  z-index: 1;
+  color: rgba(255,255,255,0.86);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-align: center;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+}
+.note {
+  margin: 0;
+  color: var(--dark-mute);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.actions-strip {
+  margin-top: 10px;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+.control-panel {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.78);
+}
+.control-group {
+  min-width: min(100%, 250px);
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.control-label { color: var(--ink-mute); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.range { width: 100%; accent-color: var(--accent); }
+.value-pill {
+  min-width: 72px;
+  padding: 6px 8px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: center;
+}
+.action-buttons { display: flex; gap: 8px; align-items: center; }
+.btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.btn:not(:disabled):hover { transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.outline { background: transparent; color: var(--ink); border-color: var(--ink); }
+.btn.outline:not(:disabled):hover { background: var(--ink); color: var(--bg); }
+.icon { width: 16px; height: 16px; }
+
+.status-strip {
+  margin-top: 10px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 13px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.78);
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.35;
+}
+.status-strip > span:first-child { min-width: 0; flex: 1 1 auto; display: inline-flex; align-items: center; gap: 10px; }
+.status-strip > span:first-child span:last-child { overflow-wrap: anywhere; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
+.status-strip strong { color: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+@media (max-width: 820px) {
+  html, body { overflow-x: hidden; }
+  .shell { max-width: 100vw; padding: 0 12px; overflow-x: hidden; }
+  .scroll-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .content { max-width: 100%; height: auto; min-height: 100%; padding: 12px 0 28px; overflow-x: hidden; }
+  .lab-shell { height: auto; min-height: 100%; }
+  .sim-header, .stage, .actions-strip, .status-strip { width: 100%; max-width: 100%; }
+  .sim-header { padding: 10px 12px; margin-bottom: 10px; overflow: hidden; }
+  .sim-header > div:first-child { min-width: 0; }
+  .title-text { font-size: 25px; }
+  .mode-tabs { width: 100%; max-width: 100%; flex: 1 1 100%; border-radius: 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden; }
+  .mode-tab { width: 100%; border-radius: 6px; padding: 8px 4px; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stage { height: auto; min-height: 560px; overflow: visible; }
+  .stage-content { height: auto; grid-template-columns: 1fr; padding: 12px; }
+  .canvas-wrap { height: 350px; }
+  .metric-panel { display: grid; grid-template-columns: 1fr; }
+  .metric-panel .metric-card:last-child { display: block; }
+  .bar-grid { height: 120px; }
+  .actions-strip { grid-template-columns: 1fr; }
+  .control-panel { align-items: stretch; }
+  .control-group { flex-basis: 100%; }
+  .action-buttons { justify-content: stretch; }
+  .action-buttons .btn { flex: 1; }
+}
+
+@media (max-width: 460px) {
+  .sim-header { align-items: flex-start; }
+  .title-text { font-size: 23px; }
+  .canvas-wrap { height: 320px; }
+  .hint-chip { position: static; margin: 10px; max-width: none; }
+  .control-group { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .value-pill { min-width: 0; }
+  .status-strip { align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="scroll-panel">
+    <main class="content">
+      <section class="lab-shell" aria-label="Conservation of energy simulation">
+        <div class="sim-header">
+          <div>
+            <div class="eyebrow">Physics lab</div>
+            <h1 class="display title-text">Conservation of Energy</h1>
+          </div>
+          <div class="mode-tabs" role="tablist" aria-label="Choose activity">
+            <button class="mode-tab active" type="button" data-mode="roller" role="tab" aria-selected="true">Roller</button>
+            <button class="mode-tab" type="button" data-mode="freefall" role="tab" aria-selected="false">Free fall</button>
+            <button class="mode-tab" type="button" data-mode="ramps" role="tab" aria-selected="false">Ramps</button>
+            <button class="mode-tab" type="button" data-mode="pendulum" role="tab" aria-selected="false">Pendulum</button>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="stage-content">
+            <div class="canvas-wrap">
+              <canvas id="stageCanvas" width="900" height="430"></canvas>
+              <div class="hint-chip label-mono" id="stageHint"><strong>Drag</strong><span>set starting height</span></div>
+            </div>
+            <aside class="metric-panel" aria-label="Energy readouts">
+              <div class="metric-card">
+                <h3 id="metricTitle">Energy tracker</h3>
+                <div class="bar-grid" id="barGrid">
+                  <div class="bar-track"><div class="bar-fill" id="barPE"></div><span class="bar-label">PE</span></div>
+                  <div class="bar-track"><div class="bar-fill ke" id="barKE"></div><span class="bar-label">KE</span></div>
+                  <div class="bar-track" id="heatTrack"><div class="bar-fill heat" id="barHeat"></div><span class="bar-label" id="heatLabel">Heat</span></div>
+                </div>
+              </div>
+              <div class="metric-card">
+                <h3 id="readoutTitle">Live values</h3>
+                <div class="readout-grid">
+                  <div class="readout"><span id="readoutLabelA">Potential</span><strong id="readoutA">0</strong></div>
+                  <div class="readout"><span id="readoutLabelB">Kinetic</span><strong id="readoutB">0</strong></div>
+                  <div class="readout"><span id="readoutLabelC">Mechanical</span><strong id="readoutC">0</strong></div>
+                </div>
+              </div>
+              <div class="metric-card">
+                <p class="note" id="conceptNote">Mechanical energy moves between PE and KE. Friction converts part of it to heat.</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="actions-strip">
+          <div class="control-panel" id="controlPanel"></div>
+          <div class="action-buttons" id="actionButtons"></div>
+        </div>
+
+        <div class="status-strip">
+          <span><span class="status-dot" aria-hidden="true"></span><span id="statusText">Drag the cart to a new height, then release to watch energy transform.</span></span>
+          <strong id="statusMetric">Ready</strong>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('stageCanvas');
+  const ctx = canvas.getContext('2d');
+  const stageHint = document.getElementById('stageHint');
+  const controlPanel = document.getElementById('controlPanel');
+  const actionButtons = document.getElementById('actionButtons');
+  const statusText = document.getElementById('statusText');
+  const statusMetric = document.getElementById('statusMetric');
+  const metricTitle = document.getElementById('metricTitle');
+  const readoutTitle = document.getElementById('readoutTitle');
+  const readoutA = document.getElementById('readoutA');
+  const readoutB = document.getElementById('readoutB');
+  const readoutC = document.getElementById('readoutC');
+  const readoutLabelA = document.getElementById('readoutLabelA');
+  const readoutLabelB = document.getElementById('readoutLabelB');
+  const readoutLabelC = document.getElementById('readoutLabelC');
+  const conceptNote = document.getElementById('conceptNote');
+  const barPE = document.getElementById('barPE');
+  const barKE = document.getElementById('barKE');
+  const barHeat = document.getElementById('barHeat');
+  const heatTrack = document.getElementById('heatTrack');
+  const heatLabel = document.getElementById('heatLabel');
+  const modeButtons = Array.from(document.querySelectorAll('.mode-tab'));
+
+  const icons = {
+    play: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 5v14"/><path d="M15 5v14"/></svg>',
+    reset: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>',
+    drop: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="m7 12 5 5 5-5"/><path d="M5 21h14"/></svg>'
+  };
+
+  const state = {
+    mode: 'roller',
+    lastTime: performance.now(),
+    roller: { x: 85, v: 0, heat: 0, dragStartX: 85, dragging: false, playing: false, friction: 0.015 },
+    freefall: { height: 50, y: 50, t: 0, v: 0, status: 'idle' },
+    ramps: { t: 0, active: false, running: false },
+    pendulum: { t: 0, playing: true, amplitudeDeg: 45 }
+  };
+
+  function el(tag, attrs = {}, children = []) {
+    const node = document.createElement(tag);
+    Object.entries(attrs).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === false) return;
+      if (key === 'class') node.className = value;
+      else if (key === 'html') node.innerHTML = value;
+      else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
+      else node.setAttribute(key, value);
+    });
+    children.forEach((child) => node.append(child));
+    return node;
+  }
+
+  function fmt(value, suffix = '') {
+    return `${Math.round(value)}${suffix}`;
+  }
+
+  function fmtLive(value, suffix = '') {
+    return `${Number(value).toFixed(1)}${suffix}`;
+  }
+
+  function setBars(pe, ke, heat = 0) {
+    barPE.style.height = `${Math.max(0, Math.min(100, pe))}%`;
+    barKE.style.height = `${Math.max(0, Math.min(100, ke))}%`;
+    barHeat.style.height = `${Math.max(0, Math.min(100, heat))}%`;
+  }
+
+  function setReadouts(labels, values) {
+    [readoutLabelA.textContent, readoutLabelB.textContent, readoutLabelC.textContent] = labels;
+    [readoutA.textContent, readoutB.textContent, readoutC.textContent] = values;
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    modeButtons.forEach((button) => {
+      const active = button.dataset.mode === mode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    if (mode === 'roller') resetRoller(false);
+    if (mode === 'freefall') resetFreefall(false);
+    if (mode === 'ramps') resetRamps(false);
+    if (mode === 'pendulum') resetPendulum(false);
+    renderControls();
+  }
+
+  function renderControls() {
+    controlPanel.replaceChildren();
+    actionButtons.replaceChildren();
+
+    if (state.mode === 'roller') {
+      metricTitle.textContent = 'Energy tracker';
+      readoutTitle.textContent = 'Cart values';
+      heatTrack.style.display = '';
+      heatLabel.textContent = 'Heat';
+      barHeat.style.background = 'var(--danger)';
+      conceptNote.textContent = 'Mechanical energy moves between PE and KE. Friction converts part of it to heat.';
+      statusText.textContent = 'Drag the cart to a new height, then release to watch energy transform.';
+      stageHint.innerHTML = '<strong>Drag</strong><span>set starting height</span>';
+      controlPanel.append(
+        el('div', { class: 'control-group' }, [
+          el('span', { class: 'control-label' }, ['Friction']),
+          el('input', { class: 'range', type: 'range', min: '0', max: '0.05', step: '0.001', value: state.roller.friction, oninput: (event) => {
+            state.roller.friction = Number(event.target.value);
+            document.getElementById('frictionValue').textContent = state.roller.friction.toFixed(3);
+          }}),
+          el('span', { class: 'value-pill', id: 'frictionValue' }, [state.roller.friction.toFixed(3)])
+        ])
+      );
+      const play = el('button', { class: 'btn', type: 'button', onclick: () => {
+        state.roller.playing = !state.roller.playing;
+        renderControls();
+      }, html: `${state.roller.playing ? icons.pause : icons.play}<span>${state.roller.playing ? 'Pause' : 'Start'}</span>` });
+      const reset = el('button', { class: 'btn outline', type: 'button', onclick: () => resetRoller(true), html: `${icons.reset}<span>Reset</span>` });
+      actionButtons.append(play, reset);
+    }
+
+    if (state.mode === 'freefall') {
+      metricTitle.textContent = 'Energy conversion';
+      readoutTitle.textContent = 'Velocity tracking';
+      heatTrack.style.display = 'none';
+      barHeat.style.background = 'var(--danger)';
+      conceptNote.textContent = 'In ideal free fall, total mechanical energy stays constant while PE becomes KE.';
+      statusText.textContent = 'Choose a height and drop the ball. Compare measured speed with sqrt(2gh).';
+      stageHint.innerHTML = '<strong>Free fall</strong><span>PE becomes KE</span>';
+      controlPanel.append(
+        el('div', { class: 'control-group' }, [
+          el('span', { class: 'control-label' }, ['Start height']),
+          el('input', { class: 'range', type: 'range', min: '10', max: '99', value: state.freefall.height, disabled: state.freefall.status === 'dropping' ? 'disabled' : null, oninput: (event) => {
+            state.freefall.height = Number(event.target.value);
+            if (state.freefall.status === 'idle') state.freefall.y = state.freefall.height;
+            document.getElementById('heightValue').textContent = `${state.freefall.height} m`;
+          }}),
+          el('span', { class: 'value-pill', id: 'heightValue' }, [`${state.freefall.height} m`])
+        ])
+      );
+      const drop = el('button', { class: 'btn', type: 'button', disabled: state.freefall.status === 'dropping' ? 'disabled' : null, onclick: dropFreefall, html: `${icons.drop}<span>Drop</span>` });
+      const reset = el('button', { class: 'btn outline', type: 'button', onclick: () => resetFreefall(true), html: `${icons.reset}<span>Reset</span>` });
+      actionButtons.append(drop, reset);
+    }
+
+    if (state.mode === 'ramps') {
+      metricTitle.textContent = 'Ramp comparison';
+      readoutTitle.textContent = 'Same height result';
+      heatTrack.style.display = 'none';
+      barHeat.style.background = 'var(--danger)';
+      conceptNote.textContent = 'Different paths change travel time, but the final speed depends on the same vertical drop.';
+      statusText.textContent = 'Drop all three balls. Each ramp starts at the same height, so each reaches the same final speed.';
+      stageHint.innerHTML = '<strong>Same height</strong><span>same final speed</span>';
+      controlPanel.append(
+        el('div', { class: 'control-group' }, [
+          el('span', { class: 'control-label' }, ['Theory']),
+          el('span', { class: 'value-pill' }, ['v = sqrt(2gh)']),
+          el('span', { class: 'value-pill' }, ['22.4 m/s'])
+        ])
+      );
+      const start = el('button', { class: 'btn', type: 'button', disabled: state.ramps.running ? 'disabled' : null, onclick: startRamps, html: `${icons.play}<span>Drop all</span>` });
+      const reset = el('button', { class: 'btn outline', type: 'button', onclick: () => resetRamps(true), html: `${icons.reset}<span>Reset</span>` });
+      actionButtons.append(start, reset);
+    }
+
+    if (state.mode === 'pendulum') {
+      metricTitle.textContent = 'Pendulum energy';
+      readoutTitle.textContent = 'Swing values';
+      heatTrack.style.display = '';
+      heatLabel.textContent = 'TE';
+      barHeat.style.background = 'var(--warning)';
+      conceptNote.textContent = 'In an ideal pendulum, PE is highest at the edges and KE is highest at the bottom. TE stays constant.';
+      statusText.textContent = 'Watch gravitational potential energy convert to kinetic energy through each swing.';
+      stageHint.innerHTML = '<strong>Pendulum</strong><span>PE and KE exchange</span>';
+      controlPanel.append(
+        el('div', { class: 'control-group' }, [
+          el('span', { class: 'control-label' }, ['Amplitude']),
+          el('input', { class: 'range', type: 'range', min: '15', max: '70', step: '1', value: state.pendulum.amplitudeDeg, oninput: (event) => {
+            state.pendulum.amplitudeDeg = Number(event.target.value);
+            document.getElementById('amplitudeValue').textContent = `${state.pendulum.amplitudeDeg} deg`;
+          }}),
+          el('span', { class: 'value-pill', id: 'amplitudeValue' }, [`${state.pendulum.amplitudeDeg} deg`])
+        ])
+      );
+      const play = el('button', { class: 'btn', type: 'button', onclick: () => {
+        state.pendulum.playing = !state.pendulum.playing;
+        renderControls();
+      }, html: `${state.pendulum.playing ? icons.pause : icons.play}<span>${state.pendulum.playing ? 'Pause' : 'Start'}</span>` });
+      const reset = el('button', { class: 'btn outline', type: 'button', onclick: () => resetPendulum(true), html: `${icons.reset}<span>Reset</span>` });
+      actionButtons.append(play, reset);
+    }
+  }
+
+  function resizeCanvasForDisplay() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const width = Math.max(320, Math.floor(rect.width * ratio));
+    const height = Math.max(260, Math.floor(rect.height * ratio));
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    return { w: rect.width, h: rect.height };
+  }
+
+  function clearStage(w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const grd = ctx.createLinearGradient(0, 0, 0, h);
+    grd.addColorStop(0, '#111B24');
+    grd.addColorStop(1, '#0A0E13');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(239,242,245,0.07)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 44) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 44) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+  }
+
+  function resetRoller(update = true) {
+    Object.assign(state.roller, { x: 85, v: 0, heat: 0, dragStartX: 85, dragging: false, playing: false });
+    if (update) renderControls();
+  }
+
+  function rollerTrackY(x, w, h) {
+    const margin = Math.max(40, w * 0.07);
+    const center = w / 2;
+    const span = Math.max(200, (w - margin * 2) / 2);
+    const floor = h - 48;
+    const depth = Math.max(130, h - 95);
+    return floor - depth * Math.pow((x - center) / span, 2);
+  }
+
+  function drawRoller(dt, dims) {
+    const { w, h } = dims;
+    const sim = state.roller;
+    clearStage(w, h);
+    const g = 420;
+    const minX = 34;
+    const maxX = w - 34;
+
+    if (!sim.dragging && sim.playing) {
+      for (let i = 0; i < 10; i++) {
+        const step = dt / 10;
+        const dx = 0.35;
+        const dy = rollerTrackY(sim.x + dx, w, h) - rollerTrackY(sim.x - dx, w, h);
+        const theta = Math.atan2(dy, dx * 2);
+        const frictionForce = sim.friction * g * Math.cos(theta) * Math.sign(sim.v || 1);
+        const accel = g * Math.sin(theta) - frictionForce;
+        sim.v += accel * step;
+        sim.x += sim.v * Math.cos(theta) * step;
+        if (sim.x < minX) {
+          const oldV = sim.v;
+          sim.x = minX;
+          sim.v = Math.abs(sim.v) * 0.52;
+          sim.heat += Math.max(0, 0.5 * (oldV * oldV - sim.v * sim.v));
+        }
+        if (sim.x > maxX) {
+          const oldV = sim.v;
+          sim.x = maxX;
+          sim.v = -Math.abs(sim.v) * 0.52;
+          sim.heat += Math.max(0, 0.5 * (oldV * oldV - sim.v * sim.v));
+        }
+        sim.heat += sim.friction * g * Math.cos(theta) * Math.abs(sim.v) * step;
+      }
+
+      correctRollerEnergy(sim, w, h, g);
+    }
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(239,242,245,0.14)';
+    for (let x = 56; x < w; x += 120) {
+      ctx.beginPath();
+      ctx.moveTo(x, rollerTrackY(x, w, h));
+      ctx.lineTo(x, h - 28);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(0, rollerTrackY(0, w, h));
+    for (let x = 0; x <= w; x += 4) ctx.lineTo(x, rollerTrackY(x, w, h));
+    ctx.strokeStyle = '#EFF2F5';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.strokeStyle = '#0E7490';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const cartX = sim.x;
+    const cartY = rollerTrackY(cartX, w, h);
+    const theta = Math.atan2(rollerTrackY(cartX + 1, w, h) - rollerTrackY(cartX - 1, w, h), 2);
+    ctx.save();
+    ctx.translate(cartX, cartY);
+    ctx.rotate(theta);
+    ctx.fillStyle = '#C2413D';
+    roundRect(ctx, -18, -22, 36, 17, 5);
+    ctx.fill();
+    ctx.fillStyle = '#EFF2F5';
+    ctx.beginPath(); ctx.arc(-11, -4, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(11, -4, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    const baseline = h - 48;
+    const pe = Math.max(0, baseline - cartY);
+    const heat = Math.max(0, sim.heat / g);
+    const startEnergy = getRollerStartEnergy(sim, w, h);
+    const liveMechanicalTotal = Math.max(0, startEnergy - heat);
+    const ke = Math.max(0, liveMechanicalTotal - pe);
+    drawEnergyTag(cartX, cartY, [
+      ['PE', fmtLive(pe)],
+      ['KE', fmtLive(ke)],
+      ['TE', fmtLive(liveMechanicalTotal)]
+    ], w, h);
+    const maxE = Math.max(1, baseline - rollerTrackY(sim.dragStartX, w, h));
+    setBars((pe / maxE) * 100, (ke / maxE) * 100, (heat / maxE) * 100);
+    setReadouts(['Potential', 'Kinetic', 'Total energy'], [fmtLive(pe), fmtLive(ke), fmtLive(liveMechanicalTotal)]);
+    statusMetric.textContent = sim.playing ? `TE ${fmtLive(liveMechanicalTotal)}` : 'Ready';
+  }
+
+  function getRollerStartEnergy(sim, w, h) {
+    const baseline = h - 48;
+    return Math.max(1, baseline - rollerTrackY(sim.dragStartX, w, h));
+  }
+
+  function correctRollerEnergy(sim, w, h, g) {
+    const baseline = h - 48;
+    const center = w / 2;
+    const margin = Math.max(40, w * 0.07);
+    const span = Math.max(200, (w - margin * 2) / 2);
+    const depth = Math.max(130, h - 95);
+    const heat = Math.max(0, sim.heat / g);
+    const budget = Math.max(0, getRollerStartEnergy(sim, w, h) - heat);
+    let pe = Math.max(0, baseline - rollerTrackY(sim.x, w, h));
+
+    if (pe > budget) {
+      const side = sim.x < center ? -1 : 1;
+      const allowedOffset = span * Math.sqrt(Math.max(0, budget / depth));
+      sim.x = center + side * allowedOffset;
+      sim.v = side < 0 ? Math.abs(sim.v) : -Math.abs(sim.v);
+      pe = budget;
+    }
+
+    const ke = Math.max(0, budget - pe);
+    const direction = sim.v === 0 ? (sim.x < center ? 1 : -1) : Math.sign(sim.v);
+    sim.v = direction * Math.sqrt(2 * g * ke);
+  }
+
+  function dropFreefall() {
+    Object.assign(state.freefall, { y: state.freefall.height, t: 0, v: 0, status: 'dropping' });
+    renderControls();
+  }
+
+  function resetFreefall(update = true) {
+    Object.assign(state.freefall, { y: state.freefall.height, t: 0, v: 0, status: 'idle' });
+    if (update) renderControls();
+  }
+
+  function drawFreefall(dt, dims) {
+    const { w, h } = dims;
+    const sim = state.freefall;
+    clearStage(w, h);
+    const g = 10;
+    const groundY = h - 42;
+    const topY = 34;
+    const usable = groundY - topY;
+    const pxPerMeter = usable / 100;
+
+    if (sim.status === 'dropping') {
+      sim.t += dt;
+      sim.y = sim.height - 0.5 * g * sim.t * sim.t;
+      sim.v = g * sim.t;
+      if (sim.y <= 0) {
+        sim.y = 0;
+        sim.v = Math.sqrt(2 * g * sim.height);
+        sim.status = 'finished';
+        renderControls();
+      }
+    }
+
+    const y = groundY - sim.y * pxPerMeter;
+    const towerX = Math.max(48, w * 0.15);
+    ctx.fillStyle = 'rgba(239,242,245,0.18)';
+    ctx.fillRect(towerX, topY, 4, usable);
+    ctx.fillStyle = 'rgba(239,242,245,0.62)';
+    ctx.font = '11px JetBrains Mono, monospace';
+    ctx.textAlign = 'right';
+    for (let m = 0; m <= 100; m += 20) {
+      const tickY = groundY - m * pxPerMeter;
+      ctx.fillRect(towerX - 15, tickY, 15, 2);
+      ctx.fillText(`${m}m`, towerX - 20, tickY + 4);
+    }
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(15,138,95,0.28)';
+    ctx.fillRect(0, groundY, w, h - groundY);
+    ctx.strokeStyle = 'rgba(239,242,245,0.45)';
+    ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(w, groundY); ctx.stroke();
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = 'rgba(239,242,245,0.35)';
+    ctx.beginPath(); ctx.moveTo(towerX, y); ctx.lineTo(w * 0.52, y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const ballX = w * 0.52;
+    const grd = ctx.createRadialGradient(ballX - 6, y - 6, 2, ballX, y, 18);
+    grd.addColorStop(0, '#FFE7A3');
+    grd.addColorStop(0.45, '#D59116');
+    grd.addColorStop(1, '#7A4300');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(ballX, y, 17, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(239,242,245,0.42)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    const pe = g * Math.max(0, sim.y);
+    const ke = 0.5 * sim.v * sim.v;
+    const total = g * sim.height;
+    drawEnergyTag(ballX, y, [
+      ['PE', fmt(pe, ' J')],
+      ['KE', fmt(ke, ' J')],
+      ['TE', fmt(total, ' J')]
+    ], w, h);
+    setBars(total ? (pe / total) * 100 : 0, total ? (ke / total) * 100 : 0, 0);
+    setReadouts(['Current speed', 'Impact speed', 'Total energy'], [`${sim.v.toFixed(2)} m/s`, `${Math.sqrt(2 * g * sim.height).toFixed(2)} m/s`, fmt(total, ' J')]);
+    statusMetric.textContent = sim.status === 'dropping' ? `${sim.y.toFixed(1)} m` : sim.status === 'finished' ? 'Landed' : 'Ready';
+  }
+
+  function startRamps() {
+    Object.assign(state.ramps, { t: 0, active: true, running: true });
+    renderControls();
+  }
+
+  function resetRamps(update = true) {
+    Object.assign(state.ramps, { t: 0, active: false, running: false });
+    if (update) renderControls();
+  }
+
+  function resetPendulum(update = true) {
+    Object.assign(state.pendulum, { t: 0, playing: true });
+    if (update) renderControls();
+  }
+
+  function drawRamps(dt, dims) {
+    const { w, h } = dims;
+    const sim = state.ramps;
+    clearStage(w, h);
+    const g = 10;
+    const H = 25;
+    const L = [18, 34, 54];
+    const colors = ['#C2413D', '#0F8A5F', '#0E7490'];
+    const startX = Math.max(52, w * 0.12);
+    const startY = Math.max(48, h * 0.18);
+    const rightPad = 48;
+    const bottomPad = 46;
+    const pxPerMeter = Math.min(
+      (h - startY - bottomPad) / H,
+      (w - startX - rightPad) / Math.max(...L)
+    );
+    const endY = startY + H * pxPerMeter;
+
+    if (sim.running) sim.t += dt;
+
+    ctx.fillStyle = 'rgba(239,242,245,0.13)';
+    ctx.fillRect(0, startY, startX, endY - startY);
+    ctx.fillStyle = 'rgba(239,242,245,0.12)';
+    ctx.fillRect(0, endY, w, h - endY);
+    ctx.strokeStyle = 'rgba(239,242,245,0.42)';
+    ctx.beginPath(); ctx.moveTo(0, endY); ctx.lineTo(w, endY); ctx.stroke();
+
+    let completeCount = 0;
+    let slowestRampTime = 0;
+    L.forEach((rampL, i) => {
+      const endX = startX + rampL * pxPerMeter;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = colors[i];
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      const theta = Math.atan2(H, rampL);
+      const a = g * Math.sin(theta);
+      const rampDistance = Math.sqrt(H * H + rampL * rampL);
+      const tEnd = Math.sqrt((2 * rampDistance) / a);
+      slowestRampTime = Math.max(slowestRampTime, tEnd);
+      let ballS = 0;
+      let v = 0;
+      let ballX = startX;
+      let ballY = startY;
+      if (sim.active) {
+        if (sim.t < tEnd) {
+          ballS = 0.5 * a * sim.t * sim.t;
+          v = a * sim.t;
+          ballX = startX + (ballS / rampDistance) * rampL * pxPerMeter;
+          ballY = startY + (ballS / rampDistance) * H * pxPerMeter;
+        } else {
+          completeCount += 1;
+          const tFlat = sim.t - tEnd;
+          v = Math.sqrt(2 * g * H);
+          ballX = Math.min(w - 40, endX + v * tFlat * pxPerMeter * 0.5);
+          ballY = endY;
+        }
+      }
+      const yOffset = (i - 1) * -5;
+      const grad = ctx.createRadialGradient(ballX - 4, ballY + yOffset - 17, 2, ballX, ballY + yOffset - 12, 13);
+      grad.addColorStop(0, '#FFFFFF');
+      grad.addColorStop(0.28, colors[i]);
+      grad.addColorStop(1, '#05080C');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(ballX, ballY + yOffset - 12, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(239,242,245,0.82)';
+      ctx.font = '11px JetBrains Mono, monospace';
+      const speedLabelX = Math.max(8, Math.min(w - 68, ballX - 18));
+      const speedLabelY = Math.max(58, Math.min(h - 18, ballY + yOffset - 30));
+      ctx.fillText(`v ${v.toFixed(1)}`, speedLabelX, speedLabelY);
+    });
+
+    if (completeCount === 3 && sim.t > slowestRampTime + 1.5) {
+      state.ramps.running = false;
+    }
+    const finalV = Math.sqrt(2 * g * H);
+    const progress = sim.active ? Math.min(100, (sim.t / (slowestRampTime + 1.5)) * 100) : 0;
+    setBars(progress, progress, 0);
+    setReadouts(['Vertical drop', 'Final speed', 'Path rule'], [`${H} m`, `${finalV.toFixed(1)} m/s`, 'height only']);
+    statusMetric.textContent = sim.active ? (sim.running ? `${sim.t.toFixed(1)} s` : `${finalV.toFixed(1)} m/s`) : 'Ready';
+  }
+
+  function drawPendulum(dt, dims) {
+    const { w, h } = dims;
+    const sim = state.pendulum;
+    clearStage(w, h);
+    if (sim.playing) sim.t += dt;
+
+    const pivotX = w * 0.5;
+    const pivotY = Math.max(44, h * 0.16);
+    const length = Math.min(h * 0.64, w * 0.34, 190);
+    const amplitude = (sim.amplitudeDeg * Math.PI) / 180;
+    const omega = Math.sqrt(9.8 / 1.25);
+    const theta = amplitude * Math.cos(omega * sim.t);
+    const bobX = pivotX + Math.sin(theta) * length;
+    const bobY = pivotY + Math.cos(theta) * length;
+    const bottomY = pivotY + length;
+    const maxLift = Math.max(1, length * (1 - Math.cos(amplitude)));
+    const lift = Math.max(0, bottomY - bobY);
+    const pe = Math.min(100, (lift / maxLift) * 100);
+    const ke = Math.max(0, 100 - pe);
+    const tangentialSpeed = Math.sqrt(Math.max(0, ke / 100) * 2 * 9.8 * (maxLift / 100)).toFixed(2);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(239,242,245,0.22)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 7]);
+    ctx.beginPath();
+    ctx.arc(pivotX, pivotY, length, Math.PI / 2 - amplitude, Math.PI / 2 + amplitude);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    [-amplitude, 0, amplitude].forEach((ghostTheta) => {
+      const gx = pivotX + Math.sin(ghostTheta) * length;
+      const gy = pivotY + Math.cos(ghostTheta) * length;
+      ctx.strokeStyle = ghostTheta === 0 ? 'rgba(239,242,245,0.18)' : 'rgba(239,242,245,0.11)';
+      ctx.beginPath();
+      ctx.moveTo(pivotX, pivotY);
+      ctx.lineTo(gx, gy);
+      ctx.stroke();
+      ctx.fillStyle = ghostTheta === 0 ? 'rgba(239,242,245,0.18)' : 'rgba(239,242,245,0.1)';
+      ctx.beginPath();
+      ctx.arc(gx, gy, 9, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.strokeStyle = '#EFF2F5';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(pivotX, pivotY);
+    ctx.lineTo(bobX, bobY);
+    ctx.stroke();
+    ctx.fillStyle = '#EFF2F5';
+    ctx.beginPath();
+    ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    const bobGrad = ctx.createRadialGradient(bobX - 7, bobY - 8, 3, bobX, bobY, 20);
+    bobGrad.addColorStop(0, '#FFE7A3');
+    bobGrad.addColorStop(0.38, '#D59116');
+    bobGrad.addColorStop(1, '#7A4300');
+    ctx.fillStyle = bobGrad;
+    ctx.beginPath();
+    ctx.arc(bobX, bobY, 19, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(239,242,245,0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(14,116,144,0.72)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(Math.min(bobX, pivotX), bottomY);
+    ctx.lineTo(Math.max(bobX, pivotX), bottomY);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(239,242,245,0.68)';
+    ctx.font = '12px JetBrains Mono, monospace';
+    ctx.fillText('lowest point', Math.min(w - 100, pivotX + 16), bottomY - 8);
+    ctx.restore();
+
+    drawEnergyTag(bobX, bobY, [
+      ['PE', fmtLive(pe)],
+      ['KE', fmtLive(ke)],
+      ['TE', '100.0']
+    ], w, h);
+    setBars(pe, ke, 100);
+    setReadouts(['Potential', 'Kinetic', 'Speed'], [fmtLive(pe), fmtLive(ke), `${tangentialSpeed} m/s`]);
+    statusMetric.textContent = `TE 100.0`;
+  }
+
+  function drawEnergyTag(anchorX, anchorY, rows, w, h) {
+    const tagW = w < 440 ? 106 : 122;
+    const tagH = w < 440 ? 76 : 82;
+    const fontSize = w < 440 ? 14 : 16;
+    let x = anchorX + 28;
+    let y = anchorY - tagH - 20;
+    if (x + tagW > w - 10) x = anchorX - tagW - 28;
+    x = Math.max(10, Math.min(w - tagW - 10, x));
+    y = Math.max(10, Math.min(h - tagH - 10, y));
+    if (x < 330 && y < 54) y = 54;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(247,248,250,0.94)';
+    ctx.strokeStyle = 'rgba(12,17,21,0.18)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, x, y, tagW, tagH, 7);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = `700 ${fontSize}px JetBrains Mono, monospace`;
+    ctx.textBaseline = 'top';
+    rows.forEach(([label, value], index) => {
+      const rowY = y + 9 + index * (fontSize + 8);
+      ctx.fillStyle = '#0E7490';
+      ctx.fillText(`${label}:`, x + 10, rowY);
+      ctx.fillStyle = '#0C1115';
+      ctx.fillText(String(value), x + 49, rowY);
+    });
+    ctx.restore();
+  }
+
+  function roundRect(context, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    context.beginPath();
+    context.moveTo(x + r, y);
+    context.arcTo(x + width, y, x + width, y + height, r);
+    context.arcTo(x + width, y + height, x, y + height, r);
+    context.arcTo(x, y + height, x, y, r);
+    context.arcTo(x, y, x + width, y, r);
+    context.closePath();
+  }
+
+  function pointerX(event) {
+    const rect = canvas.getBoundingClientRect();
+    return Math.max(34, Math.min(rect.width - 34, event.clientX - rect.left));
+  }
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (state.mode !== 'roller') return;
+    canvas.setPointerCapture(event.pointerId);
+    state.roller.dragging = true;
+    state.roller.playing = false;
+    state.roller.x = pointerX(event);
+    state.roller.dragStartX = state.roller.x;
+    state.roller.v = 0;
+    state.roller.heat = 0;
+    renderControls();
+  });
+  canvas.addEventListener('pointermove', (event) => {
+    if (state.mode !== 'roller' || !state.roller.dragging) return;
+    state.roller.x = pointerX(event);
+    state.roller.dragStartX = state.roller.x;
+    state.roller.v = 0;
+    state.roller.heat = 0;
+  });
+  canvas.addEventListener('pointerup', () => {
+    if (state.mode !== 'roller' || !state.roller.dragging) return;
+    state.roller.dragging = false;
+    state.roller.playing = true;
+    renderControls();
+  });
+  canvas.addEventListener('pointercancel', () => {
+    state.roller.dragging = false;
+  });
+
+  modeButtons.forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mode)));
+  window.addEventListener('resize', () => resizeCanvasForDisplay());
+
+  function loop(time) {
+    const dt = Math.min((time - state.lastTime) / 1000, 0.033);
+    state.lastTime = time;
+    const dims = resizeCanvasForDisplay();
+    if (state.mode === 'roller') drawRoller(dt, dims);
+    if (state.mode === 'freefall') drawFreefall(dt, dims);
+    if (state.mode === 'ramps') drawRamps(dt, dims);
+    if (state.mode === 'pendulum') drawPendulum(dt, dims);
+    requestAnimationFrame(loop);
+  }
+
+  renderControls();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

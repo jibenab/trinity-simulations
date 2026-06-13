@@ -67,11 +67,9 @@ export function RunnerClient({
             <h1 className="display mt-3 text-[32px] font-semibold">{content.title}</h1>
           </div>
           <div className="flex items-center gap-3">
-            {content.type === "game" ? (
-              <Link href={`/leaderboard/${content.slug}`} className="btn ghost">
-                Leaderboard <Icon name="trophy" size={15} />
-              </Link>
-            ) : null}
+            <Link href={`/leaderboard/${content.slug}`} className="btn ghost">
+              Leaderboard <Icon name="trophy" size={15} />
+            </Link>
             <Link href="/catalog" className="btn ghost">
               Back to catalog
             </Link>
@@ -95,16 +93,12 @@ export function RunnerClient({
               slug={content.slug}
               contentType={content.type}
               userName={viewer?.name}
-              onScore={
-                content.type === "game"
-                  ? (score, timeTaken) => {
-                      setLastScore(score);
-                      startTransition(() => {
-                        void submitScore({ slug: content.slug, score, timeTaken });
-                      });
-                    }
-                  : undefined
-              }
+              onScore={(score, timeTaken) => {
+                setLastScore(score);
+                startTransition(() => {
+                  void submitScore({ slug: content.slug, score, timeTaken });
+                });
+              }}
             />
           </div>
         </div>
