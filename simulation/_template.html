@@ -1,0 +1,396 @@
+<!doctype html>
+<!--
+  Trinity Simulation Lab — canonical starter template.
+
+  To create a new simulation:
+    1. Copy this file to simulation/<slug>.html (kebab-case slug).
+    2. Fill in the trinity-meta block below.
+    3. Replace the pendulum stage/physics with your own; keep the 4-zone
+       layout, the tokens, and the bridge script untouched.
+    4. Optional thumbnail: svg/<slug>.svg (abstract geometric, tokens only).
+    5. Check + upload:
+         npm run check:sim
+         node scripts/upload-sim.mjs <slug> --publish
+
+  Rules that keep every sim consistent (CLAUDE.md has the full list):
+    - 4 zones: header strip / stage / parameter strip / prompt.
+    - Accent marks the single live/moving thing. Never chrome.
+    - Body ≥ 17px (16px phone), mono labels ≥ 13px, readouts ≥ 14px.
+    - Hit targets ≥ 44px. Max 4 parameters. No emoji, no gradients.
+    - Page never scrolls: 100dvh locked shell, stage flexes to fit.
+-->
+<!-- trinity-meta
+{
+  "title": "Simple Pendulum",
+  "type": "simulation",
+  "subject": "Physics",
+  "grade": "Class 9",
+  "chapter": "Motion",
+  "level": "Core",
+  "minutes": 8,
+  "concepts": ["period", "gravity", "harmonic motion"],
+  "prompt": "Try halving the length. What happens to the period?"
+}
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Simple Pendulum — Trinity Simulation Lab</title>
+<link rel="icon" href="data:,"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #FFFFFF;
+  --ink: #0C1115;
+  --ink-soft: #2B333A;
+  --ink-mute: #6B7680;
+  --rule-soft: rgba(12,17,21,0.14);
+  --stage-grid: rgba(12,17,21,0.045);
+  --stage-rule: rgba(12,17,21,0.16);
+  --accent: oklch(0.52 0.12 200);
+  --sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.shell {
+  max-width: 1194px;
+  height: 100dvh;
+  margin: 0 auto;
+  padding: 16px 32px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.eyebrow, .label-mono {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  font-size: 13px;
+}
+.eyebrow { letter-spacing: 0.14em; color: var(--ink-mute); }
+.label-mono { letter-spacing: 0.08em; }
+
+/* 1 — header strip */
+.sim-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.sim-title {
+  margin: 6px 0 0;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+}
+.header-actions { display: flex; gap: 10px; }
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+.icon-btn:active { background: var(--rule-soft); }
+.icon-btn svg { display: block; }
+
+/* 2 — stage */
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--stage-rule);
+  border-radius: 4px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.grid-line { stroke: var(--stage-grid); stroke-width: 0.5; }
+.readouts {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+}
+.readouts b { color: var(--ink); font-weight: 500; margin-left: 8px; }
+
+.rod { stroke: var(--ink); stroke-width: 1.2; }
+.pivot { fill: var(--ink); }
+.bob { fill: var(--accent); }
+.trail { stroke: var(--ink); stroke-width: 1; fill: none; opacity: 0.12; }
+
+/* 3 — parameter strip */
+.params {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 28px;
+}
+.param label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+  color: var(--ink-mute);
+}
+.param label b {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.param input[type="range"] {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* 4 — prompt */
+.prompt {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 17px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 834px) {
+  .shell { padding: 14px 20px 16px; }
+  .sim-title { font-size: 32px; }
+}
+@media (max-width: 480px) {
+  html, body { font-size: 16px; }
+  .shell { padding: 12px 16px 14px; gap: 12px; }
+  .sim-title { font-size: 28px; }
+  .params { grid-template-columns: 1fr; gap: 14px; }
+  .prompt { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="sim-header">
+    <div>
+      <div class="eyebrow">Simulation · Physics</div>
+      <h1 class="sim-title">Simple Pendulum</h1>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="playBtn" type="button" aria-label="Play or pause">
+        <svg id="playIcon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4 2 L13 8 L4 14 Z" fill="currentColor"/>
+        </svg>
+        <svg id="pauseIcon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="display:none">
+          <rect x="3" y="2" width="3.5" height="12" fill="currentColor"/>
+          <rect x="9.5" y="2" width="3.5" height="12" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="resetBtn" type="button" aria-label="Reset">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M13.5 8 A5.5 5.5 0 1 1 8 2.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M8 0.5 L8 4.5 L11 2.5 Z" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage" aria-label="Pendulum stage">
+    <svg id="stageSvg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
+      <g id="gridLines"></g>
+      <path id="trailPath" class="trail" d=""/>
+      <line id="rod" class="rod" x1="500" y1="60" x2="500" y2="420"/>
+      <circle class="pivot" cx="500" cy="60" r="5"/>
+      <circle id="bob" class="bob" cx="500" cy="420" r="22"/>
+    </svg>
+    <div class="readouts" aria-live="off">
+      <span>θ<b id="thetaReadout">0.0°</b></span>
+      <span>T<b id="periodReadout">2.84 s</b></span>
+    </div>
+  </main>
+
+  <section class="params" aria-label="Parameters">
+    <div class="param">
+      <label class="label-mono" for="lengthInput">Length<b id="lengthValue">2.0 m</b></label>
+      <input id="lengthInput" type="range" min="0.5" max="3" step="0.1" value="2"/>
+    </div>
+    <div class="param">
+      <label class="label-mono" for="gravityInput">Gravity<b id="gravityValue">9.8 m/s²</b></label>
+      <input id="gravityInput" type="range" min="1.6" max="24.8" step="0.1" value="9.8"/>
+    </div>
+  </section>
+
+  <p class="prompt">Try halving the length. What happens to the period?</p>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---- Trinity bridge — keep this block in every sim ------------------- */
+  window.__TRINITY_INIT__ = { userName: "Student", slug: "", contentType: "simulation" };
+  window.addEventListener("message", function (event) {
+    if (event.data && event.data.type === "init") window.__TRINITY_INIT__ = event.data;
+  });
+  window.addEventListener("error", function (event) {
+    try { parent.postMessage({ type: "error", message: event.message || "Simulation error" }, "*"); } catch (e) {}
+  });
+  // Games and quizzes must report their result exactly once, when finished:
+  //   sendScore(score)                          — plain score
+  //   sendScore(score, seconds, adjustedScore)  — with time + leaderboard value
+  function sendScore(value, timeTaken, leaderboardValue) {
+    try {
+      parent.postMessage(
+        { type: "score", value: value, timeTaken: timeTaken, leaderboardValue: leaderboardValue },
+        "*"
+      );
+    } catch (e) {}
+  }
+  void sendScore; // template only — remove for a scored game, keep bridge above
+  try { parent.postMessage({ type: "ready" }, "*"); } catch (e) {}
+  /* ---------------------------------------------------------------------- */
+
+  var PIVOT_X = 500, PIVOT_Y = 60, PX_PER_M = 180;
+
+  var state = {
+    length: 2,
+    gravity: 9.8,
+    theta: Math.PI / 6,
+    omega: 0,
+    running: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    trail: []
+  };
+
+  var bob = document.getElementById("bob");
+  var rod = document.getElementById("rod");
+  var trailPath = document.getElementById("trailPath");
+  var thetaReadout = document.getElementById("thetaReadout");
+  var periodReadout = document.getElementById("periodReadout");
+  var playIcon = document.getElementById("playIcon");
+  var pauseIcon = document.getElementById("pauseIcon");
+
+  var gridLines = document.getElementById("gridLines");
+  (function drawGrid() {
+    var svgNs = "http://www.w3.org/2000/svg";
+    var step = 100;
+    for (var x = step; x < 1000; x += step) {
+      var v = document.createElementNS(svgNs, "line");
+      v.setAttribute("class", "grid-line");
+      v.setAttribute("x1", x); v.setAttribute("y1", 0);
+      v.setAttribute("x2", x); v.setAttribute("y2", 600);
+      gridLines.appendChild(v);
+    }
+    for (var y = step; y < 600; y += step) {
+      var h = document.createElementNS(svgNs, "line");
+      h.setAttribute("class", "grid-line");
+      h.setAttribute("x1", 0); h.setAttribute("y1", y);
+      h.setAttribute("x2", 1000); h.setAttribute("y2", y);
+      gridLines.appendChild(h);
+    }
+  })();
+
+  function render() {
+    var r = state.length * PX_PER_M;
+    var x = PIVOT_X + r * Math.sin(state.theta);
+    var y = PIVOT_Y + r * Math.cos(state.theta);
+    rod.setAttribute("x2", x); rod.setAttribute("y2", y);
+    bob.setAttribute("cx", x); bob.setAttribute("cy", y);
+
+    state.trail.push([x, y]);
+    if (state.trail.length > 90) state.trail.shift();
+    trailPath.setAttribute(
+      "d",
+      state.trail.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ")
+    );
+
+    thetaReadout.textContent = ((state.theta * 180) / Math.PI).toFixed(1) + "°";
+    periodReadout.textContent = (2 * Math.PI * Math.sqrt(state.length / state.gravity)).toFixed(2) + " s";
+  }
+
+  var lastTime = null;
+  function tick(now) {
+    if (state.running) {
+      if (lastTime !== null) {
+        var dt = Math.min((now - lastTime) / 1000, 0.033);
+        var steps = 4;
+        for (var i = 0; i < steps; i++) {
+          var alpha = -(state.gravity / state.length) * Math.sin(state.theta);
+          state.omega += alpha * (dt / steps);
+          state.theta += state.omega * (dt / steps);
+        }
+        render();
+      }
+      lastTime = now;
+    } else {
+      lastTime = null;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function syncPlayIcon() {
+    playIcon.style.display = state.running ? "none" : "block";
+    pauseIcon.style.display = state.running ? "block" : "none";
+  }
+
+  document.getElementById("playBtn").addEventListener("click", function () {
+    state.running = !state.running;
+    syncPlayIcon();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    state.theta = Math.PI / 6;
+    state.omega = 0;
+    state.trail = [];
+    render();
+  });
+
+  function bindParam(inputId, valueId, key, unit) {
+    var input = document.getElementById(inputId);
+    var label = document.getElementById(valueId);
+    input.addEventListener("input", function () {
+      state[key] = Number(input.value);
+      state.trail = [];
+      label.textContent = Number(input.value).toFixed(1) + " " + unit;
+      render();
+    });
+  }
+  bindParam("lengthInput", "lengthValue", "length", "m");
+  bindParam("gravityInput", "gravityValue", "gravity", "m/s²");
+
+  syncPlayIcon();
+  render();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

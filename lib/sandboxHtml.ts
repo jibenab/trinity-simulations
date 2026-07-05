@@ -1,3 +1,5 @@
+// Mirrors the white-stage tokens in CLAUDE.md §3 — the sim stage is white,
+// with --dark-ink/--dark-mute as text on it. Keep in sync with the design doc.
 const THEME_VARS = `
 :root {
   --bg: #EFF2F5;
@@ -8,9 +10,11 @@ const THEME_VARS = `
   --rule: #0C1115;
   --rule-soft: rgba(12,17,21,0.14);
   --paper: #F7F8FA;
-  --dark: #0C1115;
-  --dark-ink: #EFF2F5;
-  --dark-mute: #7F8892;
+  --dark: #FFFFFF;
+  --dark-ink: #0C1115;
+  --dark-mute: #4A5560;
+  --stage-grid: rgba(12,17,21,0.045);
+  --stage-rule: rgba(12,17,21,0.16);
   --accent: oklch(0.52 0.12 200);
   --accent-ink: #F7F8FA;
   --sans: Manrope, sans-serif;
@@ -140,8 +144,8 @@ export function sandboxHtml(code: string) {
   if (!trimmed) {
     return wrapPlainHtml(`
       <main style="display:grid;place-items:center;min-height:100vh;padding:24px;">
-        <div style="max-width:420px;border:1px solid #2A2A2A;border-radius:4px;padding:24px;background:rgba(255,255,255,0.02);">
-          <div style="font-family:var(--mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--dark-mute);">Simulation preview</div>
+        <div style="max-width:420px;border:1px solid var(--stage-rule);border-radius:4px;padding:24px;background:var(--paper);">
+          <div style="font-family:var(--mono);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--dark-mute);">Simulation preview</div>
           <h1 style="font-size:28px;line-height:1;margin:12px 0 0;">No code yet</h1>
           <p style="margin:16px 0 0;color:var(--dark-mute);">Paste a full HTML document or a React snippet named App.</p>
         </div>

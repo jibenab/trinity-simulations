@@ -9,6 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "check:simulation-chrome": "node scripts/check-simulation-chrome.js",
+    "check:sim": "node scripts/check-simulation-chrome.js",
+    "upload:sim": "node scripts/upload-sim.mjs",
     "dev:convex": "convex dev"
   },
   "dependencies": {

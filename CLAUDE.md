@@ -193,20 +193,23 @@ Never stack two accent buttons side-by-side. Never use gradient or "glass" butto
 ## 11. Structural file layout
 
 ```
-/styles.css              design tokens + base styles (edit here for global changes)
-/components.jsx          TopNav, Footer, SimThumb, SimGlyph, ScatterGlyphs, TweaksPanel, Icon
-/data.jsx                SIMS catalog array (id, title, subject, level, minutes, concepts)
-/pendulum.jsx            reference implementation of a simulation stage
-/home.html               landing page
-/catalog.html            browse page
-/simulation/<sim-id>.html one file per embedded simulation; mirror the 4-zone simulation anatomy, without app nav/footer chrome
+/styles.css                design tokens + base styles (edit here for global changes)
+/components.jsx            TopNav, Footer, SimThumb, SimGlyph, ScatterGlyphs, TweaksPanel, Icon
+/data.jsx                  SIMS catalog array (id, title, subject, level, minutes, concepts)
+/pendulum.jsx              reference implementation of a simulation stage
+/home.html                 landing page
+/catalog.html              browse page
+/simulation/<sim-id>.html  one file per embedded simulation; mirror the 4-zone simulation anatomy, without app nav/footer chrome
+/simulation/_template.html canonical starter for new sims — copy, rename, edit
+/svg/<sim-id>.svg          optional card thumbnail; picked up automatically by the upload script
+/scripts/upload-sim.mjs    uploads a sim (+ thumbnail) to Convex from its trinity-meta block
 ```
 
-When adding a new simulation:
-1. Add an entry to `SIMS` in `data.jsx`.
-2. Add a case to `SimGlyph` in `components.jsx` if the subject glyph needs variation.
-3. Create `simulation/<sim-id>.html` using the 4-zone simulation anatomy as the skeleton.
-4. Reuse small primitives like `Icon`, but do not include `TopNav`, `Footer`, or any app-level navigation in embedded simulation files.
+When adding a new simulation (full guide: `docs/adding-a-simulation.md`):
+1. Copy `simulation/_template.html` to `simulation/<sim-id>.html` and fill in its `trinity-meta` comment block — title, subject, grade, chapter live in the file, not in a separate registry.
+2. Build the sim inside the template's 4-zone anatomy. Do not include `TopNav`, `Footer`, or any app-level navigation in embedded simulation files.
+3. Optional thumbnail: `svg/<sim-id>.svg` (abstract geometric, tokens only). Cards fall back to `SimGlyph` when it is absent.
+4. Run `npm run check:sim`, then `node scripts/upload-sim.mjs <sim-id> --publish` (add `--prod` for the production deployment). Alternatively drag the .html (and .svg) into the admin editor at `/admin/edit/new`.
 
 ---
 

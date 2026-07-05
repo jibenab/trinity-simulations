@@ -40,7 +40,16 @@ export function RunnerClient({
   }, [content, expectedType, recordContentUse, viewer]);
 
   if (content === undefined || viewer === undefined) {
-    return <div className="shell py-20 text-sm text-ink-mute">Loading…</div>;
+    return (
+      <div className="shell">
+        <TopNav current="catalog" />
+        <section className="animate-pulse py-8 motion-reduce:animate-none" aria-label="Loading">
+          <div className="h-4 w-44 rounded-sm bg-bg-alt" />
+          <div className="mt-4 h-10 w-72 max-w-full rounded-sm bg-bg-alt" />
+          <div className="mt-6 h-[min(72dvh,700px)] min-h-[420px] rounded-md border border-[var(--rule-soft)] bg-paper" />
+        </section>
+      </div>
+    );
   }
 
   if (!content || content.type !== expectedType) {
@@ -87,16 +96,17 @@ export function RunnerClient({
             </div>
           </div>
 
-          <div className="bg-dark p-3 sm:p-5">
+          <div className="bg-paper p-3 sm:p-5">
             <SimFrame
               code={content.code}
               slug={content.slug}
               contentType={content.type}
               userName={viewer?.name}
-              onScore={(score, timeTaken) => {
-                setLastScore(score);
+              onScore={(score, timeTaken, leaderboardScore) => {
+                const scoreToSubmit = leaderboardScore ?? score;
+                setLastScore(scoreToSubmit);
                 startTransition(() => {
-                  void submitScore({ slug: content.slug, score, timeTaken });
+                  void submitScore({ slug: content.slug, score: scoreToSubmit, timeTaken });
                 });
               }}
             />

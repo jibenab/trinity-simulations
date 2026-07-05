@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import { isAdminEmail } from "../lib/isAdmin";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { requireAdminIdentity, requireIdentity } from "./users";
 
 const subjectValidator = v.union(
@@ -36,13 +36,29 @@ const contentArgs = {
 export const listPublished = query({
   args: {},
   handler: async (ctx) => {
-    const rows = await ctx.db.query("content").collect();
-    return rows
-      .filter((item) => item.published)
+    const [sims, games] = await Promise.all([
+      ctx.db
+        .query("content")
+        .withIndex("by_type_published", (q) =>
+          q.eq("type", "simulation").eq("published", true),
+        )
+        .collect(),
+      ctx.db
+        .query("content")
+        .withIndex("by_type_published", (q) =>
+          q.eq("type", "game").eq("published", true),
+        )
+        .collect(),
+    ]);
+
+    // The catalog only needs metadata + thumbnail. `code` is 20–45 KB per sim
+    // and must only travel through getBySlug when a student opens one.
+    return [...sims, ...games]
       .sort((a, b) => {
         if (a.featured !== b.featured) return a.featured ? -1 : 1;
         return b.updatedAt - a.updatedAt;
-      });
+      })
+      .map(({ code: _code, ...summary }) => summary);
   },
 });
 
@@ -66,23 +82,24 @@ export const listAdminWithStats = query({
       .order("desc")
       .take(500);
 
-    const enriched = [];
-    for (const item of rows) {
-      const stats = await ctx.db
-        .query("contentStats")
-        .withIndex("by_contentId", (q) => q.eq("contentId", item._id))
-        .unique();
+    const enriched = await Promise.all(
+      rows.map(async (item) => {
+        const stats = await ctx.db
+          .query("contentStats")
+          .withIndex("by_contentId", (q) => q.eq("contentId", item._id))
+          .unique();
 
-      enriched.push({
-        ...item,
-        stats: {
-          simulationUses: stats?.simulationUses ?? 0,
-          gamePlays: stats?.gamePlays ?? 0,
-          scoreSubmissions: stats?.scoreSubmissions ?? 0,
-          lastUsedAt: stats?.lastUsedAt,
-        },
-      });
-    }
+        return {
+          ...item,
+          stats: {
+            simulationUses: stats?.simulationUses ?? 0,
+            gamePlays: stats?.gamePlays ?? 0,
+            scoreSubmissions: stats?.scoreSubmissions ?? 0,
+            lastUsedAt: stats?.lastUsedAt,
+          },
+        };
+      }),
+    );
 
     return enriched.sort((a, b) => b.updatedAt - a.updatedAt);
   },
@@ -91,10 +108,14 @@ export const listAdminWithStats = query({
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const doc = await ctx.db
       .query("content")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
+
+    // Unpublished content is admin-only; students reach it via getById in the editor.
+    if (!doc?.published) return null;
+    return doc;
   },
 });
 
@@ -196,5 +217,58 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.id);
+  },
+});
+
+// Internal-only: reachable via `npx convex run` with deployment credentials,
+// never from the browser client. Used by scripts/upload-sim.mjs.
+export const upsertFromCli = internalMutation({
+  args: {
+    slug: v.string(),
+    type: v.union(v.literal("simulation"), v.literal("game")),
+    title: v.string(),
+    subject: subjectValidator,
+    grade: v.string(),
+    chapter: v.string(),
+    level: v.optional(levelValidator),
+    minutes: v.optional(v.number()),
+    concepts: v.optional(v.array(v.string())),
+    prompt: v.optional(v.string()),
+    svgCode: v.optional(v.string()),
+    code: v.string(),
+    published: v.optional(v.boolean()),
+    featured: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("content")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    const { published, featured, svgCode, ...fields } = args;
+
+    if (existing) {
+      // Re-uploading an already-published sim must not unpublish it or drop
+      // its thumbnail; flags and svg only change when explicitly provided.
+      await ctx.db.patch(existing._id, {
+        ...fields,
+        ...(svgCode !== undefined ? { svgCode } : {}),
+        ...(published !== undefined ? { published } : {}),
+        ...(featured !== undefined ? { featured } : {}),
+        updatedAt: now,
+      });
+      return { id: existing._id, created: false };
+    }
+
+    const id = await ctx.db.insert("content", {
+      ...fields,
+      svgCode: svgCode ?? "",
+      published: published ?? false,
+      featured: featured ?? false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return { id, created: true };
   },
 });

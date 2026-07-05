@@ -36,6 +36,9 @@ export type PublicContent = {
   updatedAt: number;
 };
 
+/** What listPublished returns — everything except the heavyweight `code`. */
+export type PublicContentSummary = Omit<PublicContent, "code">;
+
 export type LeaderboardRow = {
   _id: string;
   contentId: string;

@@ -93,7 +93,32 @@ function findScrollLayoutFailure(relativeFile, source) {
   ].join("\n");
 }
 
+const SUBJECTS = ["Physics", "Chemistry", "Biology", "Math"];
+const GRADES = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
+const LEVELS = ["Intro", "Core", "Advanced"];
+const TYPES = ["simulation", "game"];
+
+function validateMeta(meta) {
+  const problems = [];
+  if (!meta.title || typeof meta.title !== "string") problems.push("title (string) is required");
+  if (!meta.chapter || typeof meta.chapter !== "string") problems.push("chapter (string) is required");
+  if (!SUBJECTS.includes(meta.subject)) problems.push(`subject must be one of: ${SUBJECTS.join(", ")}`);
+  if (!GRADES.includes(meta.grade)) problems.push(`grade must be one of: ${GRADES.join(", ")}`);
+  if (meta.type !== undefined && !TYPES.includes(meta.type)) problems.push(`type must be one of: ${TYPES.join(", ")}`);
+  if (meta.level !== undefined && !LEVELS.includes(meta.level)) problems.push(`level must be one of: ${LEVELS.join(", ")}`);
+  if (meta.minutes !== undefined && typeof meta.minutes !== "number") problems.push("minutes must be a number");
+  if (meta.prompt !== undefined && typeof meta.prompt !== "string") problems.push("prompt must be a string");
+  if (
+    meta.concepts !== undefined &&
+    (!Array.isArray(meta.concepts) || meta.concepts.some((c) => typeof c !== "string"))
+  ) {
+    problems.push("concepts must be an array of strings");
+  }
+  return problems;
+}
+
 const failures = [];
+const warnings = [];
 
 for (const file of listHtmlFiles(simulationDir)) {
   const source = fs.readFileSync(file, "utf8");
@@ -107,6 +132,69 @@ for (const file of listHtmlFiles(simulationDir)) {
 
   const scrollLayoutFailure = findScrollLayoutFailure(relativeFile, source);
   if (scrollLayoutFailure) failures.push(scrollLayoutFailure);
+
+  if (!/<meta[^>]+name=["']viewport["']/i.test(source)) {
+    failures.push(`${relativeFile}: missing <meta name="viewport">`);
+  }
+
+  const metaMatch = source.match(/<!--\s*trinity-meta\s*([\s\S]*?)-->/);
+  if (!metaMatch) {
+    warnings.push(
+      `${relativeFile}: no trinity-meta block — scripts/upload-sim.mjs needs one (see simulation/_template.html)`,
+    );
+  } else {
+    let meta = null;
+    try {
+      meta = JSON.parse(metaMatch[1]);
+    } catch (error) {
+      failures.push(`${relativeFile}: trinity-meta is not valid JSON (${error.message})`);
+    }
+    if (meta) {
+      const problems = validateMeta(meta);
+      if (problems.length) {
+        failures.push(`${relativeFile}: invalid trinity-meta — ${problems.join("; ")}`);
+      }
+      if (meta.type === "game" && !/type:\s*["']score["']/.test(source)) {
+        failures.push(
+          `${relativeFile}: type is "game" but it never posts {type:"score"} to the parent`,
+        );
+      }
+    }
+  }
+
+  const css = extractCssBlocks(source);
+  if (css) {
+    const cssOutsideRoot = css.replace(/:root\s*\{[^}]*\}/g, "");
+    const hardcodedColors = [
+      ...new Set(
+        Array.from(cssOutsideRoot.matchAll(/#[0-9a-fA-F]{3,8}\b/g), (m) => m[0]),
+      ),
+    ];
+    if (hardcodedColors.length) {
+      warnings.push(
+        `${relativeFile}: colors hardcoded outside :root — ${hardcodedColors.join(", ")} (use var(--token))`,
+      );
+    }
+
+    const tinyFonts = [
+      ...new Set(
+        Array.from(css.matchAll(/font-size:\s*(\d+(?:\.\d+)?)px/g), (m) => Number(m[1])).filter(
+          (n) => n < 12,
+        ),
+      ),
+    ];
+    if (tinyFonts.length) {
+      warnings.push(
+        `${relativeFile}: font-size below 12px — ${tinyFonts.join("px, ")}px (13px min for labels, 12px min for svg ticks)`,
+      );
+    }
+  }
+}
+
+if (warnings.length) {
+  console.warn("Simulation warnings (not failing the check):");
+  for (const warning of warnings) console.warn(`- ${warning}`);
+  console.warn("");
 }
 
 if (failures.length) {
@@ -115,4 +203,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("Simulation chrome check passed.");
+console.log("Simulation checks passed.");

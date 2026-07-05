@@ -13,6 +13,7 @@ import {
   SUBJECTS,
   type PublicContent,
 } from "@/lib/content";
+import { parseTrinityMeta } from "@/lib/trinityMeta";
 import { titleToSlug } from "@/lib/utils";
 
 import { Button } from "./Button";
@@ -69,6 +70,8 @@ export function AdminEditor({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [previewOn, setPreviewOn] = useState(true);
+  const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
     if (!doc || isNew) return;
@@ -93,6 +96,53 @@ export function AdminEditor({ id }: { id: string }) {
 
   function redirectToLogin() {
     router.push(`/login?next=${encodeURIComponent(pathname)}`);
+  }
+
+  async function importFiles(files: FileList | File[]) {
+    const notes: string[] = [];
+
+    for (const file of Array.from(files)) {
+      const text = await file.text();
+
+      if (file.name.toLowerCase().endsWith(".svg")) {
+        setForm((current) => ({ ...current, svgCode: text }));
+        notes.push(`${file.name} → thumbnail`);
+        continue;
+      }
+
+      if (file.name.toLowerCase().endsWith(".html")) {
+        const meta = parseTrinityMeta(text);
+        const slugFromFile = titleToSlug(file.name.replace(/\.html?$/i, ""));
+
+        setForm((current) => ({
+          ...current,
+          code: text,
+          slug: current.slug || slugFromFile,
+          ...(meta?.title ? { title: meta.title } : {}),
+          ...(meta?.type === "simulation" || meta?.type === "game"
+            ? { type: meta.type }
+            : {}),
+          ...(meta?.subject &&
+          (SUBJECTS as readonly string[]).includes(meta.subject)
+            ? { subject: meta.subject as FormState["subject"] }
+            : {}),
+          ...(meta?.grade && (GRADES as readonly string[]).includes(meta.grade)
+            ? { grade: meta.grade }
+            : {}),
+          ...(meta?.chapter ? { chapter: meta.chapter } : {}),
+        }));
+        notes.push(
+          meta
+            ? `${file.name} → code + metadata`
+            : `${file.name} → code (no trinity-meta block, fill the form manually)`,
+        );
+        continue;
+      }
+
+      notes.push(`${file.name} skipped — only .html and .svg`);
+    }
+
+    setImportNotice(notes.join(" · "));
   }
 
   async function handleSave() {
@@ -207,18 +257,60 @@ export function AdminEditor({ id }: { id: string }) {
       </section>
 
       {error ? (
-        <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-6 rounded-md border border-[var(--rule-soft)] bg-bg-alt px-4 py-3 text-sm text-ink">
+          <span className="label-mono mr-3 text-ink-mute">Error</span>
           {error}
         </div>
       ) : null}
       {notice ? (
-        <div className="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="mb-6 rounded-md border border-[var(--rule-soft)] bg-paper px-4 py-3 text-sm text-ink">
+          <span className="label-mono mr-3 text-accent">Saved</span>
           {notice}
         </div>
       ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_520px]">
         <div className="space-y-6">
+          <div
+            className={`panel border-dashed p-5 transition ${dragActive ? "bg-bg-alt" : ""}`}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragActive(true);
+            }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragActive(false);
+              if (event.dataTransfer.files?.length) {
+                void importFiles(event.dataTransfer.files);
+              }
+            }}
+          >
+            <div className="label-mono text-ink-mute">Import files</div>
+            <p className="mt-2 text-sm text-ink-soft">
+              Drop the simulation .html here (plus an optional thumbnail .svg).
+              The form prefills from the file&apos;s trinity-meta block.
+            </p>
+            <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-3 rounded-pill border border-ink px-4 font-mono text-[13px] uppercase tracking-[0.08em]">
+              Choose files
+              <input
+                type="file"
+                accept=".html,.svg"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  if (event.target.files?.length) {
+                    void importFiles(event.target.files);
+                  }
+                  event.target.value = "";
+                }}
+              />
+            </label>
+            {importNotice ? (
+              <p className="mt-3 text-sm text-ink-mute">{importNotice}</p>
+            ) : null}
+          </div>
+
           <div className="panel p-5">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">

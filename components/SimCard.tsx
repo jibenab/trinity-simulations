@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { PublicContent } from "@/lib/content";
+import type { PublicContentSummary } from "@/lib/content";
 
 import { Icon } from "./Icon";
 import { SimThumb } from "./SimThumb";
@@ -9,7 +9,7 @@ export function SimCard({
   content,
   variant = 0,
 }: {
-  content: PublicContent;
+  content: PublicContentSummary;
   variant?: number;
 }) {
   const href = content.type === "game" ? `/game/${content.slug}` : `/sim/${content.slug}`;

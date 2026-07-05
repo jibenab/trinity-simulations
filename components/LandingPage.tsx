@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
-import type { PublicContent } from "@/lib/content";
+import type { PublicContent, PublicContentSummary } from "@/lib/content";
 import { seedContent } from "@/convex/seedData";
 
 import { Footer } from "./Footer";
@@ -177,7 +177,7 @@ function toFallbackContent(index: number): PublicContent {
   };
 }
 
-function pickHomepageFeatured(rows: PublicContent[]) {
+function pickHomepageFeatured(rows: PublicContentSummary[]) {
   const featured = rows.filter((item) => item.featured);
   const usedIds = new Set(featured.map((item) => item._id));
   const backfill = rows.filter((item) => !usedIds.has(item._id));
@@ -186,7 +186,7 @@ function pickHomepageFeatured(rows: PublicContent[]) {
 
 export function LandingPage() {
   const publishedContent = useQuery(api.content.listPublished, {}) as
-    | PublicContent[]
+    | PublicContentSummary[]
     | undefined;
   const fallbackContent = useMemo(
     () => seedContent.map((_, index) => toFallbackContent(index)),

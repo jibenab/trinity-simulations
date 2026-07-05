@@ -6,7 +6,11 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
-import { gradeOptions, subjectOptions, type PublicContent } from "@/lib/content";
+import {
+  gradeOptions,
+  subjectOptions,
+  type PublicContentSummary,
+} from "@/lib/content";
 
 import { ChipButton } from "./Chip";
 import { Footer } from "./Footer";
@@ -21,20 +25,55 @@ const PAGE_SIZE = 12;
 const toolbarControlClassName =
   "h-11 rounded-pill border border-ink bg-transparent px-4 font-mono text-[11px] uppercase tracking-[0.08em]";
 
+function SimCardSkeleton() {
+  return (
+    <div className="simcard animate-pulse motion-reduce:animate-none" aria-hidden>
+      <div className="thumb">
+        <div className="stripes" />
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="h-5 w-3/4 rounded-sm bg-bg-alt" />
+        <div className="h-4 w-full rounded-sm bg-bg-alt" />
+        <div className="mt-auto h-4 w-1/3 rounded-sm bg-bg-alt" />
+      </div>
+    </div>
+  );
+}
+
 export function CatalogClient() {
   const searchParams = useSearchParams();
   const content = useQuery(api.content.listPublished, {}) as
-    | PublicContent[]
+    | PublicContentSummary[]
     | undefined;
-  const [subject, setSubject] = useState<(typeof subjectOptions)[number]>("All");
-  const [grade, setGrade] = useState<(typeof gradeOptions)[number]>("All");
-  const [chapter, setChapter] = useState("All");
-  const [query, setQuery] = useState("");
-  const [view, setView] = useState<ViewMode>("grid");
-  const [sort, setSort] = useState<SortMode>("featured");
-  const [page, setPage] = useState(1);
+  // Filters live in the URL so back button and shared links keep state.
+  const [subject, setSubject] = useState<(typeof subjectOptions)[number]>(() => {
+    const param = searchParams.get("subject");
+    return subjectOptions.includes(param as (typeof subjectOptions)[number])
+      ? (param as (typeof subjectOptions)[number])
+      : "All";
+  });
+  const [grade, setGrade] = useState<(typeof gradeOptions)[number]>(() => {
+    const param = searchParams.get("grade");
+    return gradeOptions.includes(param as (typeof gradeOptions)[number])
+      ? (param as (typeof gradeOptions)[number])
+      : "All";
+  });
+  const [chapter, setChapter] = useState(() => searchParams.get("chapter") ?? "All");
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [view, setView] = useState<ViewMode>(() =>
+    searchParams.get("view") === "list" ? "list" : "grid",
+  );
+  const [sort, setSort] = useState<SortMode>(() => {
+    const param = searchParams.get("sort");
+    return param === "newest" || param === "az" ? param : "featured";
+  });
+  const [page, setPage] = useState(() => {
+    const param = Number(searchParams.get("page"));
+    return Number.isInteger(param) && param > 1 ? param : 1;
+  });
   const deferredQuery = useDeferredValue(query);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const didMountRef = useRef(false);
 
   const chapters = useMemo(() => {
     const pool = (content ?? []).filter((item) => {
@@ -84,14 +123,43 @@ export function CatalogClient() {
   }, [filtered, page]);
 
   useEffect(() => {
+    // Skip the mount run so a ?page= from a shared link survives.
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
     setPage(1);
   }, [subject, grade, chapter, sort, deferredQuery]);
 
   useEffect(() => {
+    // Don't reset a chapter restored from the URL before content has loaded.
+    if (content === undefined) return;
     if (chapter !== "All" && !chapters.includes(chapter)) {
       setChapter("All");
     }
-  }, [chapter, chapters]);
+  }, [chapter, chapters, content]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (subject !== "All") params.set("subject", subject);
+    if (grade !== "All") params.set("grade", grade);
+    if (chapter !== "All") params.set("chapter", chapter);
+    if (deferredQuery.trim()) params.set("q", deferredQuery);
+    if (sort !== "featured") params.set("sort", sort);
+    if (view !== "grid") params.set("view", view);
+    if (page > 1) params.set("page", String(page));
+
+    const next = params.toString();
+    const current = window.location.search.replace(/^\?/, "");
+    if (next !== current) {
+      // Shallow update — router.replace would re-run the server auth check.
+      window.history.replaceState(
+        window.history.state,
+        "",
+        next ? `/catalog?${next}` : "/catalog",
+      );
+    }
+  }, [subject, grade, chapter, deferredQuery, sort, view, page]);
 
   useEffect(() => {
     if (page > totalPages) {
@@ -205,7 +273,13 @@ export function CatalogClient() {
         </div>
       </section>
 
-      {view === "grid" ? (
+      {content === undefined ? (
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 8 }, (_, index) => (
+            <SimCardSkeleton key={index} />
+          ))}
+        </div>
+      ) : view === "grid" ? (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {pageRows.map((item, index) => (
             <SimCard

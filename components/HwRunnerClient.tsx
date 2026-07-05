@@ -82,7 +82,7 @@ export function HwRunnerClient({
             </div>
           </div>
 
-          <div className="bg-dark p-3 sm:p-5">
+          <div className="bg-paper p-3 sm:p-5">
             <SimFrame
               code={content.code}
               slug={content.slug}
@@ -120,7 +120,8 @@ function HwStatus({ state }: { state: SubmitState }) {
 
   if (state.kind === "error") {
     return (
-      <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[15px] text-red-700">
+      <div className="mt-4 rounded-md border border-[var(--rule-soft)] bg-bg-alt px-4 py-3 text-[15px] text-ink">
+        <span className="label-mono mr-3 text-ink-mute">Error</span>
         {state.message}
       </div>
     );
